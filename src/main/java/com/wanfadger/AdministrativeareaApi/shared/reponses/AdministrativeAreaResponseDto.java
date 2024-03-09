@@ -18,5 +18,9 @@ public class AdministrativeAreaResponseDto<T> {
         this.status = true;
     }
 
-
+    public AdministrativeAreaResponseDto(T data) {
+        this.data = data;
+        this.message = "success";
+        this.status = true;
+    }
 }
