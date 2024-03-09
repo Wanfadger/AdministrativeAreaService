@@ -15,15 +15,14 @@ public enum AdministrativeAreaType {
     PARISH("PARISH") //PARISH/WARD
     ;
 
-    private String administrativeAreaType;
+    private final String administrativeAreaType;
 
     AdministrativeAreaType(String administrativeAreaType) {
         this.administrativeAreaType = administrativeAreaType;
     }
 
     public static Optional<AdministrativeAreaType> administrativeAreaTypeStr(String administrativeAreaTypeStr) {
-        Optional<AdministrativeAreaType> optional = Arrays.stream(AdministrativeAreaType.values()).filter(administrativeAreaType -> administrativeAreaType.administrativeAreaType.equalsIgnoreCase(administrativeAreaTypeStr)).findFirst();
-        return optional;
+        return Arrays.stream(AdministrativeAreaType.values()).filter(administrativeAreaType1 -> administrativeAreaType1.administrativeAreaType.equalsIgnoreCase(administrativeAreaTypeStr)).findFirst();
     }
 
 
