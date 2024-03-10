@@ -1,12 +1,5 @@
 package com.wanfadger.AdministrativeareaApi.service.administrativearea;
 
-import com.wanfadger.AdministrativeareaApi.entity.AdministrativeArea;
-import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
-import com.wanfadger.AdministrativeareaApi.entity.BaseEntity;
-
-import java.util.List;
-import java.util.Optional;
-
 @Deprecated
 public interface DbAdministrativeAreaService {
 
