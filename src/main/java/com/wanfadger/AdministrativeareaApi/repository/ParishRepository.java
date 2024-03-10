@@ -1,7 +1,6 @@
 package com.wanfadger.AdministrativeareaApi.repository;
 
 
-import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
 import com.wanfadger.AdministrativeareaApi.entity.Parish;
 import com.wanfadger.AdministrativeareaApi.repository.projections.CodeNameProjection;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -30,7 +29,7 @@ public interface ParishRepository extends JpaRepository<Parish, String> {
     Optional<Parish> findByCodeIgnoreCase(String code);
 
     @Query("SELECT P.code as code , P.name as name FROM Parish P WHERE upper(P.subCounty.code) = upper(:code) ")
-    List<CodeNameProjection> dbIdNameList(String code);
+    List<CodeNameProjection> dbCodeNameList(String code);
 
     @Query("SELECT P.code as code , P.name as name FROM Parish P WHERE upper(P.code) = upper(:code) ")
     Optional<CodeNameProjection> dbCodeName(String code);
