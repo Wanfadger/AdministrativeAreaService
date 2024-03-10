@@ -1,7 +1,6 @@
 package com.wanfadger.AdministrativeareaApi.repository;
 
 
-import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
 import com.wanfadger.AdministrativeareaApi.entity.SubCounty;
 import com.wanfadger.AdministrativeareaApi.repository.projections.CodeNameProjection;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -29,10 +28,10 @@ public interface SubCountyRepository extends JpaRepository<SubCounty, String> {
     List<SubCounty> findAllByCounty_Code(String countyCode);
 
     Optional<SubCounty> findByCodeIgnoreCase(String code);
-    @Query("SELECT SC.id as id , SC.name as name FROM SubCounty SC WHERE upper(SC.county.code) = upper(:county) ")
-    List<CodeNameProjection> dbIdNameList(String county);
+    @Query("SELECT SC.code as code , SC.name as name FROM SubCounty SC WHERE upper(SC.county.code) = upper(:county) ")
+    List<CodeNameProjection> dbCodeNameList(String county);
 
 
-    @Query("SELECT SC.id as id , SC.name as name FROM SubCounty SC WHERE upper(SC.code) = upper(:code) ")
+    @Query("SELECT SC.id as code , SC.name as name FROM SubCounty SC WHERE upper(SC.code) = upper(:code) ")
     Optional<CodeNameProjection> dbCodeName(String code);
 }
