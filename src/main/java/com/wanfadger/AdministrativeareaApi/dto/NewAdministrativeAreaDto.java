@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public   class NewAdministrativeAreaDto{
     private String name;
+    private String description;
     private String partOfCode;
     private String latitude;
     private String longitude;
