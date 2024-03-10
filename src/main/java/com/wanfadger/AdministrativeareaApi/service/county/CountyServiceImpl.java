@@ -46,7 +46,7 @@ public class CountyServiceImpl implements DbCountyService  {
 
     @Override
     public Optional<County> dbByCode(String code) {
-        return Optional.empty();
+        return countyRepository.findByCodeIgnoreCase(code);
     }
 
 
