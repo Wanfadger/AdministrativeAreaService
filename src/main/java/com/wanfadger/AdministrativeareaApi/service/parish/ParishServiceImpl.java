@@ -3,11 +3,8 @@ package com.wanfadger.AdministrativeareaApi.service.parish;
 
 
 import com.wanfadger.AdministrativeareaApi.entity.Parish;
-import com.wanfadger.AdministrativeareaApi.entity.SubCounty;
 import com.wanfadger.AdministrativeareaApi.repository.ParishRepository;
-import com.wanfadger.AdministrativeareaApi.repository.SubCountyRepository;
 import com.wanfadger.AdministrativeareaApi.repository.projections.CodeNameProjection;
-import com.wanfadger.AdministrativeareaApi.service.subcounty.DbSubCountyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -53,7 +50,7 @@ public class ParishServiceImpl implements DbParishService {
 
     @Override
     public List<CodeNameProjection> dbCodeNameList(Map<String, String> map) {
-        return parishRepository.dbIdNameList(map.get("partOf"));
+        return parishRepository.dbCodeNameList(map.get("partOf"));
     }
 
     @Override
