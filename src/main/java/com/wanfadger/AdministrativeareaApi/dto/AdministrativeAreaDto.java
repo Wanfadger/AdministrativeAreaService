@@ -12,5 +12,4 @@ public class AdministrativeAreaDto {
     private String name;
     private String latitude;
     private String longitude;
-
 }
