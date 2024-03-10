@@ -10,10 +10,12 @@ import com.wanfadger.AdministrativeareaApi.service.region.DbRegionService;
 import com.wanfadger.AdministrativeareaApi.service.subRegion.DbSubRegionService;
 import com.wanfadger.AdministrativeareaApi.service.subcounty.DbSubCountyService;
 import com.wanfadger.AdministrativeareaApi.shared.administrativeareaexceptions.AlreadyExistsException;
+import com.wanfadger.AdministrativeareaApi.shared.administrativeareaexceptions.InvalidException;
 import com.wanfadger.AdministrativeareaApi.shared.administrativeareaexceptions.MissingDataException;
 import com.wanfadger.AdministrativeareaApi.shared.administrativeareaexceptions.NotFoundException;
 import com.wanfadger.AdministrativeareaApi.shared.reponses.AdministrativeAreaResponseDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cglib.core.Local;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -89,8 +91,8 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public ResponseEntity<AdministrativeAreaResponseDto<String>> newOne(String type, NewAdministrativeAreaDto dto) {
-        Optional<AdministrativeAreaType> optionalAdministrativeAreaType = AdministrativeAreaType.administrativeAreaTypeStr(type);
+    public ResponseEntity<AdministrativeAreaResponseDto<String>> newOne(Map<String , String> queryMap, NewAdministrativeAreaDto dto) {
+        Optional<AdministrativeAreaType> optionalAdministrativeAreaType = AdministrativeAreaType.administrativeAreaTypeStr(queryMap.get("type"));
         if (optionalAdministrativeAreaType.isEmpty()) {
             throw new MissingDataException("Missing Administrative Area Type");
         }
@@ -116,11 +118,13 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing PartOfCode");
                 }
 
+                Region region = dbRegionService.dbByCode(dto.getPartOfCode()).orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
                 if (dbSubRegionService.dbByName_RegionCode(dto.getName(), dto.getPartOfCode()).isPresent()) {
                     throw new AlreadyExistsException("Administrative Area Already Exists");
                 }
 
                 SubRegion subRegion = convertDtoSubRegion(dto, administrativeAreaType);
+                subRegion.setRegion(region);
 
                 dbSubRegionService.dbNew(subRegion);
                 yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>("success", "success"), HttpStatus.CREATED);
@@ -130,11 +134,14 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing PartOfCode");
                 }
 
+                SubRegion subRegion = dbSubRegionService.dbByCode(dto.getPartOfCode()).orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
+
                 if (dbLocalGovernmentService.dbByName_SubRegionCode(dto.getName(), dto.getPartOfCode()).isPresent()) {
                     throw new AlreadyExistsException("Administrative Area Already Exists");
                 }
 
                 LocalGovernment localGovernment = convertDtoLocalGovernment(dto, administrativeAreaType);
+                localGovernment.setSubRegion(subRegion);
 
                 dbLocalGovernmentService.dbNew(localGovernment);
                 yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>("success", "success"), HttpStatus.CREATED);
@@ -145,11 +152,14 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing PartOfCode");
                 }
 
+                LocalGovernment localGovernment = dbLocalGovernmentService.dbByCode(dto.getPartOfCode()).orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
+
                 if (dbCountyService.dbByName_LocalGovernment_Code(dto.getName(), dto.getPartOfCode()).isPresent()) {
                     throw new AlreadyExistsException("Administrative Area Already Exists");
                 }
 
                 County county = convertDtoCounty(dto, administrativeAreaType);
+                county.setLocalGovernment(localGovernment);
 
                 dbCountyService.dbNew(county);
                 yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>("success", "success"), HttpStatus.CREATED);
@@ -160,11 +170,14 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing PartOfCode");
                 }
 
+                County county = dbCountyService.dbByCode(dto.getPartOfCode()).orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
+
                 if (dbSubCountyService.dbByName_CountyCode(dto.getName(), dto.getPartOfCode()).isPresent()) {
                     throw new AlreadyExistsException("Administrative Area Already Exists");
                 }
 
                 SubCounty subCounty = convertDtoSubCounty(dto, administrativeAreaType);
+                subCounty.setCounty(county);
 
                 dbSubCountyService.dbNew(subCounty);
                 yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>("success", "success"), HttpStatus.CREATED);
@@ -175,11 +188,14 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing PartOfCode");
                 }
 
+                SubCounty subCounty = dbSubCountyService.dbByCode(dto.getPartOfCode()).orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
+
                 if (dbParishService.dbByName_SubCountyCode(dto.getName(), dto.getPartOfCode()).isPresent()) {
                     throw new AlreadyExistsException("Administrative Area Already Exists");
                 }
 
                 Parish parish = convertDtoParish(dto, administrativeAreaType);
+                parish.setSubCounty(subCounty);
 
                 dbParishService.dbNew(parish);
                 yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>("success", "success"), HttpStatus.CREATED);
@@ -192,7 +208,6 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         parish.setName(dto.getName());
         parish.setLatitude(dto.getLatitude() != null ? Double.valueOf(dto.getLatitude()) : null);
         parish.setLongitude(dto.getLongitude() != null ? Double.valueOf(dto.getLongitude()) : null);
-        parish.setPartOfCode(dto.getPartOfCode());
         parish.setCode(generateCode(administrativeAreaType));
         return parish;
     }
@@ -202,7 +217,6 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         subCounty.setName(dto.getName());
         subCounty.setLatitude(dto.getLatitude() != null ? Double.valueOf(dto.getLatitude()) : null);
         subCounty.setLongitude(dto.getLongitude() != null ? Double.valueOf(dto.getLongitude()) : null);
-        subCounty.setPartOfCode(dto.getPartOfCode());
         subCounty.setCode(generateCode(administrativeAreaType));
         return subCounty;
     }
@@ -212,7 +226,6 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         county.setName(dto.getName());
         county.setLatitude(dto.getLatitude() != null ? Double.valueOf(dto.getLatitude()) : null);
         county.setLongitude(dto.getLongitude() != null ? Double.valueOf(dto.getLongitude()) : null);
-        county.setPartOfCode(dto.getPartOfCode());
         county.setCode(generateCode(administrativeAreaType));
         return county;
     }
@@ -222,7 +235,6 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         localGovernment.setName(dto.getName());
         localGovernment.setLatitude(dto.getLatitude() != null ? Double.valueOf(dto.getLatitude()) : null);
         localGovernment.setLongitude(dto.getLongitude() != null ? Double.valueOf(dto.getLongitude()) : null);
-        localGovernment.setPartOfCode(dto.getPartOfCode());
         localGovernment.setCode(generateCode(administrativeAreaType));
         return localGovernment;
     }
@@ -230,9 +242,8 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     private SubRegion convertDtoSubRegion(NewAdministrativeAreaDto dto, AdministrativeAreaType administrativeAreaType) {
         SubRegion subRegion = new SubRegion();
         subRegion.setName(dto.getName());
-        subRegion.setLatitude(dto.getLatitude() != null ? Double.valueOf(dto.getLatitude()) : null);
-        subRegion.setLongitude(dto.getLongitude() != null ? Double.valueOf(dto.getLongitude()) : null);
-        subRegion.setPartOfCode(dto.getPartOfCode());
+        subRegion.setLatitude(notNullEmpty(dto.getLatitude())  ? Double.valueOf(dto.getLatitude()) : null);
+        subRegion.setLongitude(notNullEmpty(dto.getLongitude()) ? Double.valueOf(dto.getLongitude()) : null);
         subRegion.setCode(generateCode(administrativeAreaType));
         return subRegion;
     }
@@ -240,6 +251,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     private Region convertDtoRegion(NewAdministrativeAreaDto dto, AdministrativeAreaType administrativeAreaType) {
         Region region = new Region();
         region.setName(dto.getName());
+        region.setDescription(dto.getDescription());
         region.setLatitude(dto.getLatitude() != null ? Double.valueOf(dto.getLatitude()) : null);
         region.setLongitude(dto.getLongitude() != null ? Double.valueOf(dto.getLongitude()) : null);
         region.setCode(generateCode(administrativeAreaType));
@@ -247,8 +259,8 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public ResponseEntity<AdministrativeAreaResponseDto<String>> newList(String type, List<NewAdministrativeAreaDto> dtos) {
-        Optional<AdministrativeAreaType> optionalAdministrativeAreaType = AdministrativeAreaType.administrativeAreaTypeStr(type);
+    public ResponseEntity<AdministrativeAreaResponseDto<String>> newList(Map<String , String> queryMap, List<NewAdministrativeAreaDto> dtos) {
+        Optional<AdministrativeAreaType> optionalAdministrativeAreaType = AdministrativeAreaType.administrativeAreaTypeStr(queryMap.get("type"));
         if (optionalAdministrativeAreaType.isEmpty()) {
             throw new MissingDataException("Missing Administrative Area Type");
         }
@@ -574,6 +586,200 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                             .parallelStream().map(parish -> convertParishDto(parish)).sorted(Comparator.comparing(ParishDto::getCode)).toList();
                 }
                 yield new AdministrativeAreaResponseDto<>(parishDtos);
+            }
+        };
+
+    }
+
+    @Override
+    public AdministrativeAreaResponseDto<String> upload(List<AdministrativeAreaExcelDto> administrativeAreaExcelDtos) {
+        return null;
+    }
+
+    @Override
+    public AdministrativeAreaResponseDto<String> updateOne(Map<String, String> queryMap, UpdateAdministrativeAreaDto dto) {
+        String type = queryMap.get("type");
+        String partOf = queryMap.get("partOf");
+
+
+        Optional<AdministrativeAreaType> optionalAdministrativeAreaType = AdministrativeAreaType.administrativeAreaTypeStr(type);
+        if (optionalAdministrativeAreaType.isEmpty()) {
+            throw new MissingDataException("Missing Administrative Area Type");
+        }
+
+        AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
+
+       return switch (administrativeAreaType){
+            case REGION -> {
+                Region region = dbRegionService.dbByCode(dto.getCode()).orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
+                if (notNullEmpty(dto.getName())) {
+                    region.setName(dto.getName());
+                }
+
+                if (nullEmpty(dto.getLongitude())) {
+                    region.setLatitude(Double.valueOf(dto.getLatitude()));
+                }
+
+                if (nullEmpty(dto.getLongitude())) {
+                    region.setLatitude(Double.valueOf(dto.getLongitude()));
+                }
+
+                if (notNullEmpty(dto.getDescription())) {
+                    region.setDescription(dto.getDescription());
+                }
+
+                dbRegionService.dbNew(region);
+                yield new AdministrativeAreaResponseDto<>("SUCCESS") ;
+            }
+            case SUBREGION -> {
+                if (nullEmpty(dto.getPartOfCode())) {
+                    throw new MissingDataException("Missing PartOfCode");
+                }
+
+                Region region = dbRegionService.dbByCode(dto.getPartOfCode()).orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
+                SubRegion subRegion = dbSubRegionService.dbByCode(dto.getCode()).orElseThrow(() -> new NotFoundException("Administrative Area NotFound"));
+
+
+                if (notNullEmpty(dto.getName())) {
+                    subRegion.setName(dto.getName());
+                }
+
+                if (nullEmpty(dto.getLongitude())) {
+                    subRegion.setLatitude(Double.valueOf(dto.getLatitude()));
+                }
+
+                if (nullEmpty(dto.getLongitude())) {
+                    subRegion.setLatitude(Double.valueOf(dto.getLongitude()));
+                }
+
+                if (notNullEmpty(dto.getDescription())) {
+                    subRegion.setDescription(dto.getDescription());
+                }
+
+                subRegion.setRegion(region);
+
+                dbSubRegionService.dbNew(subRegion);
+                yield new AdministrativeAreaResponseDto<>("SUCCESS") ;
+            }
+            case LOCALGOVERNMENT -> {
+                if (nullEmpty(dto.getPartOfCode())) {
+                    throw new MissingDataException("Missing PartOfCode");
+                }
+
+                SubRegion subRegion = dbSubRegionService.dbByCode(dto.getPartOfCode()).orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
+                LocalGovernment localGovernment = dbLocalGovernmentService.dbByCode(dto.getCode()).orElseThrow(() -> new NotFoundException("Administrative Area NotFound"));
+
+
+                if (notNullEmpty(dto.getName())) {
+                    localGovernment.setName(dto.getName());
+                }
+
+                if (nullEmpty(dto.getLongitude())) {
+                    localGovernment.setLatitude(Double.valueOf(dto.getLatitude()));
+                }
+
+                if (nullEmpty(dto.getLongitude())) {
+                    localGovernment.setLatitude(Double.valueOf(dto.getLongitude()));
+                }
+
+                if (notNullEmpty(dto.getDescription())) {
+                    localGovernment.setDescription(dto.getDescription());
+                }
+
+                localGovernment.setSubRegion(subRegion);
+
+                dbLocalGovernmentService.dbNew(localGovernment);
+                yield new AdministrativeAreaResponseDto<>("SUCCESS") ;
+            }
+            case COUNTY -> {
+                if (nullEmpty(dto.getPartOfCode())) {
+                    throw new MissingDataException("Missing PartOfCode");
+                }
+
+                LocalGovernment localGovernment = dbLocalGovernmentService.dbByCode(dto.getPartOfCode()).orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
+                County county = dbCountyService.dbByCode(dto.getCode()).orElseThrow(() -> new NotFoundException("Administrative Area NotFound"));
+
+
+                if (notNullEmpty(dto.getName())) {
+                    county.setName(dto.getName());
+                }
+
+                if (nullEmpty(dto.getLongitude())) {
+                    county.setLatitude(Double.valueOf(dto.getLatitude()));
+                }
+
+                if (nullEmpty(dto.getLongitude())) {
+                    county.setLatitude(Double.valueOf(dto.getLongitude()));
+                }
+
+                if (notNullEmpty(dto.getDescription())) {
+                    county.setDescription(dto.getDescription());
+                }
+
+                county.setLocalGovernment(localGovernment);
+
+                dbCountyService.dbNew(county);
+                yield new AdministrativeAreaResponseDto<>("SUCCESS") ;
+            }
+            case SUBCOUNTY -> {
+                if (nullEmpty(dto.getPartOfCode())) {
+                    throw new MissingDataException("Missing PartOfCode");
+                }
+
+                County county = dbCountyService.dbByCode(dto.getPartOfCode()).orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
+                SubCounty subCounty = dbSubCountyService.dbByCode(dto.getCode()).orElseThrow(() -> new NotFoundException("Administrative Area NotFound"));
+
+
+                if (notNullEmpty(dto.getName())) {
+                    subCounty.setName(dto.getName());
+                }
+
+                if (nullEmpty(dto.getLongitude())) {
+                    subCounty.setLatitude(Double.valueOf(dto.getLatitude()));
+                }
+
+                if (nullEmpty(dto.getLongitude())) {
+                    subCounty.setLatitude(Double.valueOf(dto.getLongitude()));
+                }
+
+                if (notNullEmpty(dto.getDescription())) {
+                    subCounty.setDescription(dto.getDescription());
+                }
+
+                subCounty.setCounty(county);
+
+                dbSubCountyService.dbNew(subCounty);
+                yield new AdministrativeAreaResponseDto<>("SUCCESS") ;
+            }
+            case PARISH -> {
+                if (nullEmpty(dto.getPartOfCode())) {
+                    throw new MissingDataException("Missing PartOfCode");
+                }
+
+                SubCounty subCounty = dbSubCountyService.dbByCode(dto.getPartOfCode()).orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
+                Parish parish = dbParishService.dbByCode(dto.getCode()).orElseThrow(() -> new NotFoundException("Administrative Area NotFound"));
+
+
+                if (notNullEmpty(dto.getName())) {
+                    parish.setName(dto.getName());
+                }
+
+                if (nullEmpty(dto.getLongitude())) {
+                    parish.setLatitude(Double.valueOf(dto.getLatitude()));
+                }
+
+                if (nullEmpty(dto.getLongitude())) {
+                    parish.setLatitude(Double.valueOf(dto.getLongitude()));
+                }
+
+                if (notNullEmpty(dto.getDescription())) {
+                    parish.setDescription(dto.getDescription());
+                }
+
+                parish.setSubCounty(subCounty);
+
+                dbParishService.dbNew(parish);
+                yield new AdministrativeAreaResponseDto<>("SUCCESS") ;
             }
         };
 
