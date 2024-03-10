@@ -1,6 +1,8 @@
 package com.wanfadger.AdministrativeareaApi.service.administrativearea;
 
-import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaDtos;
+import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaDto;
+import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDto;
+import com.wanfadger.AdministrativeareaApi.repository.projections.CodeNameProjection;
 import com.wanfadger.AdministrativeareaApi.shared.reponses.AdministrativeAreaResponseDto;
 import org.springframework.http.ResponseEntity;
 
@@ -9,10 +11,13 @@ import java.util.Map;
 
 public interface AdministrativeAreaService {
 
-    ResponseEntity<AdministrativeAreaResponseDto<String>> newOne(AdministrativeAreaDtos.NewAdministrativeAreaDto dto);
+    ResponseEntity<AdministrativeAreaResponseDto<String>> newOne(String type , NewAdministrativeAreaDto dto);
+    ResponseEntity<AdministrativeAreaResponseDto<String>> newList(String type , List<NewAdministrativeAreaDto> dtos);
 
-    AdministrativeAreaResponseDto<AdministrativeAreaDtos.AdministrativeAreaDto> filterOne(Map<String ,String> queryMap);
-    AdministrativeAreaResponseDto<List<AdministrativeAreaDtos.AdministrativeAreaDto>> filterList(Map<String ,String> queryMap);
+    AdministrativeAreaResponseDto<CodeNameProjection> filterOne(Map<String ,String> queryMap);
+    AdministrativeAreaResponseDto<List<CodeNameProjection>> filterList(Map<String ,String> queryMap);
 
-    ResponseEntity<AdministrativeAreaResponseDto<String>> newList(List<AdministrativeAreaDtos.NewAdministrativeAreaDto> dtos);
+    AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> searchList(Map<String ,String> queryMap);
+
+
 }

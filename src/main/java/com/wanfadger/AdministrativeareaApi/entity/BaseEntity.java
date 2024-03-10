@@ -19,10 +19,20 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class BaseEntity {
-
     @Id
     @UuidGenerator
     private String id;
+
+    @Column(unique = true , nullable = false)
+    private String code;
+
+    @Column(unique = true , nullable = false)
+    private String name;
+
+    private Double latitude;
+    private Double longitude;
+
+    private String description;
 
     @CreationTimestamp
     @Column(updatable = false)
