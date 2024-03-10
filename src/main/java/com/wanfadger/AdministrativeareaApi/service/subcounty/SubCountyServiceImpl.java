@@ -7,7 +7,6 @@ import com.wanfadger.AdministrativeareaApi.repository.SubCountyRepository;
 import com.wanfadger.AdministrativeareaApi.repository.projections.CodeNameProjection;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -52,7 +51,7 @@ public class SubCountyServiceImpl implements DbSubCountyService  {
 
     @Override
     public List<CodeNameProjection> dbCodeNameList(Map<String , String> map) {
-        return subCountyRepository.dbIdNameList(map.get("partOf"));
+        return subCountyRepository.dbCodeNameList(map.get("partOf"));
     }
 
     @Override
