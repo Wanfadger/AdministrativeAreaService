@@ -18,10 +18,8 @@ import java.util.Set;
 @Entity
 public class SubRegion extends BaseEntity {
 
-    @Column(nullable = false)
-    private String partOfCode;
-
     @ManyToOne(targetEntity = Region.class ,cascade = CascadeType.PERSIST)
+    @JoinColumn(nullable = false)
     private Region region;
 
     @OneToMany(mappedBy = "subRegion" , targetEntity = LocalGovernment.class ,cascade = CascadeType.PERSIST)

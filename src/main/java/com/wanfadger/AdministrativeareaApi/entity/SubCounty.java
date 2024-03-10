@@ -16,10 +16,8 @@ import java.util.List;
 @Entity
 public class SubCounty extends BaseEntity {
 
-    @Column(nullable = false)
-    private String partOfCode;
-
     @ManyToOne(targetEntity = County.class , fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false)
     private County county;
 
     @OneToMany(mappedBy = "subCounty" , cascade = CascadeType.PERSIST , targetEntity = Parish.class)

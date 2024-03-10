@@ -17,10 +17,9 @@ import java.util.Set;
 @NoArgsConstructor
 @Entity
 public class County extends BaseEntity {
-    @Column(nullable = false)
-    private String partOfCode;
 
     @ManyToOne(fetch = FetchType.LAZY , targetEntity = LocalGovernment.class)
+    @JoinColumn(nullable = false)
     private LocalGovernment localGovernment;
 
     @OneToMany(mappedBy = "county" , cascade = CascadeType.PERSIST , targetEntity = SubCounty.class)
