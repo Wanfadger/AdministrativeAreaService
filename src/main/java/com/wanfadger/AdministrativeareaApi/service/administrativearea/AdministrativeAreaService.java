@@ -17,7 +17,7 @@ public interface AdministrativeAreaService {
     AdministrativeAreaResponseDto<CodeNameProjection> filterOne(Map<String ,String> queryMap);
     AdministrativeAreaResponseDto<List<CodeNameProjection>> filterList(Map<String ,String> queryMap);
 
-    AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> searchList(Map<String ,String> queryMap);
+    AdministrativeAreaResponseDto<List<?>> searchList(Map<String ,String> queryMap);
 
 
 }

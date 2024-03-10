@@ -36,7 +36,7 @@ public class SecurityConfiguration {
 
 
     String[] WHITELIST = new String[]{
-            "/Auth/**"
+            "/**"
     };
 
     @Bean

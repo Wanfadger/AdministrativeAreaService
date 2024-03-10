@@ -506,7 +506,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> searchList(Map<String, String> queryMap) {
+    public AdministrativeAreaResponseDto<List<?>> searchList(Map<String, String> queryMap) {
         String type = queryMap.get("type");
         String partOf = queryMap.get("partOf");
 
