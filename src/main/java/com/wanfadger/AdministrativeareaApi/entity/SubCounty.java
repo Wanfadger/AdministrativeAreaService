@@ -16,6 +16,9 @@ import java.util.List;
 @Entity
 public class SubCounty extends BaseEntity {
 
+    @Column(nullable = false)
+    private String name;
+
     @ManyToOne(targetEntity = County.class , fetch = FetchType.LAZY)
     @JoinColumn(nullable = false)
     private County county;
