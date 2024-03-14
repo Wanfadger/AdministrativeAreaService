@@ -18,6 +18,9 @@ import java.util.Set;
 @Entity
 public class SubRegion extends BaseEntity {
 
+    @Column(unique = true , nullable = false)
+    private String name;
+
     @ManyToOne(targetEntity = Region.class ,cascade = CascadeType.PERSIST)
     @JoinColumn(nullable = false)
     private Region region;
