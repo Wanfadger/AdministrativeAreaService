@@ -18,6 +18,9 @@ import java.util.Set;
 @Entity
 public class County extends BaseEntity {
 
+    @Column(nullable = false)
+    private String name;
+
     @ManyToOne(fetch = FetchType.LAZY , targetEntity = LocalGovernment.class)
     @JoinColumn(nullable = false)
     private LocalGovernment localGovernment;
