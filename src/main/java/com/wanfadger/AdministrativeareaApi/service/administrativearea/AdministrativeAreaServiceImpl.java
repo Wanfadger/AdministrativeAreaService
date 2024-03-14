@@ -1,6 +1,7 @@
 package com.wanfadger.AdministrativeareaApi.service.administrativearea;
 
 import com.wanfadger.AdministrativeareaApi.dto.*;
+import com.wanfadger.AdministrativeareaApi.dto.uniqueDtos.*;
 import com.wanfadger.AdministrativeareaApi.entity.*;
 import com.wanfadger.AdministrativeareaApi.repository.projections.CodeNameProjection;
 import com.wanfadger.AdministrativeareaApi.service.county.DbCountyService;
@@ -15,12 +16,17 @@ import com.wanfadger.AdministrativeareaApi.shared.administrativeareaexceptions.M
 import com.wanfadger.AdministrativeareaApi.shared.administrativeareaexceptions.NotFoundException;
 import com.wanfadger.AdministrativeareaApi.shared.reponses.AdministrativeAreaResponseDto;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cglib.core.Local;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -91,7 +97,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public ResponseEntity<AdministrativeAreaResponseDto<String>> newOne(Map<String , String> queryMap, NewAdministrativeAreaDto dto) {
+    public ResponseEntity<AdministrativeAreaResponseDto<String>> newOne(Map<String, String> queryMap, NewAdministrativeAreaDto dto) {
         Optional<AdministrativeAreaType> optionalAdministrativeAreaType = AdministrativeAreaType.administrativeAreaTypeStr(queryMap.get("type"));
         if (optionalAdministrativeAreaType.isEmpty()) {
             throw new MissingDataException("Missing Administrative Area Type");
@@ -242,7 +248,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     private SubRegion convertDtoSubRegion(NewAdministrativeAreaDto dto, AdministrativeAreaType administrativeAreaType) {
         SubRegion subRegion = new SubRegion();
         subRegion.setName(dto.getName());
-        subRegion.setLatitude(notNullEmpty(dto.getLatitude())  ? Double.valueOf(dto.getLatitude()) : null);
+        subRegion.setLatitude(notNullEmpty(dto.getLatitude()) ? Double.valueOf(dto.getLatitude()) : null);
         subRegion.setLongitude(notNullEmpty(dto.getLongitude()) ? Double.valueOf(dto.getLongitude()) : null);
         subRegion.setCode(generateCode(administrativeAreaType));
         return subRegion;
@@ -259,7 +265,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public ResponseEntity<AdministrativeAreaResponseDto<String>> newList(Map<String , String> queryMap, List<NewAdministrativeAreaDto> dtos) {
+    public ResponseEntity<AdministrativeAreaResponseDto<String>> newList(Map<String, String> queryMap, List<NewAdministrativeAreaDto> dtos) {
         Optional<AdministrativeAreaType> optionalAdministrativeAreaType = AdministrativeAreaType.administrativeAreaTypeStr(queryMap.get("type"));
         if (optionalAdministrativeAreaType.isEmpty()) {
             throw new MissingDataException("Missing Administrative Area Type");
@@ -530,17 +536,17 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
         AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
 
-       return switch (administrativeAreaType){
+        return switch (administrativeAreaType) {
             case REGION -> {
                 List<RegionDto> regionDtos = dbRegionService.dbList().parallelStream().map(region -> convertRegionDto(region)).sorted(Comparator.comparing(RegionDto::getCode)).toList();
                 yield new AdministrativeAreaResponseDto<>(regionDtos);
             }
-            case SUBREGION ->{
+            case SUBREGION -> {
 
                 List<SubRegionDto> subRegionDtos;
                 if (notNullEmpty(partOf)) {
                     subRegionDtos = dbSubRegionService.dbByRegionCode(partOf).parallelStream().map(subRegion -> convertSubRegionDto(subRegion)).sorted(Comparator.comparing(SubRegionDto::getCode)).toList();
-                }else{
+                } else {
                     subRegionDtos = dbSubRegionService.dbList()
                             .parallelStream().map(subRegion -> convertSubRegionDto(subRegion)).sorted(Comparator.comparing(SubRegionDto::getCode)).toList();
                 }
@@ -551,7 +557,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 List<LocalGovernmentDto> localGovernmentDtos;
                 if (notNullEmpty(partOf)) {
                     localGovernmentDtos = dbLocalGovernmentService.dbBySubRegionCode(partOf).parallelStream().map(localGovernment -> convertLocalGovernmentDto(localGovernment)).sorted(Comparator.comparing(LocalGovernmentDto::getCode)).toList();
-                }else{
+                } else {
                     localGovernmentDtos = dbLocalGovernmentService.dbList()
                             .parallelStream().map(localGovernment -> convertLocalGovernmentDto(localGovernment)).sorted(Comparator.comparing(LocalGovernmentDto::getCode)).toList();
                 }
@@ -561,7 +567,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 List<CountyDto> countyDtos;
                 if (notNullEmpty(partOf)) {
                     countyDtos = dbCountyService.dbAllByLocalGovernmentCode(partOf).parallelStream().map(county -> convertCountyDto(county)).sorted(Comparator.comparing(CountyDto::getCode)).toList();
-                }else{
+                } else {
                     countyDtos = dbCountyService.dbList()
                             .parallelStream().map(county -> convertCountyDto(county)).sorted(Comparator.comparing(CountyDto::getCode)).toList();
                 }
@@ -571,7 +577,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 List<SubCountyDto> subCountyDtos;
                 if (notNullEmpty(partOf)) {
                     subCountyDtos = dbSubCountyService.dbByCountyCode(partOf).parallelStream().map(subCounty -> convertSubCountyDto(subCounty)).sorted(Comparator.comparing(SubCountyDto::getCode)).toList();
-                }else{
+                } else {
                     subCountyDtos = dbSubCountyService.dbList()
                             .parallelStream().map(subCounty -> convertSubCountyDto(subCounty)).sorted(Comparator.comparing(SubCountyDto::getCode)).toList();
                 }
@@ -581,7 +587,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 List<ParishDto> parishDtos;
                 if (notNullEmpty(partOf)) {
                     parishDtos = dbParishService.dbBySubCountyCode(partOf).parallelStream().map(parish -> convertParishDto(parish)).sorted(Comparator.comparing(ParishDto::getCode)).toList();
-                }else{
+                } else {
                     parishDtos = dbParishService.dbList()
                             .parallelStream().map(parish -> convertParishDto(parish)).sorted(Comparator.comparing(ParishDto::getCode)).toList();
                 }
@@ -592,8 +598,306 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public AdministrativeAreaResponseDto<String> upload(List<AdministrativeAreaExcelDto> administrativeAreaExcelDtos) {
-        return null;
+    public AdministrativeAreaResponseDto<String> upload(List<AdministrativeAreaExcelDto> dtoList) {
+//        System.out.println(dtoList);
+        uploadAdministrativeAreas(dtoList);
+        return new AdministrativeAreaResponseDto<>("Successfully updated " + dtoList.size());
+    }
+
+    @Async
+    public void uploadAdministrativeAreas(List<AdministrativeAreaExcelDto> dtoList) {
+        // REGION
+        uploadRegions(dtoList);
+
+//        //LOCALGOVERNMENT
+//        uploadLocalGovernment(dtoList);
+//
+//        //COUNTY
+//        uploadCounty(dtoList);
+//
+//        //SUBCOUNTY
+//        uploadSubCounty(dtoList);
+//
+//        //PARISH
+//        uploadParishes(dtoList);
+    }
+
+    private void uploadParishes(List<AdministrativeAreaExcelDto> dtoList) {
+        List<Parish> dbParishes = dbParishService.dbList();
+
+        Set<UParish> newParishSet = dtoList.parallelStream().filter(dto -> dbParishes.stream().noneMatch(dbParish -> {
+            SubCounty subCounty = dbParish.getSubCounty();
+            County county = subCounty.getCounty();
+            LocalGovernment localGovernment = county.getLocalGovernment();
+            SubRegion subRegion = localGovernment.getSubRegion();
+            Region region = subRegion.getRegion();
+            return (dbParish.getName().equalsIgnoreCase(dto.getParish())
+                    && subCounty.getName().equalsIgnoreCase(dto.getSubCounty())
+                    && county.getName().equalsIgnoreCase(dto.getCounty())
+                    && localGovernment.getName().equalsIgnoreCase(dto.getLocalGovernment())
+                    && subRegion.getName().equalsIgnoreCase(dto.getSubRegion())
+                    && region.getName().equalsIgnoreCase(dto.getRegion()));
+        })).map(dto -> new UParish(dto.getParish(), dto.getDbSubCounty())).collect(Collectors.toSet());
+
+
+        if (newParishSet.size() > 0) {
+            List<Parish> newParishes = newParishSet.stream().map(UP -> {
+                        Parish parish = new Parish();
+                        parish.setCode(generateCode(AdministrativeAreaType.PARISH));
+                        parish.setName(UP.name());
+                        parish.setSubCounty(UP.subCounty());
+                        return parish;
+                    })
+                    .toList();
+            dbParishService.dbNew(newParishes);
+        }
+
+    }
+
+    private void uploadSubCounty(List<AdministrativeAreaExcelDto> dtoList) {
+        List<SubCounty> dbSubCounties = dbSubCountyService.dbList();
+
+        Set<USubCounty> newSubCountySet = dtoList.parallelStream().filter(dto -> dbSubCounties.stream().noneMatch(dbSubCounty -> {
+            County county = dbSubCounty.getCounty();
+            LocalGovernment localGovernment = county.getLocalGovernment();
+            SubRegion subRegion = localGovernment.getSubRegion();
+            Region region = subRegion.getRegion();
+            return (dbSubCounty.getName().equalsIgnoreCase(dto.getSubCounty())
+                    && county.getName().equalsIgnoreCase(dto.getCounty())
+                    && localGovernment.getName().equalsIgnoreCase(dto.getLocalGovernment())
+                    && subRegion.getName().equalsIgnoreCase(dto.getSubRegion())
+                    && region.getName().equalsIgnoreCase(dto.getRegion()));
+        })).map(dto -> new USubCounty(dto.getSubCounty(), dto.getDbCounty())).collect(Collectors.toSet());
+
+
+        List<SubCounty> dbSubCounties2;
+        if (newSubCountySet.size() > 0) {
+            List<SubCounty> newSubCounties = newSubCountySet.stream().map(dto -> {
+                SubCounty subCounty = new SubCounty();
+                subCounty.setCode(generateCode(AdministrativeAreaType.SUBCOUNTY));
+                subCounty.setName(dto.name());
+                subCounty.setCounty(dto.county());
+                return subCounty;
+            }).toList();
+
+            dbSubCountyService.dbNew(newSubCounties);
+            dbSubCounties2 = dbSubCountyService.dbList();
+        } else {
+            dbSubCounties2 = dbSubCounties;
+        }
+
+
+        // ADDING Subcounty TO LIST
+        List<SubCounty> finalDbSubCounties = dbSubCounties2;
+        List<AdministrativeAreaExcelDto> newDtos = dtoList.parallelStream()
+                .flatMap(oldDto -> finalDbSubCounties.stream()
+                        .filter(dbSubCounty -> {
+                            County county = dbSubCounty.getCounty();
+                            LocalGovernment localGovernment = county.getLocalGovernment();
+                            SubRegion subRegion = localGovernment.getSubRegion();
+                            Region region = subRegion.getRegion();
+                            return (dbSubCounty.getName().equalsIgnoreCase(oldDto.getSubCounty())
+                                    && county.getName().equalsIgnoreCase(oldDto.getCounty())
+                                    && localGovernment.getName().equalsIgnoreCase(oldDto.getLocalGovernment())
+                                    && subRegion.getName().equalsIgnoreCase(oldDto.getSubRegion())
+                                    && region.getName().equalsIgnoreCase(oldDto.getRegion())
+                            );
+                        })
+                        .map(subCounty -> {
+                            oldDto.setDbSubCounty(subCounty);
+                            return oldDto;
+                        })).toList();
+
+
+        /// UPLOAD Parishes
+        uploadParishes(newDtos);
+
+    }
+
+    private void uploadCounty(List<AdministrativeAreaExcelDto> dtoList) {
+        List<County> dbCounties = dbCountyService.dbList();
+
+        Set<UCounty> newCountSet = dtoList.parallelStream().filter(dto -> dbCounties.stream().parallel().noneMatch(dbCounty -> {
+            LocalGovernment localGovernment = dbCounty.getLocalGovernment();
+            SubRegion subRegion = localGovernment.getSubRegion();
+            Region region = subRegion.getRegion();
+            return (dbCounty.getName().equalsIgnoreCase(dto.getCounty())
+                    && localGovernment.getName().equalsIgnoreCase(dto.getLocalGovernment())
+                    && subRegion.getName().equalsIgnoreCase(dto.getSubRegion())
+                    && region.getName().equalsIgnoreCase(dto.getRegion()));
+        })).map(dto -> new UCounty(dto.getCounty(), dto.getDbLocalGovernment())).collect(Collectors.toSet());
+
+        List<County> dbCounties2;
+        if (newCountSet.size() > 0) {
+            List<County> newCounties = newCountSet.stream().map(UC -> {
+                County county = new County();
+                county.setCode(generateCode(AdministrativeAreaType.COUNTY));
+                county.setName(UC.name());
+                county.setLocalGovernment(UC.localGovernment());
+                return county;
+            }).toList();
+            dbCountyService.dbNew(newCounties);
+            dbCounties2 = dbCountyService.dbList();
+        } else {
+            dbCounties2 = dbCounties;
+        }
+
+
+        // ADDING Count TO LIST
+
+
+        List<AdministrativeAreaExcelDto> newDtos = dtoList.parallelStream()
+                .flatMap(oldDto -> dbCounties2.stream()
+                        .filter(dbCounty -> {
+                            LocalGovernment localGovernment = dbCounty.getLocalGovernment();
+                            SubRegion subRegion = localGovernment.getSubRegion();
+                            Region region = subRegion.getRegion();
+                            return (dbCounty.getName().equalsIgnoreCase(oldDto.getCounty())
+                                    && localGovernment.getName().equalsIgnoreCase(oldDto.getLocalGovernment())
+                                    && subRegion.getName().equalsIgnoreCase(oldDto.getSubRegion())
+                                    && region.getName().equalsIgnoreCase(oldDto.getRegion()));
+                        })
+                        .map(county -> {
+                            oldDto.setDbCounty(county);
+                            return oldDto;
+                        })).toList();
+
+        /// UPLOAD SUB COUNTYe());
+        uploadSubCounty(newDtos);
+
+    }
+
+    private void uploadLocalGovernment(List<AdministrativeAreaExcelDto> dtoList) {
+        List<LocalGovernment> dbLocalGovernments = dbLocalGovernmentService.dbList();
+
+        Set<ULocalGovernment> newLocalGovernmentSet = dtoList.parallelStream().filter(dto -> dbLocalGovernments.stream().noneMatch(dbLocalGovernment -> {
+            SubRegion subRegion = dto.getDbSubRegion();
+            Region region = dto.getDbRegion();
+            return (dbLocalGovernment.getName().equalsIgnoreCase(dto.getLocalGovernment())
+                    && subRegion.getName().equalsIgnoreCase(dto.getSubRegion())
+                    && region.getName().equalsIgnoreCase(dto.getRegion()));
+        })).map(dto -> new ULocalGovernment(dto.getLocalGovernment(), dto.getDbSubRegion())).collect(Collectors.toSet());
+
+
+        List<LocalGovernment> dbLocalGovernments2;
+        if (newLocalGovernmentSet.size() > 0) {
+            List<LocalGovernment> newLocalGovernments = newLocalGovernmentSet.stream().map(uL -> {
+                LocalGovernment localGovernment = new LocalGovernment();
+                localGovernment.setCode(generateCode(AdministrativeAreaType.LOCALGOVERNMENT));
+                localGovernment.setName(uL.name());
+                localGovernment.setSubRegion(uL.subRegion());
+                return localGovernment;
+            }).toList();
+            dbLocalGovernmentService.dbNew(newLocalGovernments);
+            dbLocalGovernments2 = dbLocalGovernmentService.dbList();
+        } else {
+            dbLocalGovernments2 = dbLocalGovernments;
+        }
+
+
+        // ADDING LOCAL GOVERNMENT TO LIST
+        List<AdministrativeAreaExcelDto> newDtos = dtoList.parallelStream()
+                .flatMap(oldDto -> dbLocalGovernments2.stream()
+                        .filter(dbLocalGovernment -> {
+                            SubRegion subRegion = dbLocalGovernment.getSubRegion();
+                            Region region = subRegion.getRegion();
+                            return (dbLocalGovernment.getName().equalsIgnoreCase(oldDto.getLocalGovernment())
+                                    && subRegion.getName().equalsIgnoreCase(oldDto.getSubRegion())
+                                    && region.getName().equalsIgnoreCase(oldDto.getRegion()));
+                        })
+                        .map(localGovernment -> {
+                            oldDto.setDbLocalGovernment(localGovernment);
+                            return oldDto;
+                        })).toList();
+
+
+        /// UPLOAD COUNTY
+        uploadCounty(newDtos);
+
+    }
+
+    private void uploadSubRegions(List<AdministrativeAreaExcelDto> dtoList) {
+        List<SubRegion> dbSubRegions = dbSubRegionService.dbList();
+
+        Set<USubRegion> newSubRegionSet = dtoList.stream().filter(dto -> dbSubRegions.stream().noneMatch(dbSubRegion -> {
+                    Region region = dto.getDbRegion();
+                    return (dbSubRegion.getName().equalsIgnoreCase(dto.getSubRegion()) && region.getName().equalsIgnoreCase(dto.getRegion()));
+                })).map(dto -> new USubRegion(dto.getSubRegion(), dto.getDbRegion()))
+                .collect(Collectors.toSet());
+
+        List<SubRegion> dbSubRegions2;
+        if (newSubRegionSet.size() > 0) {
+            List<SubRegion> newSubRegions = newSubRegionSet.stream().map(uSubRegion -> {
+                SubRegion subRegion = new SubRegion();
+                subRegion.setCode(generateCode(AdministrativeAreaType.SUBREGION));
+                subRegion.setName(uSubRegion.name());
+                // region
+                subRegion.setRegion(uSubRegion.region());
+                return subRegion;
+            }).toList();
+            dbSubRegionService.dbNew(newSubRegions);
+            dbSubRegions2 = dbSubRegionService.dbList();
+        } else {
+            dbSubRegions2 = dbSubRegions;
+        }
+
+
+        //Update list with db SubREGION
+        List<AdministrativeAreaExcelDto> newDtos = dtoList.parallelStream()
+                .flatMap(oldDto -> dbSubRegions2.stream()
+                        .filter(dbSubRegion -> {
+                            Region region = dbSubRegion.getRegion();
+                            return (dbSubRegion.getName().equalsIgnoreCase(oldDto.getSubRegion()) && region.getName().equalsIgnoreCase(oldDto.getRegion()));
+                        })
+                        .map(subRegion -> {
+                            oldDto.setDbSubRegion(subRegion);
+                            return oldDto;
+                        })).toList();
+
+
+        // UPLOAD LOCAL GOVERNMENT
+        uploadLocalGovernment(newDtos);
+
+    }
+
+    @Transactional
+    void uploadRegions(List<AdministrativeAreaExcelDto> dtoList) {
+        List<Region> dbRegions = dbRegionService.dbList();
+        // exclude existing regions
+        List<Region> newRegions = dtoList.parallelStream().filter(dto -> dbRegions.stream().noneMatch(dbRegion -> (dbRegion.getName().equalsIgnoreCase(dto.getRegion()))))
+                .filter(distinctByKey(dto -> dto.getRegion()))
+                .map(dto -> {
+                    Region region = new Region();
+                    region.setCode(generateCode(AdministrativeAreaType.REGION));
+                    region.setName(dto.getRegion());
+                    return region;
+                })
+                .toList();
+
+        List<Region> dbRegions2;
+        if (newRegions.size() > 0) {
+            dbRegionService.dbNew(newRegions);
+            dbRegions2 = dbRegionService.dbList();
+        } else {
+            dbRegions2 = dbRegions;
+        }
+
+
+        //Update list with db Region
+        List<AdministrativeAreaExcelDto> newDtos = dtoList.parallelStream()
+                .flatMap(oldDto -> dbRegions2.stream().filter(region -> region.getName().equalsIgnoreCase(oldDto.getRegion()))
+                        .map(region -> {
+                            oldDto.setDbRegion(region);
+                            return oldDto;
+                        })).toList();
+        uploadSubRegions(newDtos);
+    }
+
+    public static <T> Predicate<T> distinctByKey(
+            Function<? super T, ?> keyExtractor) {
+
+        Map<Object, Boolean> seen = new ConcurrentHashMap<>();
+        return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
     }
 
     @Override
@@ -609,7 +913,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
         AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
 
-       return switch (administrativeAreaType){
+        return switch (administrativeAreaType) {
             case REGION -> {
                 Region region = dbRegionService.dbByCode(dto.getCode()).orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
                 if (notNullEmpty(dto.getName())) {
@@ -629,7 +933,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 }
 
                 dbRegionService.dbNew(region);
-                yield new AdministrativeAreaResponseDto<>("SUCCESS") ;
+                yield new AdministrativeAreaResponseDto<>("SUCCESS");
             }
             case SUBREGION -> {
                 if (nullEmpty(dto.getPartOfCode())) {
@@ -659,7 +963,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 subRegion.setRegion(region);
 
                 dbSubRegionService.dbNew(subRegion);
-                yield new AdministrativeAreaResponseDto<>("SUCCESS") ;
+                yield new AdministrativeAreaResponseDto<>("SUCCESS");
             }
             case LOCALGOVERNMENT -> {
                 if (nullEmpty(dto.getPartOfCode())) {
@@ -689,7 +993,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 localGovernment.setSubRegion(subRegion);
 
                 dbLocalGovernmentService.dbNew(localGovernment);
-                yield new AdministrativeAreaResponseDto<>("SUCCESS") ;
+                yield new AdministrativeAreaResponseDto<>("SUCCESS");
             }
             case COUNTY -> {
                 if (nullEmpty(dto.getPartOfCode())) {
@@ -719,7 +1023,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 county.setLocalGovernment(localGovernment);
 
                 dbCountyService.dbNew(county);
-                yield new AdministrativeAreaResponseDto<>("SUCCESS") ;
+                yield new AdministrativeAreaResponseDto<>("SUCCESS");
             }
             case SUBCOUNTY -> {
                 if (nullEmpty(dto.getPartOfCode())) {
@@ -749,7 +1053,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 subCounty.setCounty(county);
 
                 dbSubCountyService.dbNew(subCounty);
-                yield new AdministrativeAreaResponseDto<>("SUCCESS") ;
+                yield new AdministrativeAreaResponseDto<>("SUCCESS");
             }
             case PARISH -> {
                 if (nullEmpty(dto.getPartOfCode())) {
@@ -779,7 +1083,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 parish.setSubCounty(subCounty);
 
                 dbParishService.dbNew(parish);
-                yield new AdministrativeAreaResponseDto<>("SUCCESS") ;
+                yield new AdministrativeAreaResponseDto<>("SUCCESS");
             }
         };
 
@@ -849,8 +1153,8 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         RegionDto dto = new RegionDto();
         dto.setCode(region.getCode());
         dto.setName(region.getName());
-        dto.setLongitude(region.getLongitude() !=null ? String.valueOf(region.getLongitude()) : "");
-        dto.setLatitude(region.getLatitude() !=null ? String.valueOf(region.getLatitude()) : "");
+        dto.setLongitude(region.getLongitude() != null ? String.valueOf(region.getLongitude()) : "");
+        dto.setLatitude(region.getLatitude() != null ? String.valueOf(region.getLatitude()) : "");
         return dto;
     }
 
