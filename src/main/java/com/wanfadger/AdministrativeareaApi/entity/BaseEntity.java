@@ -26,9 +26,6 @@ public class BaseEntity {
     @Column(unique = true , nullable = false)
     private String code;
 
-    @Column(unique = true , nullable = false)
-    private String name;
-
     private Double latitude;
     private Double longitude;
 
