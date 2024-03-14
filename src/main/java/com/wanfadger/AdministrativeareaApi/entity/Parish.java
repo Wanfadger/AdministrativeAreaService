@@ -14,6 +14,8 @@ import lombok.Setter;
 @Entity
 public class Parish extends BaseEntity {
 
+    @Column(nullable = false)
+    private String name;
 
     @ManyToOne(targetEntity = SubCounty.class , fetch = FetchType.LAZY)
     @JoinColumn(nullable = false)
