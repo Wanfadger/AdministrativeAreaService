@@ -1,6 +1,7 @@
 package com.wanfadger.AdministrativeareaApi.entity;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
@@ -19,6 +20,9 @@ import java.util.Set;
 @NoArgsConstructor
 @Entity
 public class Region extends BaseEntity {
+
+    @Column(unique = true , nullable = false)
+    private String name;
 
     @OneToMany(mappedBy = "region" , targetEntity = SubRegion.class ,cascade = CascadeType.PERSIST)
     private List<SubRegion> subRegions = new ArrayList<>();
