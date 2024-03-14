@@ -18,6 +18,8 @@ import java.util.Set;
 @Entity
 public class LocalGovernment extends BaseEntity {
 
+    @Column(unique = true , nullable = false)
+    private String name;
 
     @ManyToOne(fetch = FetchType.LAZY , targetEntity = SubRegion.class )
     @JoinColumn(nullable = false)
