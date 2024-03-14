@@ -55,7 +55,7 @@ public class AdministrativeAreaController {
     }
 
 
-    @GetMapping("/upload")
+    @PostMapping("/upload")
     private AdministrativeAreaResponseDto<String> upload(@RequestBody List<AdministrativeAreaExcelDto> administrativeAreaExcelDtos){
         return administrativeAreaService.upload(administrativeAreaExcelDtos);
     }
