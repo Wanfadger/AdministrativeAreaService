@@ -1,6 +1,5 @@
 package com.wanfadger.AdministrativeareaApi.service.administrativearea;
 
-import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaDto;
 import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDto;
 import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDto;
 import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDto;
