@@ -1,5 +1,6 @@
 package com.wanfadger.AdministrativeareaApi.service.administrativearea;
 
+import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaDto;
 import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDto;
 import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDto;
 import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDto;
@@ -18,10 +19,13 @@ public interface AdministrativeAreaService {
     AdministrativeAreaResponseDto<CodeNameProjection> filterOne(Map<String ,String> queryMap);
     AdministrativeAreaResponseDto<List<CodeNameProjection>> filterList(Map<String ,String> queryMap);
 
-    AdministrativeAreaResponseDto<List<?>> searchList(Map<String ,String> queryMap);
+    AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> searchList(Map<String ,String> queryMap);
+    AdministrativeAreaResponseDto<? extends AdministrativeAreaDto> searchOne(Map<String, String> queryMap);
 
 
     AdministrativeAreaResponseDto<String> upload(List<AdministrativeAreaExcelDto> administrativeAreaExcelDtos);
 
     AdministrativeAreaResponseDto<String> updateOne(Map<String, String> queryMap, UpdateAdministrativeAreaDto dto);
+
+
 }

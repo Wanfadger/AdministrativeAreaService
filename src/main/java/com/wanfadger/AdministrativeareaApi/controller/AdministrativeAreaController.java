@@ -1,5 +1,6 @@
 package com.wanfadger.AdministrativeareaApi.controller;
 
+import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaDto;
 import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDto;
 import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDto;
 import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDto;
@@ -50,9 +51,15 @@ public class AdministrativeAreaController {
 
 
     @GetMapping("/searchList")
-    private AdministrativeAreaResponseDto<List<?>> searchList(@RequestParam Map<String , String> queryMap){
+    private AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> searchList(@RequestParam Map<String , String> queryMap){
         return administrativeAreaService.searchList(queryMap);
     }
+
+    @GetMapping("/searchOne")
+    private AdministrativeAreaResponseDto<? extends AdministrativeAreaDto> searchOne(@RequestParam Map<String , String> queryMap){
+        return administrativeAreaService.searchOne(queryMap);
+    }
+
 
 
     @PostMapping("/upload")

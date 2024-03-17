@@ -505,7 +505,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public AdministrativeAreaResponseDto<List<?>> searchList(Map<String, String> queryMap) {
+    public AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> searchList(Map<String, String> queryMap) {
         String type = queryMap.get("type");
         String partOf = queryMap.get("partOf");
 
@@ -573,6 +573,52 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                             .parallelStream().map(this::convertParishDto).sorted(Comparator.comparing(ParishDto::getCode)).toList();
                 }
                 yield new AdministrativeAreaResponseDto<>(parishDtos);
+            }
+        };
+
+    }
+
+    @Override
+    public AdministrativeAreaResponseDto<? extends AdministrativeAreaDto> searchOne(Map<String, String> queryMap) {
+        String type = queryMap.get("type");
+        String code = queryMap.get("code");
+
+        if (code == null){
+            throw new MissingDataException("Missing required data");
+        }
+
+        Optional<AdministrativeAreaType> optionalAdministrativeAreaType = AdministrativeAreaType.administrativeAreaTypeStr(type);
+        if (optionalAdministrativeAreaType.isEmpty()) {
+            throw new MissingDataException("Missing Administrative Area Type");
+        }
+
+        AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
+
+        return switch (administrativeAreaType) {
+            case REGION -> {
+                Region region = dbRegionService.dbByCode(code).orElseThrow(() -> new NotFoundException("Region  not found"));
+                yield new AdministrativeAreaResponseDto<>(convertRegionDto(region));
+            }
+            case SUBREGION -> {
+                SubRegion subRegion = dbSubRegionService.dbByCode(code).orElseThrow(() -> new NotFoundException("subRegion  not found"));
+                yield new AdministrativeAreaResponseDto<>(convertSubRegionDto(subRegion));
+
+            }
+            case LOCALGOVERNMENT -> {
+                LocalGovernment localGovernment = dbLocalGovernmentService.dbByCode(code).orElseThrow(() -> new NotFoundException("localGovernment  not found"));
+                yield new AdministrativeAreaResponseDto<>(convertLocalGovernmentDto(localGovernment));
+            }
+            case COUNTY -> {
+                County county = dbCountyService.dbByCode(code).orElseThrow(() -> new NotFoundException("county  not found"));
+                yield new AdministrativeAreaResponseDto<>(convertCountyDto(county));
+            }
+            case SUBCOUNTY -> {
+                SubCounty subCounty = dbSubCountyService.dbByCode(code).orElseThrow(() -> new NotFoundException("subCounty  not found"));
+                yield new AdministrativeAreaResponseDto<>(convertSubCountyDto(subCounty));
+            }
+            case PARISH -> {
+                Parish parish = dbParishService.dbByCode(code).orElseThrow(() -> new NotFoundException("parish  not found"));
+                yield new AdministrativeAreaResponseDto<>(convertParishDto(parish));
             }
         };
 
