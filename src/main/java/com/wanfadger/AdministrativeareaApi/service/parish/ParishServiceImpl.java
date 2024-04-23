@@ -39,6 +39,11 @@ public class ParishServiceImpl implements DbParishService {
     }
 
     @Override
+    public List<Parish> dbBySubCountyCodes(List<String> codes) {
+        return parishRepository.findAllBySubCountyCodes(codes);
+    }
+
+    @Override
     public Optional<Parish> dbByName_SubCountyCode(String name, String subCountyCode) {
         return parishRepository.findByNameIgnoreCaseAndSubCounty_Code(name, subCountyCode);
     }
