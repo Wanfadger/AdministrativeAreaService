@@ -34,8 +34,13 @@ public class SubCountyServiceImpl implements DbSubCountyService  {
     }
 
     @Override
-    public List<SubCounty> dbByCountyCode(String countyId) {
-        return subCountyRepository.findAllByCounty_Code(countyId);
+    public List<SubCounty> dbByCountyCode(String countyCode) {
+        return subCountyRepository.findAllByCounty_Code(countyCode);
+    }
+
+    @Override
+    public List<SubCounty> dbByCountyCodes(List<String> countyCodes) {
+        return subCountyRepository.findAllByCountyCodes(countyCodes);
     }
 
     @Override

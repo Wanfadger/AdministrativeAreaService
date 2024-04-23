@@ -15,6 +15,7 @@ public interface DbSubCountyService {
 
     List<SubCounty> dbList();
     List<SubCounty> dbByCountyCode(String countyCode);
+    List<SubCounty> dbByCountyCodes(List<String> countyCodes);
 
     Optional<SubCounty> dbByName_CountyCode(String name , String countyCode);
 
