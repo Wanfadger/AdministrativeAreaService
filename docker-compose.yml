@@ -1,0 +1,35 @@
+version: "3.1"
+
+services:
+
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: qwertyuftdytrs
+      POSTGRES_USER: siip-db-user
+      POSTGRES_DB: siipdb
+    ports:
+      - "5438:5432"
+
+  api:
+    image: wanfadger/siip-api:v0.0.1
+    ports:
+      - "8083:8082"
+    environment:
+       DB-URL: jdbc:postgresql://db:5432/siipdb
+       DB-USERNAME: siip-db-user
+       DB-PASSWORD: qwertyuftdytrs
+       APP-PROFILE: prod
+       LoadSchoolPermissions: false
+       LoadManagementPermissions: false
+       LoadDefaultProfile: false
+
+    depends_on:
+      - db
+
+  ui:
+    image: wanfadger/siip-ui:v0.0.1
+    ports:
+      - "4200:4200"
+
