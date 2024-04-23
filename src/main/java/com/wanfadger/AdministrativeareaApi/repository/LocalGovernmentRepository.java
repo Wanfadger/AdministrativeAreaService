@@ -22,7 +22,8 @@ public interface LocalGovernmentRepository extends JpaRepository<LocalGovernment
 
     @EntityGraph(attributePaths = {"subRegion.region"} , type = EntityGraph.EntityGraphType.FETCH)
     List<LocalGovernment> findAllBySubRegion_Code(String regionCode);
-
+    @Query("SELECT L FROM LocalGovernment L WHERE L.subRegion.code IN :subRegionCodes")
+    List<LocalGovernment> findAllBySubRegionCodes(List<String> subRegionCodes);
 
     Optional<LocalGovernment> findByNameIgnoreCaseAndSubRegion_Code (String name , String code);
 
@@ -35,4 +36,6 @@ public interface LocalGovernmentRepository extends JpaRepository<LocalGovernment
 
     @Query("SELECT L.code as code , L.name as name FROM LocalGovernment L WHERE upper(L.code) = upper(:code) ")
     Optional<CodeNameProjection> dbCodeName(String code);
+
+
 }
