@@ -33,10 +33,15 @@ public interface CountyRepository extends JpaRepository<County, String> {
     @EntityGraph(attributePaths = {"localGovernment.subRegion.region"} , type = EntityGraph.EntityGraphType.FETCH)
     List<County> findAllByLocalGovernment_Code(String localGovernmentCode);
 
+    @Query("SELECT C FROM County C WHERE C.localGovernment.code IN :codes")
+    List<County> findAllByLocalGovernmentCodes(List<String> codes);
+
     @Query("SELECT C.code as code , C.name as name FROM County C WHERE upper(C.localGovernment.code) = upper(:localGovernment) ")
     List<CodeNameProjection> dbCodeNameList(String localGovernment);
 
 
     @Query("SELECT C.code as code , C.name as name FROM County C WHERE upper(C.code) = upper(:code) ")
     Optional<CodeNameProjection> dbCodeName(String code);
+
+
 }
