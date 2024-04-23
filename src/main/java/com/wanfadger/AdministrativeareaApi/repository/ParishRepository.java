@@ -26,6 +26,9 @@ public interface ParishRepository extends JpaRepository<Parish, String> {
 
     List<Parish> findAllBySubCounty_Code(String subCountyCode);
 
+    @Query("SELECT P FROM Parish P WHERE P.subCounty.code IN :subCountyCodes")
+    List<Parish> findAllBySubCountyCodes(List<String> subCountyCodes);
+
     Optional<Parish> findByCodeIgnoreCase(String code);
 
     @Query("SELECT P.code as code , P.name as name FROM Parish P WHERE upper(P.subCounty.code) = upper(:code) ")
