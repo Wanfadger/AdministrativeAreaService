@@ -36,6 +36,8 @@ public class DbSubRegionServiceImpl implements DbSubRegionService{
         return subRegionRepository.findAllByRegion_Code(regionCode);
     }
 
+
+
     @Override
     public Optional<SubRegion> dbByName_RegionCode(String name, String regionCode) {
         return subRegionRepository.findByNameIgnoreCaseAndRegion_Code(name, regionCode);
