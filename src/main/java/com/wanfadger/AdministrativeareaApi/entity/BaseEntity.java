@@ -41,4 +41,5 @@ public class BaseEntity {
     public BaseEntity(String id) {
         this.id = id;
     }
+
 }
