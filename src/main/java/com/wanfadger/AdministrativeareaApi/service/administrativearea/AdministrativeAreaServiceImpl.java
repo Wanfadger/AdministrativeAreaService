@@ -505,6 +505,104 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
+    public AdministrativeAreaResponseDto<List<CodeNameDto>> getParishByPartOf(Map<String, String> queryMap) {
+        String type = queryMap.get("type");
+        String partOfCode = queryMap.get("partOfCode");
+
+
+        if (!notNullEmpty(type)) {
+            throw new MissingDataException("Missing Administrative Area Type");
+        }
+
+
+        Optional<AdministrativeAreaType> optionalAdministrativeAreaType = AdministrativeAreaType.administrativeAreaTypeStr(type);
+        if (optionalAdministrativeAreaType.isEmpty()) {
+            throw new MissingDataException("Missing Administrative Area Type");
+        }
+
+        AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
+
+        return switch (administrativeAreaType) {
+            case REGION -> {
+                // get reg subRegs
+                // get sub Lgs
+                // get lgs counties
+                // get counties subcounties
+                // get subcounties parishes
+                List<String> subRegionCodes = dbSubRegionService.dbByRegionCode(partOfCode).parallelStream().map(subRegion -> subRegion.getCode()).distinct().toList();
+                List<String> lgCodes = dbLocalGovernmentService.dbBySubRegionCodes(subRegionCodes).parallelStream().map(localGovernment -> localGovernment.getCode()).distinct().toList();
+                List<String> countyCodes = dbCountyService.dbAllByLocalGovernmentCodes(lgCodes).parallelStream().map(county -> county.getCode()).distinct().toList();
+                List<String> subCounties = dbSubCountyService.dbByCountyCodes(countyCodes).parallelStream().map(subCounty -> subCounty.getCode()).distinct().toList();
+                List<CodeNameDto> codeNameDtoList = dbParishService.dbBySubCountyCodes(subCounties).parallelStream().map(parish -> new CodeNameDto(parish.getCode() , parish.getName())).distinct().toList();
+
+                yield new AdministrativeAreaResponseDto<>(codeNameDtoList);
+            }
+
+            case SUBREGION -> {
+
+                if (!notNullEmpty(partOfCode)) {
+                    throw new MissingDataException("Missing Administrative Area partOf");
+                }
+                // get sub Lgs
+                // get lgs counties
+                // get counties subcounties
+                // get subcounties parishes
+                List<String> lgCodes = dbLocalGovernmentService.dbBySubRegionCode(partOfCode).parallelStream().map(localGovernment -> localGovernment.getCode()).distinct().toList();
+                List<String> countyCodes = dbCountyService.dbAllByLocalGovernmentCodes(lgCodes).parallelStream().map(county -> county.getCode()).distinct().toList();
+                List<String> subCounties = dbSubCountyService.dbByCountyCodes(countyCodes).parallelStream().map(subCounty -> subCounty.getCode()).distinct().toList();
+                List<CodeNameDto> codeNameDtoList = dbParishService.dbBySubCountyCodes(subCounties).parallelStream().map(parish -> new CodeNameDto(parish.getCode() , parish.getName()))
+                        .sorted(Comparator.comparing(CodeNameDto::getCode))
+                        .toList();
+                yield new AdministrativeAreaResponseDto<>(codeNameDtoList);
+            }
+
+            case LOCALGOVERNMENT -> {
+                if (!notNullEmpty(partOfCode)) {
+                    throw new MissingDataException("Missing Administrative Area partOf");
+                }
+                // get lg counties
+                // get counties subcouties
+                // get subcounties parishes
+                List<String> countyCodes = dbCountyService.dbAllByLocalGovernmentCode(partOfCode).parallelStream().map(county -> county.getCode()).distinct().toList();
+                List<String> subCountyCodes = dbSubCountyService.dbByCountyCodes(countyCodes).parallelStream().map(subCounty -> subCounty.getCode()).distinct().toList();
+
+                List<CodeNameDto> codeNameDtoList = dbParishService.dbBySubCountyCodes(subCountyCodes).parallelStream().map(parish -> new CodeNameDto(parish.getCode() , parish.getName()))
+                        .sorted(Comparator.comparing(CodeNameDto::getCode))
+                        .toList();
+                yield new AdministrativeAreaResponseDto<>(codeNameDtoList);
+            }
+
+            case COUNTY -> {
+                if (!notNullEmpty(partOfCode)) {
+                    throw new MissingDataException("Missing Administrative Area partOf");
+                }
+                // get county subcounty
+                // get subCounties parishes
+                List<String> subCountyCodes = dbSubCountyService.dbByCountyCode(partOfCode).parallelStream().map(subCounty -> subCounty.getCode()).distinct().toList();
+
+                List<CodeNameDto> codeNameDtoList = dbParishService.dbBySubCountyCodes(subCountyCodes).parallelStream().map(parish -> new CodeNameDto(parish.getCode() , parish.getName()))
+                        .sorted(Comparator.comparing(CodeNameDto::getCode))
+                        .toList();
+                yield new AdministrativeAreaResponseDto<>(codeNameDtoList);
+            }
+
+            case SUBCOUNTY -> {
+                if (!notNullEmpty(partOfCode)) {
+                    throw new MissingDataException("Missing Administrative Area partOf");
+                }
+
+                List<CodeNameDto> codeNameDtoList = dbParishService.dbBySubCountyCode(partOfCode).parallelStream().map(parish -> new CodeNameDto(parish.getCode() , parish.getName()))
+                        .sorted(Comparator.comparing(CodeNameDto::getCode))
+                        .toList();
+                yield new AdministrativeAreaResponseDto<>(codeNameDtoList);
+            }
+
+            case PARISH -> new AdministrativeAreaResponseDto<>(Collections.emptyList());
+        };
+
+    }
+
+    @Override
     public AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> searchList(Map<String, String> queryMap) {
         String type = queryMap.get("type");
         String partOf = queryMap.get("partOf");
@@ -1114,6 +1212,8 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         };
 
     }
+
+
 
     private ParishDto convertParishDto(Parish parish) {
         ParishDto dto = new ParishDto();
