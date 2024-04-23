@@ -29,4 +29,10 @@ public class SubCounty extends BaseEntity {
     public SubCounty(String id) {
         super(id);
     }
+
+
+
+
+
+
 }

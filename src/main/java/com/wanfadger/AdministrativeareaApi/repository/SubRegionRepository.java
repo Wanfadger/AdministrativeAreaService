@@ -28,12 +28,15 @@ public interface SubRegionRepository extends JpaRepository<SubRegion, String> {
     @EntityGraph(attributePaths = {"region"} , type = EntityGraph.EntityGraphType.FETCH)
     List<SubRegion> findAllByRegion_Code(String code);
 
+
+
     @Override
     @EntityGraph(attributePaths = {"region"} , type = EntityGraph.EntityGraphType.FETCH)
     List<SubRegion> findAll();
 
     @EntityGraph(attributePaths = {"region"} , type = EntityGraph.EntityGraphType.FETCH)
     Optional<SubRegion> findByCodeIgnoreCase(String code);
+
 
 
 }
