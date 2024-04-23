@@ -16,6 +16,7 @@ public interface DbLocalGovernmentService {
 
     List<LocalGovernment> dbList();
     List<LocalGovernment> dbBySubRegionCode(String subRegionCode);
+    List<LocalGovernment> dbBySubRegionCodes(List<String> subRegionCodes);
 
     Optional<LocalGovernment> dbByName_SubRegionCode(String name , String subRegionCode);
     Optional<LocalGovernment> dbByCode(String code);

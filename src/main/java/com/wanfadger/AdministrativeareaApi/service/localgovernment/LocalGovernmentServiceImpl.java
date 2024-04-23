@@ -38,6 +38,11 @@ public class LocalGovernmentServiceImpl implements DbLocalGovernmentService  {
     }
 
     @Override
+    public List<LocalGovernment> dbBySubRegionCodes(List<String> subRegionCodes) {
+        return localGovernmentRepository.findAllBySubRegionCodes(subRegionCodes);
+    }
+
+    @Override
     public Optional<LocalGovernment> dbByName_SubRegionCode(String name, String subRegionCode) {
         return localGovernmentRepository.findByNameIgnoreCaseAndSubRegion_Code(name, subRegionCode);
     }
