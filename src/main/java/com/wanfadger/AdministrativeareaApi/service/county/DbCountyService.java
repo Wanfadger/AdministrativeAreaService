@@ -16,6 +16,7 @@ public interface DbCountyService {
 
     List<County> dbList();
     List<County> dbAllByLocalGovernmentCode(String code);
+    List<County> dbAllByLocalGovernmentCodes(List<String> codeS);
 
     Optional<County> dbByName_LocalGovernment_Code(String name , String localGovernmentCode);
     Optional<County> dbByCode(String code);

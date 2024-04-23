@@ -40,6 +40,11 @@ public class CountyServiceImpl implements DbCountyService  {
     }
 
     @Override
+    public List<County> dbAllByLocalGovernmentCodes(List<String> codes) {
+        return countyRepository.findAllByLocalGovernmentCodes(codes);
+    }
+
+    @Override
     public Optional<County> dbByName_LocalGovernment_Code(String name, String localGovernmentCode) {
         return countyRepository.findByNameIgnoreCaseAndLocalGovernment_Code( name ,localGovernmentCode);
     }
