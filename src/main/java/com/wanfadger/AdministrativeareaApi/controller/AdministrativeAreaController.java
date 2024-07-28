@@ -55,13 +55,13 @@ public class AdministrativeAreaController {
 
 
     @GetMapping("/filterList")
-    @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS_FILTER, key = "#queryMap")
-    public AdministrativeAreaResponseDto<List<CodeNameDto>> filterList(@RequestParam Map<String, String> queryMap) {
+    @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS_FILTER, key = "#queryMap" , cacheManager = "weekCacheManager")
+    public AdministrativeAreaResponseDto<List<CodeNameDto>> filterList(@RequestParam Map<String, String> queryMap ) {
         return administrativeAreaService.filterList(queryMap);
     }
 
     @GetMapping("/parishListByPartOf")
-    @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS, key = "#queryMap")
+    @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS, key = "#queryMap", cacheManager = "weekCacheManager")
     public AdministrativeAreaResponseDto<List<CodeNameDto>> getParishByPartOf(@RequestParam Map<String, String> queryMap) {
         return administrativeAreaService.getParishByPartOf(queryMap);
     }
