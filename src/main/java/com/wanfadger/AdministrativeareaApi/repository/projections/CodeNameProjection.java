@@ -1,6 +1,8 @@
 package com.wanfadger.AdministrativeareaApi.repository.projections;
 
-public interface CodeNameProjection {
+import java.io.Serializable;
+
+public interface CodeNameProjection extends Serializable {
     String getCode();
     String getName();
 }

@@ -4,10 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class AdministrativeAreaResponseDto<T> {
+public class AdministrativeAreaResponseDto<T> implements Serializable {
     private T data;
     private String message;
     private boolean status;
