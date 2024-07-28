@@ -1,15 +1,12 @@
 package com.wanfadger.AdministrativeareaApi.service.subcounty;
 
 
-
 import com.wanfadger.AdministrativeareaApi.entity.SubCounty;
 import com.wanfadger.AdministrativeareaApi.repository.SubCountyRepository;
-import com.wanfadger.AdministrativeareaApi.repository.projections.CodeNameProjection;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -54,15 +51,6 @@ public class SubCountyServiceImpl implements DbSubCountyService  {
     }
 
 
-    @Override
-    public List<CodeNameProjection> dbCodeNameList(Map<String , String> map) {
-        return subCountyRepository.dbCodeNameList(map.get("partOf"));
-    }
-
-    @Override
-    public Optional<CodeNameProjection> dbCodeName(Map<String, String> queryMap) {
-        return subCountyRepository.dbCodeName(queryMap.get("code"));
-    }
 //
 //    @Override
 //    public SiipResponseDto<SubCountyDtos.SubCountyDto> newSubCounty(SubCountyDtos.NewDto dto) {

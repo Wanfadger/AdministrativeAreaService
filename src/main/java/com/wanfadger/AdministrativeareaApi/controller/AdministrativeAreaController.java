@@ -1,7 +1,6 @@
 package com.wanfadger.AdministrativeareaApi.controller;
 
 import com.wanfadger.AdministrativeareaApi.dto.*;
-import com.wanfadger.AdministrativeareaApi.repository.projections.CodeNameProjection;
 import com.wanfadger.AdministrativeareaApi.service.administrativearea.AdministrativeAreaService;
 import com.wanfadger.AdministrativeareaApi.shared.reponses.AdministrativeAreaResponseDto;
 import com.wanfadger.AdministrativeareaApi.shared.util.CacheKeys;
@@ -50,14 +49,14 @@ public class AdministrativeAreaController {
 
     @GetMapping("/filterOne")
     @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS_FILTER, key = "#queryMap")
-    public AdministrativeAreaResponseDto<CodeNameProjection> filterOne(@RequestParam Map<String, String> queryMap) {
+    public AdministrativeAreaResponseDto<CodeNameDto> filterOne(@RequestParam Map<String, String> queryMap) {
         return administrativeAreaService.filterOne(queryMap);
     }
 
 
     @GetMapping("/filterList")
     @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS_FILTER, key = "#queryMap")
-    public AdministrativeAreaResponseDto<List<CodeNameProjection>> filterList(@RequestParam Map<String, String> queryMap) {
+    public AdministrativeAreaResponseDto<List<CodeNameDto>> filterList(@RequestParam Map<String, String> queryMap) {
         return administrativeAreaService.filterList(queryMap);
     }
 

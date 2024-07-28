@@ -2,12 +2,10 @@ package com.wanfadger.AdministrativeareaApi.service.subRegion;
 
 import com.wanfadger.AdministrativeareaApi.entity.SubRegion;
 import com.wanfadger.AdministrativeareaApi.repository.SubRegionRepository;
-import com.wanfadger.AdministrativeareaApi.repository.projections.CodeNameProjection;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -48,15 +46,7 @@ public class DbSubRegionServiceImpl implements DbSubRegionService{
         return subRegionRepository.findByCodeIgnoreCase(code);
     }
 
-    @Override
-    public List<CodeNameProjection> dbCodeNameList(Map<String, String> map) {
-        return subRegionRepository.dbCodeNameList(map.get("partOf"));
-    }
 
-    @Override
-    public Optional<CodeNameProjection> dbCodeName(Map<String, String> map) {
-        return subRegionRepository.dbCodeName(map.get("code"));
-    }
 
 
 }

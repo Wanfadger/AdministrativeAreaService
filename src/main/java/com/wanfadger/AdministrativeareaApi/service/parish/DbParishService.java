@@ -1,12 +1,9 @@
 package com.wanfadger.AdministrativeareaApi.service.parish;
 
 
-
 import com.wanfadger.AdministrativeareaApi.entity.Parish;
-import com.wanfadger.AdministrativeareaApi.repository.projections.CodeNameProjection;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 public interface DbParishService {
@@ -19,8 +16,4 @@ public interface DbParishService {
     Optional<Parish> dbByName_SubCountyCode(String name , String subCountyCode);
     Optional<Parish> dbByCode(String subCountyCode);
 
-    List<CodeNameProjection> dbCodeNameList(Map<String , String> map);
-
-
-    Optional<CodeNameProjection> dbCodeName(Map<String, String> queryMap);
 }

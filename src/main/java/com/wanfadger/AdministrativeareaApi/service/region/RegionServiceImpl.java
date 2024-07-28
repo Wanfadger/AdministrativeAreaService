@@ -3,12 +3,10 @@ package com.wanfadger.AdministrativeareaApi.service.region;
 
 import com.wanfadger.AdministrativeareaApi.entity.Region;
 import com.wanfadger.AdministrativeareaApi.repository.RegionRepository;
-import com.wanfadger.AdministrativeareaApi.repository.projections.CodeNameProjection;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -92,13 +90,4 @@ public class RegionServiceImpl implements DbRegionService  {
     }
 
 
-    @Override
-    public List<CodeNameProjection> dbCodeNameList() {
-        return regionRepository.dbCodeNameList();
-    }
-
-    @Override
-    public Optional<CodeNameProjection> dbCodeName(String code) {
-        return regionRepository.dbCodeName(code);
-    }
 }

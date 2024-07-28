@@ -3,7 +3,6 @@ package com.wanfadger.AdministrativeareaApi.service.administrativearea;
 import com.wanfadger.AdministrativeareaApi.dto.*;
 import com.wanfadger.AdministrativeareaApi.dto.uniqueDtos.*;
 import com.wanfadger.AdministrativeareaApi.entity.*;
-import com.wanfadger.AdministrativeareaApi.repository.projections.CodeNameProjection;
 import com.wanfadger.AdministrativeareaApi.service.county.DbCountyService;
 import com.wanfadger.AdministrativeareaApi.service.localgovernment.DbLocalGovernmentService;
 import com.wanfadger.AdministrativeareaApi.service.parish.DbParishService;
@@ -362,7 +361,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public AdministrativeAreaResponseDto<CodeNameProjection> filterOne(Map<String, String> queryMap) {
+    public AdministrativeAreaResponseDto<CodeNameDto> filterOne(Map<String, String> queryMap) {
         String type = queryMap.get("type");
         String code = queryMap.get("code");
 
@@ -383,50 +382,50 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 if (!notNullEmpty(code)) {
                     throw new MissingDataException("Missing Administrative Area Code");
                 }
-                CodeNameProjection codeNameProjection = dbRegionService.dbCodeName(code).orElseThrow(() -> new NotFoundException("Region not found"));
-                yield new AdministrativeAreaResponseDto<>(codeNameProjection);
+                Region region = dbRegionService.dbByCode(code).orElseThrow(() -> new NotFoundException("Region not found"));
+                yield new AdministrativeAreaResponseDto<>(new CodeNameDto(region.getCode() , region.getName()));
             }
             case SUBREGION -> {
                 if (!notNullEmpty(code)) {
                     throw new MissingDataException("Missing Administrative Area Code");
                 }
-                CodeNameProjection codeNameProjection = dbSubRegionService.dbCodeName(queryMap).orElseThrow(() -> new NotFoundException("SubRegion not found"));
-                yield new AdministrativeAreaResponseDto<>(codeNameProjection);
+                SubRegion subRegion = dbSubRegionService.dbByCode(code).orElseThrow(() -> new NotFoundException("SubRegion not found"));
+                yield new AdministrativeAreaResponseDto<>(new CodeNameDto(subRegion.getCode() , subRegion.getName()));
             }
             case LOCALGOVERNMENT -> {
                 if (!notNullEmpty(code)) {
                     throw new MissingDataException("Missing Administrative Area Code");
                 }
-                CodeNameProjection codeNameProjection = dbLocalGovernmentService.dbCodeName(queryMap).orElseThrow(() -> new NotFoundException("LocalGovernment not found"));
-                yield new AdministrativeAreaResponseDto<>(codeNameProjection);
+                LocalGovernment localGovernment = dbLocalGovernmentService.dbByCode(code).orElseThrow(() -> new NotFoundException("LocalGovernment not found"));
+                yield new AdministrativeAreaResponseDto<>(new CodeNameDto(localGovernment.getCode() , localGovernment.getName()));
             }
             case COUNTY -> {
                 if (!notNullEmpty(code)) {
                     throw new MissingDataException("Missing Administrative Area Code");
                 }
-                CodeNameProjection codeNameProjection = dbCountyService.dbCodeName(queryMap).orElseThrow(() -> new NotFoundException("County not found"));
-                yield new AdministrativeAreaResponseDto<>(codeNameProjection);
+                County county = dbCountyService.dbByCode(code).orElseThrow(() -> new NotFoundException("County not found"));
+                yield new AdministrativeAreaResponseDto<>(new CodeNameDto(county.getCode() , county.getName()));
             }
             case SUBCOUNTY -> {
                 if (!notNullEmpty(code)) {
                     throw new MissingDataException("Missing Administrative Area Code");
                 }
-                CodeNameProjection codeNameProjection = dbSubCountyService.dbCodeName(queryMap).orElseThrow(() -> new NotFoundException("County not found"));
-                yield new AdministrativeAreaResponseDto<>(codeNameProjection);
+                SubCounty subCounty = dbSubCountyService.dbByCode(code).orElseThrow(() -> new NotFoundException("County not found"));
+                yield new AdministrativeAreaResponseDto<>(new CodeNameDto(subCounty.getCode() , subCounty.getName()));
             }
             case PARISH -> {
                 if (!notNullEmpty(code)) {
                     throw new MissingDataException("Missing Administrative Area Code");
                 }
-                CodeNameProjection codeNameProjection = dbParishService.dbCodeName(queryMap).orElseThrow(() -> new NotFoundException("County not found"));
-                yield new AdministrativeAreaResponseDto<>(codeNameProjection);
+                Parish parish = dbParishService.dbByCode(code).orElseThrow(() -> new NotFoundException("County not found"));
+                yield new AdministrativeAreaResponseDto<>(new CodeNameDto(parish.getCode() , parish.getName()));
             }
         };
 
     }
 
     @Override
-    public AdministrativeAreaResponseDto<List<CodeNameProjection>> filterList(Map<String, String> queryMap) {
+    public AdministrativeAreaResponseDto<List<CodeNameDto>> filterList(Map<String, String> queryMap) {
         String type = queryMap.get("type");
         String partOf = queryMap.get("partOf");
 
@@ -445,9 +444,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
         return switch (administrativeAreaType) {
             case REGION -> {
-                List<CodeNameProjection> codeNameProjections = dbRegionService.dbCodeNameList().parallelStream()
-                        .sorted(Comparator.comparing(CodeNameProjection::getCode)).toList();
-                yield new AdministrativeAreaResponseDto<>(codeNameProjections);
+                List<CodeNameDto> codeNameDtoList = dbRegionService.dbList().parallelStream()
+                        .map(region -> new CodeNameDto(region.getCode() , region.getName()))
+                        .sorted(Comparator.comparing(CodeNameDto::getCode))
+                        .toList();
+                yield new AdministrativeAreaResponseDto<>(codeNameDtoList);
             }
 
             case SUBREGION -> {
@@ -456,9 +457,10 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area partOf");
                 }
 
-                List<CodeNameProjection> codeNameProjections = dbSubRegionService.dbCodeNameList(queryMap).parallelStream()
-                        .sorted(Comparator.comparing(CodeNameProjection::getCode)).toList();
-                yield new AdministrativeAreaResponseDto<>(codeNameProjections);
+                List<CodeNameDto> codeNameDtoList = dbSubRegionService.dbList().parallelStream()
+                        .map(subRegion -> new CodeNameDto(subRegion.getCode() , subRegion.getName()))
+                        .sorted(Comparator.comparing(CodeNameDto::getCode)).toList();
+                yield new AdministrativeAreaResponseDto<>(codeNameDtoList);
             }
 
             case LOCALGOVERNMENT -> {
@@ -466,9 +468,10 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area partOf");
                 }
 
-                List<CodeNameProjection> codeNameProjections = dbLocalGovernmentService.dbCodeNameList(queryMap).parallelStream()
-                        .sorted(Comparator.comparing(CodeNameProjection::getCode)).toList();
-                yield new AdministrativeAreaResponseDto<>(codeNameProjections);
+                List<CodeNameDto> codeNameDtoList = dbLocalGovernmentService.dbList().parallelStream()
+                        .map(localGovernment -> new CodeNameDto(localGovernment.getCode() , localGovernment.getName()))
+                        .sorted(Comparator.comparing(CodeNameDto::getCode)).toList();
+                yield new AdministrativeAreaResponseDto<>(codeNameDtoList);
             }
 
             case COUNTY -> {
@@ -476,9 +479,10 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area partOf");
                 }
 
-                List<CodeNameProjection> codeNameProjections = dbCountyService.dbCodeNameList(queryMap).parallelStream()
-                        .sorted(Comparator.comparing(CodeNameProjection::getCode)).toList();
-                yield new AdministrativeAreaResponseDto<>(codeNameProjections);
+                List<CodeNameDto> codeNameDtoList = dbCountyService.dbList().parallelStream()
+                        .map(localGovernment -> new CodeNameDto(localGovernment.getCode() , localGovernment.getName()))
+                        .sorted(Comparator.comparing(CodeNameDto::getCode)).toList();
+                yield new AdministrativeAreaResponseDto<>(codeNameDtoList);
             }
 
             case SUBCOUNTY -> {
@@ -486,9 +490,10 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area partOf");
                 }
 
-                List<CodeNameProjection> codeNameProjections = dbSubCountyService.dbCodeNameList(queryMap).parallelStream()
-                        .sorted(Comparator.comparing(CodeNameProjection::getCode)).toList();
-                yield new AdministrativeAreaResponseDto<>(codeNameProjections);
+                List<CodeNameDto> codeNameDtoList = dbSubCountyService.dbList().parallelStream()
+                        .map(subCounty -> new CodeNameDto(subCounty.getCode() , subCounty.getName()))
+                        .sorted(Comparator.comparing(CodeNameDto::getCode)).toList();
+                yield new AdministrativeAreaResponseDto<>(codeNameDtoList);
             }
 
             case PARISH -> {
@@ -496,9 +501,10 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area partOf");
                 }
 
-                List<CodeNameProjection> codeNameProjections = dbParishService.dbCodeNameList(queryMap).parallelStream()
-                        .sorted(Comparator.comparing(CodeNameProjection::getCode)).toList();
-                yield new AdministrativeAreaResponseDto<>(codeNameProjections);
+                List<CodeNameDto> codeNameDtoList = dbParishService.dbList().parallelStream()
+                        .map(parish -> new CodeNameDto(parish.getCode() , parish.getName()))
+                        .sorted(Comparator.comparing(CodeNameDto::getCode)).toList();
+                yield new AdministrativeAreaResponseDto<>(codeNameDtoList);
             }
         };
 

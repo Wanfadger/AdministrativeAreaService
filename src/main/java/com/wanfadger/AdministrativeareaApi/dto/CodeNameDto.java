@@ -1,14 +1,14 @@
 package com.wanfadger.AdministrativeareaApi.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.io.Serializable;
 
-@Data
+
 @AllArgsConstructor
 @NoArgsConstructor
+@Getter
+@Setter
 public class CodeNameDto implements Serializable {
    private String code;
    private String name;

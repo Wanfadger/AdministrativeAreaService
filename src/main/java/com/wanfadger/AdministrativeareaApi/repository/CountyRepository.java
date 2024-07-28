@@ -1,8 +1,6 @@
 package com.wanfadger.AdministrativeareaApi.repository;
 
-import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
 import com.wanfadger.AdministrativeareaApi.entity.County;
-import com.wanfadger.AdministrativeareaApi.repository.projections.CodeNameProjection;
 import lombok.NonNull;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -36,12 +34,6 @@ public interface CountyRepository extends JpaRepository<County, String> {
     @Query("SELECT C FROM County C WHERE C.localGovernment.code IN :codes")
     List<County> findAllByLocalGovernmentCodes(List<String> codes);
 
-    @Query("SELECT C.code as code , C.name as name FROM County C WHERE upper(C.localGovernment.code) = upper(:localGovernment) ")
-    List<CodeNameProjection> dbCodeNameList(String localGovernment);
-
-
-    @Query("SELECT C.code as code , C.name as name FROM County C WHERE upper(C.code) = upper(:code) ")
-    Optional<CodeNameProjection> dbCodeName(String code);
 
 
 }

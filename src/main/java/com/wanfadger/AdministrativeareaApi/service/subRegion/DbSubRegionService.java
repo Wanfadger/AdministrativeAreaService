@@ -1,12 +1,9 @@
 package com.wanfadger.AdministrativeareaApi.service.subRegion;
 
 
-
 import com.wanfadger.AdministrativeareaApi.entity.SubRegion;
-import com.wanfadger.AdministrativeareaApi.repository.projections.CodeNameProjection;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 public interface DbSubRegionService {
@@ -21,8 +18,6 @@ public interface DbSubRegionService {
     Optional<SubRegion> dbByName_RegionCode(String name , String regionCode);
     Optional<SubRegion> dbByCode(String code);
 
-    List<CodeNameProjection> dbCodeNameList(Map<String , String> map);
-    Optional<CodeNameProjection> dbCodeName(Map<String , String> map);
 
 
 }

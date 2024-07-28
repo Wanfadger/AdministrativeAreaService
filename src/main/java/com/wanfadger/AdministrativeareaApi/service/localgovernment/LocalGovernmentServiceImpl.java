@@ -3,12 +3,10 @@ package com.wanfadger.AdministrativeareaApi.service.localgovernment;
 
 import com.wanfadger.AdministrativeareaApi.entity.LocalGovernment;
 import com.wanfadger.AdministrativeareaApi.repository.LocalGovernmentRepository;
-import com.wanfadger.AdministrativeareaApi.repository.projections.CodeNameProjection;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -52,15 +50,6 @@ public class LocalGovernmentServiceImpl implements DbLocalGovernmentService  {
         return localGovernmentRepository.findByCodeIgnoreCase(code);
     }
 
-    @Override
-    public List<CodeNameProjection> dbCodeNameList(Map<String, String> map) {
-        return localGovernmentRepository.dbCodeNameList(map.get("partOf"));
-    }
-
-    @Override
-    public Optional<CodeNameProjection> dbCodeName(Map<String, String> queryMap) {
-        return localGovernmentRepository.dbCodeName(queryMap.get("code"));
-    }
 
 
 //    @Override

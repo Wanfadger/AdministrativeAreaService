@@ -1,16 +1,12 @@
 package com.wanfadger.AdministrativeareaApi.service.county;
 
 import com.wanfadger.AdministrativeareaApi.entity.County;
-import com.wanfadger.AdministrativeareaApi.entity.LocalGovernment;
 import com.wanfadger.AdministrativeareaApi.repository.CountyRepository;
-import com.wanfadger.AdministrativeareaApi.repository.projections.CodeNameProjection;
-import com.wanfadger.AdministrativeareaApi.shared.administrativeareaexceptions.AlreadyExistsException;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -56,16 +52,6 @@ public class CountyServiceImpl implements DbCountyService  {
 
 
 
-
-    @Override
-    public List<CodeNameProjection> dbCodeNameList(Map<String , String> map) {
-        return countyRepository.dbCodeNameList(map.get("partOf"));
-    }
-
-    @Override
-    public Optional<CodeNameProjection> dbCodeName(Map<String, String> queryMap) {
-        return countyRepository.dbCodeName(queryMap.get("code"));
-    }
 
 //    @Override
 //    @Transactional

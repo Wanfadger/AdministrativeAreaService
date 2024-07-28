@@ -1,15 +1,12 @@
 package com.wanfadger.AdministrativeareaApi.service.parish;
 
 
-
 import com.wanfadger.AdministrativeareaApi.entity.Parish;
 import com.wanfadger.AdministrativeareaApi.repository.ParishRepository;
-import com.wanfadger.AdministrativeareaApi.repository.projections.CodeNameProjection;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -53,15 +50,6 @@ public class ParishServiceImpl implements DbParishService {
         return parishRepository.findByCodeIgnoreCase(subCountyCode);
     }
 
-    @Override
-    public List<CodeNameProjection> dbCodeNameList(Map<String, String> map) {
-        return parishRepository.dbCodeNameList(map.get("partOf"));
-    }
-
-    @Override
-    public Optional<CodeNameProjection> dbCodeName(Map<String, String> queryMap) {
-        return parishRepository.dbCodeName(queryMap.get("code"));
-    }
 
 
 //
