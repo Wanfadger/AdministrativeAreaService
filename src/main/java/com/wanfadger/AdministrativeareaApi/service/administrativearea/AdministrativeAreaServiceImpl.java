@@ -479,7 +479,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area partOf");
                 }
 
-                List<CodeNameDto> codeNameDtoList = dbCountyService.dbList().parallelStream()
+                List<CodeNameDto> codeNameDtoList = dbCountyService.dbAllByLocalGovernmentCode(partOf).parallelStream()
                         .map(localGovernment -> new CodeNameDto(localGovernment.getCode() , localGovernment.getName()))
                         .sorted(Comparator.comparing(CodeNameDto::getCode)).toList();
                 yield new AdministrativeAreaResponseDto<>(codeNameDtoList);
