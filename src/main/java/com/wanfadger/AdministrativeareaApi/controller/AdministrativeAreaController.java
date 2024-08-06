@@ -73,6 +73,8 @@ public class AdministrativeAreaController {
         return administrativeAreaService.searchList(queryMap);
     }
 
+
+
     @GetMapping("/searchOne")
     @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS , key = "#queryMap" )
     public AdministrativeAreaResponseDto<? extends AdministrativeAreaDto> searchOne(@RequestParam Map<String, String> queryMap) {
@@ -81,3 +83,4 @@ public class AdministrativeAreaController {
 
 
 }
+
