@@ -48,27 +48,39 @@ public class AdministrativeAreaController {
 
 
     @GetMapping("/filterOne")
-    @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS_FILTER, keyGenerator = "queryMapKeyGenerator", cacheManager = "weekCacheManager")
+    @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS_FILTER, 
+               keyGenerator = "queryMapKeyGenerator", 
+               cacheManager = "weekCacheManager",
+               condition = "#result != null && #result.status == true")
     public AdministrativeAreaResponseDto<CodeNameDto> filterOne(@RequestParam Map<String, String> queryMap) {
         return administrativeAreaService.filterOne(queryMap);
     }
 
 
     @GetMapping("/filterList")
-    @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS_FILTER, keyGenerator = "queryMapKeyGenerator", cacheManager = "weekCacheManager")
+    @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS_FILTER, 
+               keyGenerator = "queryMapKeyGenerator", 
+               cacheManager = "weekCacheManager",
+               condition = "#result != null && #result.status == true")
     public AdministrativeAreaResponseDto<List<CodeNameDto>> filterList(@RequestParam Map<String, String> queryMap ) {
         return administrativeAreaService.filterList(queryMap);
     }
 
     @GetMapping("/parishListByPartOf")
-    @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS, keyGenerator = "queryMapKeyGenerator", cacheManager = "weekCacheManager")
+    @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS, 
+               keyGenerator = "queryMapKeyGenerator", 
+               cacheManager = "weekCacheManager",
+               condition = "#result != null && #result.status == true")
     public AdministrativeAreaResponseDto<List<CodeNameDto>> getParishByPartOf(@RequestParam Map<String, String> queryMap) {
         return administrativeAreaService.getParishByPartOf(queryMap);
     }
 
 
     @GetMapping("/searchList")
-    @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS, keyGenerator = "queryMapKeyGenerator", cacheManager = "hourCacheManager")
+    @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS, 
+               keyGenerator = "queryMapKeyGenerator", 
+               cacheManager = "hourCacheManager",
+               condition = "#result != null && #result.status == true")
     public AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> searchList(@RequestParam Map<String, String> queryMap) {
         return administrativeAreaService.searchList(queryMap);
     }
@@ -76,7 +88,10 @@ public class AdministrativeAreaController {
 
 
     @GetMapping("/searchOne")
-    @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS, keyGenerator = "queryMapKeyGenerator", cacheManager = "hourCacheManager")
+    @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS, 
+               keyGenerator = "queryMapKeyGenerator", 
+               cacheManager = "hourCacheManager",
+               condition = "#result != null && #result.status == true")
     public AdministrativeAreaResponseDto<? extends AdministrativeAreaDto> searchOne(@RequestParam Map<String, String> queryMap) {
         return administrativeAreaService.searchOne(queryMap);
     }
