@@ -6,9 +6,9 @@ services:
     image: postgres
     restart: always
     environment:
-      POSTGRES_PASSWORD: qwertyuftdytrs
-      POSTGRES_USER: siip-db-user
-      POSTGRES_DB: siipdb
+      POSTGRES_PASSWORD: qwertyuftdytrsdev
+      POSTGRES_USER: siip-db-user-dev
+      POSTGRES_DB: areadevdb
     ports:
       - "5437:5432"
 
