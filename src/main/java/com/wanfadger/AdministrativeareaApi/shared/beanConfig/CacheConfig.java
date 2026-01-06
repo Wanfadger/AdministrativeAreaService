@@ -50,7 +50,8 @@ public class CacheConfig {
     @Primary
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig() //
-                .prefixCacheNameWith(this.getClass().getPackageName() + ".") //
+                .prefixCacheNameWith("adminArea.") // Shorter, meaningful prefix
+                .entryTtl(Duration.ofMinutes(30))   // Added TTL (was missing)
                 .disableCachingNullValues();
 
         return RedisCacheManager.builder(connectionFactory) //
@@ -61,7 +62,7 @@ public class CacheConfig {
     @Bean("hourCacheManager")
     public RedisCacheManager hourCacheManager(RedisConnectionFactory connectionFactory) {
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig() //
-                .prefixCacheNameWith(this.getClass().getPackageName() + ".") //
+                .prefixCacheNameWith("adminArea.hour.") // Shorter prefix
                 .entryTtl(Duration.ofHours(1)) //
                 .disableCachingNullValues();
 
@@ -73,7 +74,7 @@ public class CacheConfig {
     @Bean("_24HourCacheManager")
     public RedisCacheManager _24HourCacheManager(RedisConnectionFactory connectionFactory) {
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig() //
-                .prefixCacheNameWith(this.getClass().getPackageName() + ".") //
+                .prefixCacheNameWith("adminArea.24h.") // Shorter prefix
                 .entryTtl(Duration.ofHours(1*24)) //
                 .disableCachingNullValues();
 
@@ -85,7 +86,7 @@ public class CacheConfig {
     @Bean("weekCacheManager")
     public RedisCacheManager weekCacheManager(RedisConnectionFactory connectionFactory) {
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig() //
-                .prefixCacheNameWith(this.getClass().getPackageName() + ".") //
+                .prefixCacheNameWith("adminArea.week.") // Shorter prefix
                 .entryTtl(Duration.ofDays(7)) //
                 .disableCachingNullValues();
 
@@ -98,7 +99,7 @@ public class CacheConfig {
     @Bean("monthCacheManager")
     public RedisCacheManager monthCacheManager(RedisConnectionFactory connectionFactory) {
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig() //
-                .prefixCacheNameWith(this.getClass().getPackageName() + ".") //
+                .prefixCacheNameWith("adminArea.month.") // Shorter prefix
                 .entryTtl(Duration.ofDays(30)) //
                 .disableCachingNullValues();
 

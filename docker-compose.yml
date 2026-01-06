@@ -10,26 +10,45 @@ services:
       POSTGRES_USER: siip-db-user
       POSTGRES_DB: siipdb
     ports:
-      - "5438:5432"
+      - "5437:5432"
 
-  api:
-    image: wanfadger/siip-api:v0.0.1
+  redis:
+    image: redis/redis-stack:latest
+    restart: always
     ports:
-      - "8083:8082"
+      - "8101:6379"      # Redis port
+      - "8001:8001"      # Redis Insight port
+    # volumes:
+    #   - redis-data:/data
     environment:
-       DB-URL: jdbc:postgresql://db:5432/siipdb
-       DB-USERNAME: siip-db-user
-       DB-PASSWORD: qwertyuftdytrs
-       APP-PROFILE: prod
-       LoadSchoolPermissions: false
-       LoadManagementPermissions: false
-       LoadDefaultProfile: false
+      - REDIS_ARGS=--appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-    depends_on:
-      - db
+  # api:
+  #   image: wanfadger/siip-api:v0.0.1
+  #   ports:
+  #     - "8083:8082"
+  #   environment:
+  #      DB-URL: jdbc:postgresql://db:5432/siipdb
+  #      DB-USERNAME: siip-db-user
+  #      DB-PASSWORD: qwertyuftdytrs
+  #      APP-PROFILE: prod
+  #      LoadSchoolPermissions: false
+  #      LoadManagementPermissions: false
+  #      LoadDefaultProfile: false
 
-  ui:
-    image: wanfadger/siip-ui:v0.0.1
-    ports:
-      - "4200:4200"
+  #   depends_on:
+  #     - db
 
+  # ui:
+  #   image: wanfadger/siip-ui:v0.0.1
+  #   ports:
+  #     - "4200:4200"
+
+# volumes:
+#   redis-data:
+#   redis-insight-data:

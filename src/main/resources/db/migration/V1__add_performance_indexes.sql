@@ -31,11 +31,10 @@ CREATE INDEX IF NOT EXISTS idx_county_name_localgovernment ON county(LOWER(name)
 CREATE INDEX IF NOT EXISTS idx_subcounty_name_county ON subcounty(LOWER(name), county_id);
 CREATE INDEX IF NOT EXISTS idx_parish_name_subcounty ON parish(LOWER(name), subcounty_id);
 
--- Indexes for code-based foreign key lookups (used in IN queries)
-CREATE INDEX IF NOT EXISTS idx_subregion_region_code ON subregion((SELECT code FROM region WHERE id = subregion.region_id));
--- Note: The above might need adjustment based on actual schema
--- Alternative if code is stored directly:
--- CREATE INDEX IF NOT EXISTS idx_subregion_region_code_lookup ON subregion(region_id) WHERE EXISTS (SELECT 1 FROM region r WHERE r.id = subregion.region_id);
+-- Note: Code-based foreign key lookups use the region_id index above
+-- If you need to query by parent code frequently, consider adding a functional index:
+-- CREATE INDEX IF NOT EXISTS idx_subregion_region_code_lookup ON subregion(region_id);
+-- The region_id index above should be sufficient for most queries
 
 -- Analyze tables after index creation for query planner optimization
 ANALYZE region;
