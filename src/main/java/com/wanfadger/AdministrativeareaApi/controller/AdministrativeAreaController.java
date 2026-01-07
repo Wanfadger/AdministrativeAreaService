@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -122,10 +121,6 @@ public class AdministrativeAreaController {
             @ApiResponse(responseCode = "400", description = "Missing required parameters")
     })
     @GetMapping(value = "/filterOne", produces = MediaType.APPLICATION_JSON_VALUE)
-    @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS_FILTER, 
-               keyGenerator = "queryMapKeyGenerator", 
-               cacheManager = "weekCacheManager",
-               unless = "#result == null || #result.status != true")
     public AdministrativeAreaResponseDto<CodeNameDto> filterOne(
             @Parameter(description = "Query parameters: 'type' (required), 'code' (required), 'partOf' (optional)", required = true, example = "type=REGION&code=001")
             @RequestParam Map<String, String> queryMap) {
@@ -144,10 +139,6 @@ public class AdministrativeAreaController {
             @ApiResponse(responseCode = "400", description = "Missing required parameters")
     })
     @GetMapping(value = "/filterList", produces = MediaType.APPLICATION_JSON_VALUE)
-    @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS_FILTER, 
-               keyGenerator = "queryMapKeyGenerator", 
-               cacheManager = "weekCacheManager",
-               unless = "#result == null || #result.status != true")
     public AdministrativeAreaResponseDto<List<CodeNameDto>> filterList(
             @Parameter(description = "Query parameters: 'type' (required), 'partOf' (optional)", required = true, example = "type=REGION")
             @RequestParam Map<String, String> queryMap ) {
@@ -164,10 +155,6 @@ public class AdministrativeAreaController {
             @ApiResponse(responseCode = "400", description = "Missing required parameters")
     })
     @GetMapping(value = "/parishListByPartOf", produces = MediaType.APPLICATION_JSON_VALUE)
-    @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS, 
-               keyGenerator = "queryMapKeyGenerator", 
-               cacheManager = "weekCacheManager",
-               unless = "#result == null || #result.status != true")
     public AdministrativeAreaResponseDto<List<CodeNameDto>> getParishByPartOf(
             @Parameter(description = "Query parameters: 'type' (required - parent type), 'partOfCode' (required - parent code)", required = true, example = "type=REGION&partOfCode=001")
             @RequestParam Map<String, String> queryMap) {
@@ -185,10 +172,6 @@ public class AdministrativeAreaController {
             @ApiResponse(responseCode = "400", description = "Missing required parameters")
     })
     @GetMapping(value = "/searchList", produces = MediaType.APPLICATION_JSON_VALUE)
-    @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS, 
-               keyGenerator = "queryMapKeyGenerator", 
-               cacheManager = "hourCacheManager",
-               unless = "#result == null || #result.status != true")
     public AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> searchList(
             @Parameter(description = "Query parameters: 'type' (required), 'partOf' (optional)", required = true, example = "type=REGION")
             @RequestParam Map<String, String> queryMap) {
@@ -208,10 +191,6 @@ public class AdministrativeAreaController {
             @ApiResponse(responseCode = "400", description = "Missing required parameters")
     })
     @GetMapping(value = "/searchOne", produces = MediaType.APPLICATION_JSON_VALUE)
-    @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS, 
-               keyGenerator = "queryMapKeyGenerator", 
-               cacheManager = "hourCacheManager",
-               unless = "#result == null || #result.status != true")
     public AdministrativeAreaResponseDto<? extends AdministrativeAreaDto> searchOne(
             @Parameter(description = "Query parameters: 'type' (required), 'code' (required), 'partOf' (optional)", required = true, example = "type=REGION&code=001")
             @RequestParam Map<String, String> queryMap) {

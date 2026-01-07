@@ -14,7 +14,10 @@ import com.wanfadger.AdministrativeareaApi.shared.administrativeareaexceptions.I
 import com.wanfadger.AdministrativeareaApi.shared.administrativeareaexceptions.MissingDataException;
 import com.wanfadger.AdministrativeareaApi.shared.administrativeareaexceptions.NotFoundException;
 import com.wanfadger.AdministrativeareaApi.shared.reponses.AdministrativeAreaResponseDto;
+import com.wanfadger.AdministrativeareaApi.shared.util.CacheKeys;
+import com.wanfadger.AdministrativeareaApi.shared.util.ServiceLevelCacheHelper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
@@ -23,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -36,6 +40,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     private final DbCountyService dbCountyService;
     private final DbSubCountyService dbSubCountyService;
     private final DbParishService dbParishService;
+    private final ServiceLevelCacheHelper cacheHelper;
 
     private boolean notNullEmpty(String value) {
         return value != null && !value.isEmpty();
@@ -610,9 +615,21 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
     @Override
     public AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> searchList(Map<String, String> queryMap) {
+        // Check cache first
+        String cacheKey = ServiceLevelCacheHelper.generateKey("searchList", queryMap);
+        ParameterizedTypeReference<AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>>> typeRef = 
+            new ParameterizedTypeReference<AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>>>() {};
+        
+        AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> cached = 
+            cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS, cacheKey, typeRef);
+        
+        if (cached != null) {
+            return cached;
+        }
+
+        // Cache miss - fetch from database
         String type = queryMap.get("type");
         String partOf = queryMap.get("partOf");
-
 
         Optional<AdministrativeAreaType> optionalAdministrativeAreaType = AdministrativeAreaType.administrativeAreaTypeStr(type);
         if (optionalAdministrativeAreaType.isEmpty()) {
@@ -621,7 +638,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
         AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
 
-        return switch (administrativeAreaType) {
+        AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> result = switch (administrativeAreaType) {
             case REGION -> {
                 List<RegionDto> regionDtos = dbRegionService.dbList().parallelStream().map(AdministrativeAreaServiceImpl::convertRegionDto).sorted(Comparator.comparing(RegionDto::getCode)).toList();
                 yield new AdministrativeAreaResponseDto<>(regionDtos);
@@ -680,6 +697,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             }
         };
 
+        // Cache the result (1 hour TTL)
+        if (result != null && result.isStatus()) {
+            cacheHelper.put(CacheKeys.ADMINISTRATIVE_AREAS, cacheKey, result, 1, TimeUnit.HOURS);
+        }
+
+        return result;
     }
 
     @Override
