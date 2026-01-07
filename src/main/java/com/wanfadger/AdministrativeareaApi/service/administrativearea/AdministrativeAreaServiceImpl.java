@@ -427,7 +427,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     @Override
     public AdministrativeAreaResponseDto<CodeNameDto> filterOne(Map<String, String> queryMap) {
         // Check cache first
-        String cacheKey = CacheHelperService.generateKey("filterOne", queryMap);
+        String cacheKey = CacheHelperService.generateKey(queryMap);
         ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDto>> typeRef = 
             new ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDto>>() {};
         
@@ -510,7 +510,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     @Override
     public AdministrativeAreaResponseDto<List<CodeNameDto>> filterList(Map<String, String> queryMap) {
         // Check cache first
-        String cacheKey = CacheHelperService.generateKey("filterList", queryMap);
+        String cacheKey = CacheHelperService.generateKey(queryMap);
         ParameterizedTypeReference<AdministrativeAreaResponseDto<List<CodeNameDto>>> typeRef = 
             new ParameterizedTypeReference<AdministrativeAreaResponseDto<List<CodeNameDto>>>() {};
         
@@ -615,7 +615,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     @Override
     public AdministrativeAreaResponseDto<List<CodeNameDto>> getParishByPartOf(Map<String, String> queryMap) {
         // Check cache first
-        String cacheKey = CacheHelperService.generateKey("getParishByPartOf", queryMap);
+        String cacheKey = CacheHelperService.generateKey(queryMap);
         ParameterizedTypeReference<AdministrativeAreaResponseDto<List<CodeNameDto>>> typeRef = 
             new ParameterizedTypeReference<AdministrativeAreaResponseDto<List<CodeNameDto>>>() {};
         
@@ -732,7 +732,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     @Override
     public AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> searchList(Map<String, String> queryMap) {
         // Check cache first
-        String cacheKey = CacheHelperService.generateKey("searchList", queryMap);
+        String cacheKey = CacheHelperService.generateKey(queryMap);
         ParameterizedTypeReference<AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>>> typeRef = 
             new ParameterizedTypeReference<AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>>>() {};
         
@@ -824,7 +824,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     @Override
     public AdministrativeAreaResponseDto<? extends AdministrativeAreaDto> searchOne(Map<String, String> queryMap) {
         // Check cache first
-        String cacheKey = CacheHelperService.generateKey("searchOne", queryMap);
+        String cacheKey = CacheHelperService.generateKey(queryMap);
         ParameterizedTypeReference<AdministrativeAreaResponseDto<? extends AdministrativeAreaDto>> typeRef = 
             new ParameterizedTypeReference<AdministrativeAreaResponseDto<? extends AdministrativeAreaDto>>() {};
         

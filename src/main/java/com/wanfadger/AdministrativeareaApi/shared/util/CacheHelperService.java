@@ -5,9 +5,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Component;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -99,15 +103,32 @@ public class CacheHelperService {
 
     /**
      * Evict all entries in a cache
+     * 
+     * Uses SCAN instead of KEYS for better performance (non-blocking).
+     * SCAN iterates through keys without blocking the Redis server.
      */
     @SuppressWarnings("unchecked")
     public void evictAll(String cacheName) {
         try {
             String pattern = cacheName + "::*";
             RedisTemplate<String, Object> template = (RedisTemplate<String, Object>) redisTemplate;
-            java.util.Set<String> keys = template.keys(pattern);
-            if (keys != null && !keys.isEmpty()) {
+            
+            // Use SCAN instead of KEYS for better performance (non-blocking)
+            Set<String> keys = new HashSet<>();
+            ScanOptions options = ScanOptions.scanOptions()
+                    .match(pattern)
+                    .count(100) // Process 100 keys at a time
+                    .build();
+            
+            try (Cursor<String> cursor = template.scan(options)) {
+                while (cursor.hasNext()) {
+                    keys.add(cursor.next());
+                }
+            }
+            
+            if (!keys.isEmpty()) {
                 template.delete(keys);
+                log.debug("Evicted {} cache entries for {}", keys.size(), cacheName);
             }
         } catch (Exception e) {
             log.warn("Failed to evict all cache entries for {}: {}", cacheName, e.getMessage());
@@ -119,13 +140,20 @@ public class CacheHelperService {
      * 
      * Creates deterministic cache keys by sorting query parameters alphabetically.
      * This ensures consistent keys regardless of Map iteration order.
+     * 
+     * Note: Method name is not included to allow external services to construct
+     * keys using only query parameters. Cache namespace (cacheName) provides
+     * logical separation between different operation types.
+     * 
+     * @param queryMap Query parameters map
+     * @return Deterministic cache key string
      */
-    public static String generateKey(String methodName, java.util.Map<String, String> queryMap) {
+    public static String generateKey(java.util.Map<String, String> queryMap) {
         if (queryMap == null || queryMap.isEmpty()) {
-            return methodName + ":default";
+            return "default";
         }
 
-        String key = queryMap.entrySet().stream()
+        return queryMap.entrySet().stream()
                 .sorted(java.util.Map.Entry.comparingByKey())
                 .map(entry -> {
                     String k = entry.getKey() != null ? entry.getKey() : "";
@@ -133,7 +161,5 @@ public class CacheHelperService {
                     return k + "=" + v;
                 })
                 .collect(java.util.stream.Collectors.joining("&"));
-
-        return methodName + ":" + key;
     }
 }

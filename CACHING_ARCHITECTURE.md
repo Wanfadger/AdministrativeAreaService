@@ -67,7 +67,7 @@ This application uses **service-level caching** with clean JSON storage for cros
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Redis (via RedisTemplate)                     │
 │  - Stores clean JSON (no @class fields)                          │
-│  - Keys: "CacheName::methodName:param1=value1&param2=value2"    │
+│  - Keys: "CacheName::param1=value1&param2=value2"               │
 │  - TTL: Varies by operation (1 hour, 7 days)                    │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -99,10 +99,11 @@ This application uses **service-level caching** with clean JSON storage for cros
    - Removes all entries in a cache namespace
    - Uses pattern matching: `cacheName::*`
 
-5. **`generateKey(String methodName, Map<String, String> queryMap)`**
-   - Creates deterministic cache keys
-   - Sorts query parameters alphabetically
-   - Format: `methodName:param1=value1&param2=value2`
+5. **`generateKey(Map<String, String> queryMap)`**
+   - Creates deterministic cache keys from query parameters
+   - Sorts query parameters alphabetically for consistency
+   - Format: `param1=value1&param2=value2`
+   - Method name is NOT included (cache namespace provides separation)
 
 ### Cache Namespaces
 
@@ -120,8 +121,8 @@ This application uses **service-level caching** with clean JSON storage for cros
 public AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> searchList(
         Map<String, String> queryMap) {
     
-    // 1. Generate cache key
-    String cacheKey = CacheHelperService.generateKey("searchList", queryMap);
+    // 1. Generate cache key (method name not needed - cache namespace provides separation)
+    String cacheKey = CacheHelperService.generateKey(queryMap);
     
     // 2. Check cache
     ParameterizedTypeReference<AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>>> typeRef = 
@@ -177,17 +178,38 @@ public ResponseEntity<AdministrativeAreaResponseDto<String>> newOne(
 
 ## Cache Key Format
 
-**Pattern:** `CacheName::methodName:param1=value1&param2=value2`
+**Pattern:** `CacheName::param1=value1&param2=value2`
 
 **Examples:**
-- `AdministrativeAreas::searchList:type=REGION`
-- `AdministrativeAreas::searchList:type=SUB REGION&partOf=001`
-- `AdministrativeAreaFilters::filterList:type=REGION`
+- `AdministrativeAreas::type=REGION`
+- `AdministrativeAreas::type=SUB REGION&partOf=001`
+- `AdministrativeAreaFilters::type=REGION&code=123`
 
 **Key Generation:**
 - Parameters are sorted alphabetically for consistency
 - Ensures same query always generates same key
 - Prevents cache misses due to parameter order
+- **Method name is NOT included** - external services can construct keys using only query parameters
+- Cache namespace (`cacheName`) provides logical separation between different operation types
+- **Shorter keys** - reduces Redis memory usage, especially beneficial with many cache entries
+
+### Why Separate `cacheName` and `key`?
+
+Even though they're concatenated into a single Redis key, separating `cacheName` and `key` provides important benefits:
+
+1. **Bulk Eviction**: `evictAll(cacheName)` can clear all entries for a namespace using pattern matching (`cacheName + "::*"`). This is essential for cache invalidation after write operations.
+
+2. **Logical Grouping**: Different `cacheName` values represent different logical groups:
+   - `AdministrativeAreas` - for search operations (shorter TTL: 1 hour)
+   - `AdministrativeAreaFilters` - for filter operations (longer TTL: 7 days)
+
+3. **Prevents Key Collisions**: If multiple services/modules generate the same query parameters, the namespace prevents collisions.
+
+4. **Easier Monitoring**: In Redis Insight, you can filter by namespace (e.g., `AdministrativeAreas::*`) to see all related cache entries.
+
+5. **Language-Agnostic Keys**: External services can construct cache keys using only query parameters (no need to know internal method names). The `generateKey()` method creates deterministic keys from query parameters, while `cacheName` handles logical grouping at a higher level.
+
+6. **Shorter Keys**: Removing method names results in shorter cache keys, which reduces Redis memory usage. This is especially beneficial when caching many entries, as key overhead can become significant at scale.
 
 ## Cache Eviction Strategy
 
@@ -313,11 +335,14 @@ spring.data.redis.port=6379
 
 ### Cache Diagnostics
 
-**Endpoint:** `/cache-diagnostics/keys`
+**Endpoint:** `/cache-diagnostics/info`
 
-- Lists all Redis keys
-- Shows cache statistics
-- Useful for debugging
+- Returns Redis connection status
+- Shows sample cache keys (first 10)
+- Shows cache namespace keys (AdministrativeAreas, AdministrativeAreaFilters)
+- Returns total key count
+- Uses SCAN (non-blocking) instead of KEYS for better performance
+- Useful for troubleshooting cache issues
 
 ## Best Practices
 
@@ -372,7 +397,13 @@ spring.data.redis.port=6379
 
 2. **Check cache keys in Redis**
    ```bash
+   # List all keys in a namespace
    redis-cli keys "AdministrativeAreas::*"
+   
+   # Example keys you might see:
+   # AdministrativeAreas::type=REGION
+   # AdministrativeAreas::code=123&type=REGION
+   # AdministrativeAreaFilters::type=SUB REGION&partOf=001
    ```
 
 3. **Check logs**
@@ -422,6 +453,72 @@ public AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> sear
 
 ## Examples
 
+### Constructing Cache Keys (External Services)
+
+**Key Format:** `CacheName::param1=value1&param2=value2`
+
+**Important:** Parameters must be sorted alphabetically to match the Java implementation.
+
+**Python Example:**
+```python
+import redis
+
+def generate_cache_key(cache_name, params):
+    """Generate cache key matching Java implementation"""
+    sorted_params = sorted(params.items())
+    key_part = "&".join(f"{k}={v}" for k, v in sorted_params)
+    return f"{cache_name}::{key_part}"
+
+# Usage
+params = {"type": "REGION", "code": "123"}
+key = generate_cache_key("AdministrativeAreas", params)
+# Result: "AdministrativeAreas::code=123&type=REGION"
+```
+
+**Node.js Example:**
+```javascript
+function generateCacheKey(cacheName, params) {
+    const sorted = Object.keys(params)
+        .sort()
+        .map(key => `${key}=${params[key]}`)
+        .join('&');
+    return `${cacheName}::${sorted}`;
+}
+
+// Usage
+const params = { type: "REGION", code: "123" };
+const key = generateCacheKey("AdministrativeAreas", params);
+// Result: "AdministrativeAreas::code=123&type=REGION"
+```
+
+**Go Example:**
+```go
+import (
+    "sort"
+    "strings"
+)
+
+func generateCacheKey(cacheName string, params map[string]string) string {
+    keys := make([]string, 0, len(params))
+    for k := range params {
+        keys = append(keys, k)
+    }
+    sort.Strings(keys)
+    
+    parts := make([]string, len(keys))
+    for i, k := range keys {
+        parts[i] = k + "=" + params[k]
+    }
+    
+    return cacheName + "::" + strings.Join(parts, "&")
+}
+
+// Usage
+params := map[string]string{"type": "REGION", "code": "123"}
+key := generateCacheKey("AdministrativeAreas", params)
+// Result: "AdministrativeAreas::code=123&type=REGION"
+```
+
 ### Reading Cached Data from Other Services
 
 **Python:**
@@ -430,8 +527,12 @@ import redis
 import json
 
 r = redis.Redis(host='localhost', port=6379, db=0)
-cached = r.get("AdministrativeAreas::searchList:type=REGION")
+# Key format: CacheName::param1=value1&param2=value2 (no method name)
+cached = r.get("AdministrativeAreas::type=REGION")
 data = json.loads(cached)  # Clean JSON, no @class fields!
+
+# Example with multiple parameters (sorted alphabetically)
+cached = r.get("AdministrativeAreas::code=123&type=REGION")
 ```
 
 **Node.js:**
@@ -439,15 +540,23 @@ data = json.loads(cached)  # Clean JSON, no @class fields!
 const redis = require('redis');
 const client = redis.createClient();
 
-const cached = await client.get("AdministrativeAreas::searchList:type=REGION");
+// Key format: CacheName::param1=value1&param2=value2 (no method name)
+const cached = await client.get("AdministrativeAreas::type=REGION");
 const data = JSON.parse(cached);  // Clean JSON!
+
+// Example with multiple parameters (sorted alphabetically)
+const cached2 = await client.get("AdministrativeAreas::code=123&type=REGION");
 ```
 
 **Java (Other Service):**
 ```java
-String cached = redisTemplate.opsForValue().get("AdministrativeAreas::searchList:type=REGION");
+// Key format: CacheName::param1=value1&param2=value2 (no method name)
+String cached = redisTemplate.opsForValue().get("AdministrativeAreas::type=REGION");
 ObjectMapper mapper = new ObjectMapper();
 Map<String, Object> data = mapper.readValue(cached, Map.class);  // Clean JSON!
+
+// Example with multiple parameters (sorted alphabetically)
+String cached2 = redisTemplate.opsForValue().get("AdministrativeAreas::code=123&type=REGION");
 ```
 
 ## Summary

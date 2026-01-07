@@ -10,6 +10,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import redis.clients.jedis.JedisPoolConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
@@ -26,11 +27,31 @@ public class CacheConfig {
     @Value("${spring.data.redis.port}")
     int port;
 
+    @Value("${spring.data.redis.password:}")
+    String password;
+
     @Bean
     public JedisConnectionFactory jedisConnectionFactory(){
+        // Configure connection pool for production readiness
+        JedisPoolConfig poolConfig = new JedisPoolConfig();
+        poolConfig.setMaxTotal(200);  // Maximum connections
+        poolConfig.setMaxIdle(50);     // Maximum idle connections
+        poolConfig.setMinIdle(10);     // Minimum idle connections
+        poolConfig.setMaxWaitMillis(5000); // Max wait time for connection
+        poolConfig.setTestOnBorrow(true);  // Test connection before use
+        poolConfig.setTestOnReturn(true);   // Test connection on return
+        poolConfig.setTestWhileIdle(true);  // Test idle connections
+        poolConfig.setBlockWhenExhausted(true); // Block when pool exhausted
+        
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(host, port);
-        return new JedisConnectionFactory(config);
-//        return new JedisConnectionFactory();
+        if (password != null && !password.isEmpty()) {
+            config.setPassword(password);
+        }
+        
+        JedisConnectionFactory factory = new JedisConnectionFactory(config);
+        factory.setPoolConfig(poolConfig);
+        factory.setTimeout(2000); // 2 seconds timeout
+        return factory;
     }
 
 
@@ -88,11 +109,11 @@ public class CacheConfig {
      * because we now use service-level caching with explicit TTLs via CacheHelperService.
      * 
      * The primary cacheManager is kept for:
-     * - CacheTestController (uses @Cacheable)
      * - MonitoringConfig (health checks)
+     * - Any future components that need Spring Cache annotations
      * 
      * Service-level caching uses RedisTemplate directly with keys like:
-     * "AdministrativeAreas::searchList:type=REGION"
+     * "AdministrativeAreas::code=123&type=REGION"
      * 
      * Cache eviction is handled via CacheHelperService.evictAll() in service methods.
      */
