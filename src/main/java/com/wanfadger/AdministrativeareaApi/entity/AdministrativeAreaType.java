@@ -21,8 +21,8 @@ public enum AdministrativeAreaType {
         this.administrativeAreaType = administrativeAreaType;
     }
 
-    public static Optional<AdministrativeAreaType> administrativeAreaTypeStr(String administrativeAreaTypeStr) {
-        return Arrays.stream(AdministrativeAreaType.values()).filter(administrativeAreaType1 -> administrativeAreaType1.administrativeAreaType.equalsIgnoreCase(administrativeAreaTypeStr)).findFirst();
+    public static Optional<AdministrativeAreaType> fromStr(String administrativeAreaTypeStr) {
+        return Arrays.stream(AdministrativeAreaType.values()).filter(type -> type.administrativeAreaType.equalsIgnoreCase(administrativeAreaTypeStr)).findFirst();
     }
 
 

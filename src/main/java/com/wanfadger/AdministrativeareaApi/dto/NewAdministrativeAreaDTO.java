@@ -1,6 +1,7 @@
 package com.wanfadger.AdministrativeareaApi.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,7 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Schema(description = "Data transfer object for creating a new administrative area")
 public class NewAdministrativeAreaDTO {
-    @Schema(description = "Name of the administrative area", example = "Central Region", required = true)
+    @Schema(description = "Name of the administrative area", example = "Central Region", requiredMode = RequiredMode.REQUIRED)
     private String name;
     
     @Schema(description = "Description of the administrative area", example = "Central Region of Uganda")

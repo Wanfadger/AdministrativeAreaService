@@ -16,7 +16,7 @@ public interface SubRegionRepository extends JpaRepository<SubRegion, String> {
 
 
 
-    Optional<SubRegion> findByNameIgnoreCaseAndRegion_Code(String name , String regionCod);
+    Optional<SubRegion> findByNameIgnoreCaseAndRegion_Code(String name , String regionCode);
 
     @EntityGraph(attributePaths = {"region"} , type = EntityGraph.EntityGraphType.FETCH)
     List<SubRegion> findAllByRegion_Code(String code);
