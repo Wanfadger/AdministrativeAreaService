@@ -974,6 +974,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     public AdministrativeAreaResponseDto<?> searchList(Map<String, String> queryMap) {
         log.info("Searching for administrative areas with query map: {}", queryMap);
         String cacheKey = CacheHelperService.generateKey(queryMap);
+        log.info("Cache key: {}", cacheKey);
         String type = queryMap.get("type");
         String partOf = queryMap.get("partOf");
 
