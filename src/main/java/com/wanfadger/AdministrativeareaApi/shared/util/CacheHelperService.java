@@ -249,7 +249,9 @@ public class CacheHelperService {
                 .sorted(java.util.Map.Entry.comparingByKey())
                 .map(entry -> {
                     String k = entry.getKey() != null ? entry.getKey() : "";
-                    String v = entry.getValue() != null ? entry.getValue() : "";
+                    String v = entry.getValue() != null 
+                        ? ("type".equalsIgnoreCase(k) ? entry.getValue().toUpperCase() : entry.getValue())
+                        : "";
                     return k + "=" + v;
                 })
                 .collect(java.util.stream.Collectors.joining("&"));
