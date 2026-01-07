@@ -8,63 +8,38 @@ This document provides comprehensive recommendations to enable the Administrativ
 ## 1. Database Optimization
 
 ### 1.1 Add Database Indexes
-**Priority: HIGH** | **Impact: CRITICAL**
+**Priority: HIGH** | **Impact: CRITICAL** | **Status: ✅ IMPLEMENTED**
 
-The current implementation lacks explicit database indexes on frequently queried fields. Add indexes to improve query performance:
+✅ **IMPLEMENTED**: Database indexes have been added via Flyway migration `V1__add_performance_indexes.sql`.
 
-```sql
--- Indexes for code lookups (most frequent operation)
-CREATE INDEX idx_region_code ON region(code);
-CREATE INDEX idx_subregion_code ON subregion(code);
-CREATE INDEX idx_localgovernment_code ON localgovernment(code);
-CREATE INDEX idx_county_code ON county(code);
-CREATE INDEX idx_subcounty_code ON subcounty(code);
-CREATE INDEX idx_parish_code ON parish(code);
+The migration includes:
+- Code indexes for all tables (most frequent lookup)
+- Name indexes with LOWER() for case-insensitive searches
+- Foreign key indexes for all hierarchical relationships
+- Composite indexes for common query patterns (name + parent_id)
+- Automatic table analysis after index creation
 
--- Indexes for name lookups
-CREATE INDEX idx_region_name ON region(LOWER(name));
-CREATE INDEX idx_subregion_name ON subregion(LOWER(name));
-CREATE INDEX idx_localgovernment_name ON localgovernment(LOWER(name));
-CREATE INDEX idx_county_name ON county(LOWER(name));
-CREATE INDEX idx_subcounty_name ON subcounty(LOWER(name));
-CREATE INDEX idx_parish_name ON parish(LOWER(name));
+**Location**: `src/main/resources/db/migration/V1__add_performance_indexes.sql`
 
--- Foreign key indexes (critical for JOINs)
-CREATE INDEX idx_subregion_region_code ON subregion(region_id);
-CREATE INDEX idx_localgovernment_subregion_code ON localgovernment(subregion_id);
-CREATE INDEX idx_county_localgovernment_code ON county(localgovernment_id);
-CREATE INDEX idx_subcounty_county_code ON subcounty(county_id);
-CREATE INDEX idx_parish_subcounty_code ON parish(subcounty_id);
-
--- Composite indexes for common query patterns
-CREATE INDEX idx_subregion_name_region ON subregion(LOWER(name), region_id);
-CREATE INDEX idx_localgovernment_name_subregion ON localgovernment(LOWER(name), subregion_id);
-CREATE INDEX idx_county_name_localgovernment ON county(LOWER(name), localgovernment_id);
-CREATE INDEX idx_subcounty_name_county ON subcounty(LOWER(name), county_id);
-CREATE INDEX idx_parish_name_subcounty ON parish(LOWER(name), subcounty_id);
-```
-
-**Implementation**: Create a database migration script or add `@Index` annotations to entity classes.
+**Note**: Indexes are created safely with existence checks to avoid errors during migration.
 
 ### 1.2 Optimize HikariCP Connection Pool
-**Priority: HIGH** | **Impact: HIGH**
+**Priority: HIGH** | **Impact: HIGH** | **Status: ✅ IMPLEMENTED**
 
-Current settings may not be optimal for high traffic. Adjust based on expected load:
+✅ **IMPLEMENTED**: HikariCP connection pool is optimized in `application-dev1.properties`:
 
 ```properties
-# For high-traffic scenarios (adjust based on load testing)
 spring.datasource.hikari.maximum-pool-size=100
 spring.datasource.hikari.minimum-idle=20
 spring.datasource.hikari.max-lifetime=1800000
 spring.datasource.hikari.connection-timeout=20000
 spring.datasource.hikari.idle-timeout=600000
 spring.datasource.hikari.leak-detection-threshold=60000
-
-# Enable connection pool metrics
 spring.datasource.hikari.register-mbeans=true
+management.metrics.hikari.enabled=true
 ```
 
-**Formula**: `maximum-pool-size = ((core_count * 2) + effective_spindle_count)`
+**Note**: Production profile uses more conservative settings (50 max pool size). Adjust based on load testing results.
 
 ### 1.3 Database Read Replicas
 **Priority: MEDIUM** | **Impact: HIGH**
@@ -92,76 +67,74 @@ Implement read replicas for scaling read operations:
 
 ## 2. Caching Strategy Improvements
 
-### 2.1 Granular Cache Eviction
-**Priority: HIGH** | **Impact: HIGH**
+### 2.1 Service-Level Caching with Cache Eviction
+**Priority: HIGH** | **Impact: HIGH** | **Status: ✅ IMPLEMENTED**
 
-**Current Issue**: All cache entries are evicted on any write operation (lines 25, 31, 37, 44 in Controller).
+✅ **IMPLEMENTED**: Service-level caching has been implemented with `CacheHelperService`.
 
-**Solution**: Implement granular cache eviction:
+**Current Implementation**:
+- All caching logic moved to service layer (`CacheHelperService`)
+- Cache eviction uses `evictAll()` for cache namespaces (simpler than granular eviction)
+- Uses `SCAN` instead of `KEYS` for non-blocking eviction
+- Type-specific `ParameterizedTypeReference` for proper deserialization
+- Deterministic cache key generation with sorted parameters
 
-```java
-// Instead of clearing entire cache, evict specific entries
-@CacheEvict(value = CacheKeys.ADMINISTRATIVE_AREAS_FILTER, 
-            key = "#result.code", 
-            condition = "#result != null")
-public ResponseEntity<AdministrativeAreaResponseDto<String>> newOne(...) {
-    // implementation
-}
+**Location**: `src/main/java/com/wanfadger/AdministrativeareaApi/shared/util/CacheHelperService.java`
 
-// Or use cache tags/patterns for selective eviction
-@CacheEvict(value = CacheKeys.ADMINISTRATIVE_AREAS, 
-            key = "'region:' + #dto.partOfCode")
-```
+**Note**: Current approach evicts entire cache namespaces on writes. Granular eviction could be added later if needed for more fine-grained control.
 
 ### 2.2 Cache Key Optimization
-**Priority: MEDIUM** | **Impact: MEDIUM**
+**Priority: MEDIUM** | **Impact: MEDIUM** | **Status: ✅ IMPLEMENTED**
 
-**Current Issue**: Cache keys use `Map.toString()` which may not be deterministic.
+✅ **IMPLEMENTED**: Deterministic cache key generation implemented in `CacheHelperService.generateKey()`.
 
-**Solution**: Create explicit cache key generators:
+**Features**:
+- Sorted query parameters for consistent keys regardless of Map iteration order
+- Automatic uppercasing of `type` parameter values for consistency
+- Case-insensitive key matching (`equalsIgnoreCase`)
+- Format: `key1=value1&key2=value2` (sorted alphabetically)
 
-```java
-@Component
-public class CacheKeyGenerator implements KeyGenerator {
-    @Override
-    public Object generate(Object target, Method method, Object... params) {
-        Map<String, String> queryMap = (Map<String, String>) params[0];
-        return String.format("%s:%s:%s", 
-            queryMap.getOrDefault("type", ""),
-            queryMap.getOrDefault("code", ""),
-            queryMap.getOrDefault("partOf", ""));
-    }
-}
-```
+**Location**: `src/main/java/com/wanfadger/AdministrativeareaApi/shared/util/CacheHelperService.java` (line 243-259)
+
+**Example**: `type=REGION` and `type=region` both generate `type=REGION` in cache key.
 
 ### 2.3 Redis Connection Pooling
-**Priority: HIGH** | **Impact: MEDIUM**
+**Priority: HIGH** | **Impact: MEDIUM** | **Status: ✅ IMPLEMENTED**
 
-**Current Issue**: No connection pooling configuration for Redis.
+✅ **IMPLEMENTED**: Redis connection pooling configured in `CacheConfig.java`.
 
-**Solution**: Configure Jedis connection pool:
-
+**Configuration**:
 ```java
-@Bean
-public JedisConnectionFactory jedisConnectionFactory() {
-    JedisPoolConfig poolConfig = new JedisPoolConfig();
-    poolConfig.setMaxTotal(200);
-    poolConfig.setMaxIdle(50);
-    poolConfig.setMinIdle(10);
-    poolConfig.setTestOnBorrow(true);
-    poolConfig.setTestOnReturn(true);
-    
-    RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(host, port);
-    JedisConnectionFactory factory = new JedisConnectionFactory(config);
-    factory.setPoolConfig(poolConfig);
-    return factory;
-}
+JedisPoolConfig poolConfig = new JedisPoolConfig();
+poolConfig.setMaxTotal(200);      // Maximum connections
+poolConfig.setMaxIdle(50);         // Maximum idle connections
+poolConfig.setMinIdle(10);         // Minimum idle connections
+poolConfig.setMaxWaitMillis(5000); // Max wait time
+poolConfig.setTestOnBorrow(true);  // Test connection before use
+poolConfig.setTestOnReturn(true);  // Test connection on return
+poolConfig.setTestWhileIdle(true); // Test idle connections
+poolConfig.setBlockWhenExhausted(true); // Block when pool exhausted
 ```
 
-### 2.4 Cache Warming
-**Priority: LOW** | **Impact: LOW**
+**Location**: `src/main/java/com/wanfadger/AdministrativeareaApi/shared/beanConfig/CacheConfig.java` (line 34-55)
 
-Implement cache warming on application startup for frequently accessed data.
+**Additional**: Redis timeout set to 2 seconds for production readiness.
+
+### 2.4 Cache Warming
+**Priority: LOW** | **Impact: LOW** | **Status: ✅ IMPLEMENTED**
+
+✅ **IMPLEMENTED**: Cache warming implemented via `CacheWarmer` component.
+
+**Features**:
+- Automatically warms cache on application startup (`@EventListener(ApplicationReadyEvent.class)`)
+- Pre-loads frequently accessed data (all administrative area types)
+- Runs asynchronously to avoid blocking startup
+- Graceful error handling (logs warnings but doesn't fail startup)
+
+**Location**: `src/main/java/com/wanfadger/AdministrativeareaApi/shared/util/CacheWarmer.java`
+
+**Warmed Endpoints**:
+- `filterList` and `searchList` for all types (REGION, SUB REGION, LOCAL GOVERNMENT, COUNTY, SUB COUNTY, PARISH)
 
 ---
 
@@ -410,19 +383,25 @@ Consider API versioning for future changes.
 ## 9. Testing & Load Testing
 
 ### 9.1 Load Testing
-**Priority: HIGH** | **Impact: HIGH**
+**Priority: HIGH** | **Impact: HIGH** | **Status: ✅ IMPLEMENTED**
 
-Perform load testing with tools like:
-- JMeter
-- Gatling
-- k6
-- Locust
+✅ **IMPLEMENTED**: Load testing scripts created in `load-tests/` directory.
 
-**Test Scenarios**:
-- Peak load: 1000+ RPS
-- Sustained load: 500 RPS for 1 hour
-- Spike test: Sudden increase to 2000 RPS
-- Stress test: Find breaking point
+**Available Tools**:
+- **k6 Baseline Test**: Comprehensive PARISH endpoint testing with gradual load increase
+  - Location: `load-tests/k6-baseline-test.js`
+  - Tests 5 PARISH-related endpoints
+  - Configurable thresholds for slower endpoints
+- **curl Load Test Script**: Simple bash-based load testing
+  - Location: `load-tests/curl-load-test.sh`
+  - Quick smoke tests and basic performance checks
+
+**Documentation**: `load-tests/README.md` provides complete usage instructions.
+
+**Test Scenarios** (Ready to Execute):
+- Baseline performance: 10 → 50 → 100 users over 5 minutes
+- PARISH endpoint focus (performance bottleneck)
+- Configurable test data via environment variables
 
 ### 9.2 Performance Testing
 **Priority: HIGH** | **Impact: HIGH**
@@ -436,31 +415,31 @@ Perform load testing with tools like:
 ## 10. Implementation Priority
 
 ### Phase 1: Critical (Immediate)
-1. ✅ Add database indexes
-2. ✅ Optimize HikariCP connection pool
-3. ✅ Implement granular cache eviction
-4. ✅ Add pagination to list endpoints
-5. ✅ Fix UUID generation race condition
-6. ✅ Add application metrics/monitoring
+1. ✅ **COMPLETE** - Add database indexes (Flyway migration V1__add_performance_indexes.sql)
+2. ✅ **COMPLETE** - Optimize HikariCP connection pool (configured in application-dev1.properties)
+3. ✅ **COMPLETE** - Implement service-level caching with CacheHelperService
+4. ⚠️ **PENDING** - Add pagination to list endpoints
+5. ⚠️ **PENDING** - Fix UUID generation race condition (if still an issue)
+6. ✅ **COMPLETE** - Add application metrics/monitoring (Spring Boot Actuator + Prometheus)
 
 ### Phase 2: High Priority (Within 1-2 weeks)
-1. ✅ Implement Redis connection pooling
-2. ✅ Optimize complex queries (getParishByPartOf)
-3. ✅ Add database read replicas
-4. ✅ Implement rate limiting
-5. ✅ Configure async thread pool
+1. ✅ **COMPLETE** - Implement Redis connection pooling (JedisPoolConfig in CacheConfig)
+2. ⚠️ **PENDING** - Optimize complex queries (getParishByPartOf still uses multiple sequential queries)
+3. ⚠️ **PENDING** - Add database read replicas
+4. ⚠️ **PENDING** - Implement rate limiting
+5. ⚠️ **PENDING** - Configure async thread pool (virtual threads enabled, but custom executor not configured)
 
 ### Phase 3: Medium Priority (Within 1 month)
-1. ✅ Redis clustering
-2. ✅ Distributed tracing
-3. ✅ Load testing and optimization
-4. ✅ Batch operations optimization
+1. ⚠️ **PENDING** - Redis clustering (for high availability)
+2. ⚠️ **PENDING** - Distributed tracing (Spring Cloud Sleuth / Micrometer Tracing)
+3. ✅ **COMPLETE** - Load testing scripts created (k6 and curl scripts ready)
+4. ⚠️ **PENDING** - Batch operations optimization (Hibernate batch settings not configured)
 
 ### Phase 4: Low Priority (Ongoing)
-1. ✅ Cache warming
-2. ✅ Response compression
-3. ✅ Container optimization
-4. ✅ API versioning
+1. ✅ **COMPLETE** - Cache warming (CacheWarmer component implemented)
+2. ⚠️ **PENDING** - Response compression
+3. ⚠️ **PENDING** - Container optimization
+4. ⚠️ **PENDING** - API versioning
 
 ---
 
@@ -491,11 +470,22 @@ Track these metrics to measure success:
 
 ## Conclusion
 
-The Administrative Area API has a solid foundation with caching, connection pooling, and virtual threads. The main areas for improvement are:
+The Administrative Area API has a solid foundation with many optimizations already implemented:
 
-1. **Database optimization** (indexes, query optimization)
-2. **Caching strategy** (granular eviction, better keys)
-3. **Scalability** (horizontal scaling, read replicas)
-4. **Monitoring** (metrics, tracing, alerting)
+### ✅ Completed Optimizations
+1. **Database indexes** - All critical indexes added via Flyway migration (`V1__add_performance_indexes.sql`)
+2. **Connection pooling** - HikariCP and Redis (Jedis) pools configured and optimized
+3. **Service-level caching** - Clean JSON, type-safe deserialization, deterministic keys, SCAN-based eviction
+4. **Cache warming** - Automatic pre-loading on startup (`CacheWarmer` component)
+5. **Load testing tools** - k6 and curl scripts ready for use (`load-tests/` directory)
+6. **Monitoring** - Spring Boot Actuator with Prometheus metrics enabled
 
-Implementing these recommendations will enable the service to handle significantly higher loads while maintaining low latency and high availability.
+### ⚠️ Remaining Work
+1. **Query optimization** - Optimize `getParishByPartOf()` hierarchical queries (still uses multiple sequential queries)
+2. **Pagination** - Add to list endpoints for large datasets
+3. **Read replicas** - For horizontal read scaling
+4. **Rate limiting** - Prevent abuse
+5. **Distributed tracing** - For production observability (Spring Cloud Sleuth / Micrometer Tracing)
+6. **Batch operations** - Configure Hibernate batch settings for bulk inserts
+
+The service is **production-ready** with current optimizations. Remaining items can be prioritized based on actual load testing results and production metrics.
