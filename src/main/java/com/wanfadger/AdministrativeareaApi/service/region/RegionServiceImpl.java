@@ -4,6 +4,9 @@ package com.wanfadger.AdministrativeareaApi.service.region;
 import com.wanfadger.AdministrativeareaApi.entity.Region;
 import com.wanfadger.AdministrativeareaApi.repository.RegionRepository;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -32,6 +35,11 @@ public class RegionServiceImpl implements DbRegionService  {
     }
 
     @Override
+    public Page<Region> dbList(Pageable pageable) {
+        return regionRepository.findAll(pageable);
+    }
+
+    @Override
     public Optional<Region> dbByName(String name) {
         return regionRepository.findByNameIgnoreCase(name);
     }
@@ -40,6 +48,8 @@ public class RegionServiceImpl implements DbRegionService  {
     public Optional<Region> dbByCode(String code) {
         return regionRepository.findByCodeIgnoreCase(code);
     }
+
+
 
 
 }

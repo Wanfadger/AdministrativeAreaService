@@ -3,6 +3,9 @@ package com.wanfadger.AdministrativeareaApi.service.subRegion;
 import com.wanfadger.AdministrativeareaApi.entity.SubRegion;
 import com.wanfadger.AdministrativeareaApi.repository.SubRegionRepository;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,6 +30,11 @@ public class DbSubRegionServiceImpl implements DbSubRegionService{
     @Override
     public List<SubRegion> dbList() {
         return subRegionRepository.findAll();
+    }
+
+    @Override
+    public Page<SubRegion> dbList(Pageable pageable) {
+        return subRegionRepository.findAll(pageable);
     }
 
     @Override
