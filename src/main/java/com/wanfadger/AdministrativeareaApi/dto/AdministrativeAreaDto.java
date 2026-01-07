@@ -24,3 +24,4 @@ public class AdministrativeAreaDto implements Serializable {
     @Schema(description = "Longitude coordinate", example = "32.5825")
     private String longitude;
 }
+

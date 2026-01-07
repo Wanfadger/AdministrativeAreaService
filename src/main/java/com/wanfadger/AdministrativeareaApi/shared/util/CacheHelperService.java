@@ -34,15 +34,9 @@ public class CacheHelperService {
 
     private final RedisTemplate<?, ?> redisTemplate;
     
-    @Autowired(required = false)
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
-    private ObjectMapper getObjectMapper() {
-        if (objectMapper == null) {
-            objectMapper = new ObjectMapper();
-        }
-        return objectMapper;
-    }
+
 
     /**
      * Get cached value with explicit type conversion
@@ -59,15 +53,22 @@ public class CacheHelperService {
             Object cached = ((RedisTemplate<String, Object>) redisTemplate).opsForValue().get(fullKey);
             
             if (cached == null) {
+                log.debug("Cache MISS for key: '{}'", fullKey);
                 return null;
             }
             
+            log.debug("Cache HIT for key: '{}'", fullKey);
+            
             // Convert LinkedHashMap (from clean JSON) to target type
-            ObjectMapper mapper = getObjectMapper();
-            return mapper.convertValue(cached, 
-                mapper.getTypeFactory().constructType(typeReference.getType()));
+            // Using exact type-specific ParameterizedTypeReference ensures proper deserialization
+            // to the exact DTO type (e.g., SubRegionDto with all fields including 'region')
+            String json = objectMapper.writeValueAsString(cached);
+            T result = objectMapper.readValue(json, 
+                objectMapper.getTypeFactory().constructType(typeReference.getType()));
+            
+            return result;
         } catch (Exception e) {
-            log.warn("Failed to get cache value for key {}: {}", key, e.getMessage());
+            log.warn("Failed to get cache value for key '{}': {}", key, e.getMessage());
             return null;
         }
     }
@@ -86,7 +87,7 @@ public class CacheHelperService {
         try {
             String fullKey = cacheName + "::" + key;
             ((RedisTemplate<String, Object>) redisTemplate).opsForValue().set(fullKey, value, ttl, timeUnit);
-            log.debug("Cached value for key: {}", fullKey);
+            log.debug("Cached value for key: '{}'", fullKey);
         } catch (Exception e) {
             log.warn("Failed to cache value for key {}: {}", key, e.getMessage());
         }
@@ -178,12 +179,13 @@ public class CacheHelperService {
                     String key = cursor.next();
                     allKeys.add(key);
                     
-                    // Collect sample keys (first 10)
+                    // Collect sample keys (first 10) - all keys, not filtered
                     if (sampleKeys.size() < 10) {
                         sampleKeys.add(key);
                     }
                     
                     // Collect cache namespace keys (AdministrativeAreas, AdministrativeAreaFilters)
+                    // Only add if it's from our cache namespaces
                     if (key.contains("AdministrativeAreas") || key.contains("AdministrativeAreaFilters")) {
                         if (cacheNamespaceKeys.size() < 20) { // Limit to 20 examples
                             cacheNamespaceKeys.add(key);
@@ -196,8 +198,22 @@ public class CacheHelperService {
             
             result.put("totalKeys", allKeys.size());
             result.put("sampleKeys", sampleKeys);
-            result.put("cacheNamespaceKeys", cacheNamespaceKeys);
-            result.put("cacheNamespaceKeyCount", cacheNamespaceKeys.size());
+            
+            // Check if sampleKeys and cacheNamespaceKeys are the same (order-independent)
+            // If they're identical, we don't need to return both to avoid redundancy
+            Set<String> sampleKeysSet = new HashSet<>(sampleKeys);
+            Set<String> cacheNamespaceKeysSet = new HashSet<>(cacheNamespaceKeys);
+            
+            if (sampleKeysSet.equals(cacheNamespaceKeysSet)) {
+                // They're the same - all sample keys are from our cache namespaces
+                result.put("cacheNamespaceKeyCount", cacheNamespaceKeys.size());
+                result.put("note", "All sample keys are from cache namespaces");
+            } else {
+                // They're different - include both
+                result.put("cacheNamespaceKeys", cacheNamespaceKeys);
+                result.put("cacheNamespaceKeyCount", cacheNamespaceKeys.size());
+            }
+            
             result.put("status", "success");
             
         } catch (Exception e) {

@@ -16,8 +16,8 @@ public interface AdministrativeAreaService {
     AdministrativeAreaResponseDto<List<CodeNameDto>> filterList(Map<String ,String> queryMap);
     AdministrativeAreaResponseDto<List<CodeNameDto>> getParishByPartOf(Map<String, String> queryMap);
 
-    AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> searchList(Map<String ,String> queryMap);
-    AdministrativeAreaResponseDto<? extends AdministrativeAreaDto> searchOne(Map<String, String> queryMap);
+    AdministrativeAreaResponseDto<?> searchList(Map<String ,String> queryMap);
+    AdministrativeAreaResponseDto<?> searchOne(Map<String, String> queryMap);
 
 
     AdministrativeAreaResponseDto<String> upload(List<AdministrativeAreaExcelDto> administrativeAreaExcelDtos);

@@ -218,7 +218,7 @@ public class AdministrativeAreaControllerImproved {
             @ApiResponse(responseCode = "400", description = "Missing required parameters")
     })
     @GetMapping(value = "/searchList", produces = MediaType.APPLICATION_JSON_VALUE)
-    public AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> searchList(
+    public AdministrativeAreaResponseDto<?> searchList(
             @Parameter(description = "Query parameters: 'type' (required), 'partOf' (optional)", required = true, example = "type=REGION")
             @RequestParam Map<String, String> queryMap) {
         return administrativeAreaService.searchList(queryMap);
@@ -239,7 +239,7 @@ public class AdministrativeAreaControllerImproved {
             @ApiResponse(responseCode = "400", description = "Missing required parameters")
     })
     @GetMapping(value = "/searchOne", produces = MediaType.APPLICATION_JSON_VALUE)
-    public AdministrativeAreaResponseDto<? extends AdministrativeAreaDto> searchOne(
+    public AdministrativeAreaResponseDto<?> searchOne(
             @Parameter(description = "Query parameters: 'type' (required), 'code' (required), 'partOf' (optional)", required = true, example = "type=REGION&code=001")
             @RequestParam Map<String, String> queryMap) {
         return administrativeAreaService.searchOne(queryMap);
