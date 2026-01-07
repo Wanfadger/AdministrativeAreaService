@@ -125,7 +125,7 @@ public class AdministrativeAreaController {
     @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS_FILTER, 
                keyGenerator = "queryMapKeyGenerator", 
                cacheManager = "weekCacheManager",
-               condition = "#result != null && #result.status == true")
+               unless = "#result == null || #result.status != true")
     public AdministrativeAreaResponseDto<CodeNameDto> filterOne(
             @Parameter(description = "Query parameters: 'type' (required), 'code' (required), 'partOf' (optional)", required = true, example = "type=REGION&code=001")
             @RequestParam Map<String, String> queryMap) {
@@ -147,7 +147,7 @@ public class AdministrativeAreaController {
     @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS_FILTER, 
                keyGenerator = "queryMapKeyGenerator", 
                cacheManager = "weekCacheManager",
-               condition = "#result != null && #result.status == true")
+               unless = "#result == null || #result.status != true")
     public AdministrativeAreaResponseDto<List<CodeNameDto>> filterList(
             @Parameter(description = "Query parameters: 'type' (required), 'partOf' (optional)", required = true, example = "type=REGION")
             @RequestParam Map<String, String> queryMap ) {
@@ -167,7 +167,7 @@ public class AdministrativeAreaController {
     @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS, 
                keyGenerator = "queryMapKeyGenerator", 
                cacheManager = "weekCacheManager",
-               condition = "#result != null && #result.status == true")
+               unless = "#result == null || #result.status != true")
     public AdministrativeAreaResponseDto<List<CodeNameDto>> getParishByPartOf(
             @Parameter(description = "Query parameters: 'type' (required - parent type), 'partOfCode' (required - parent code)", required = true, example = "type=REGION&partOfCode=001")
             @RequestParam Map<String, String> queryMap) {
@@ -188,7 +188,7 @@ public class AdministrativeAreaController {
     @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS, 
                keyGenerator = "queryMapKeyGenerator", 
                cacheManager = "hourCacheManager",
-               condition = "#result != null && #result.status == true")
+               unless = "#result == null || #result.status != true")
     public AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> searchList(
             @Parameter(description = "Query parameters: 'type' (required), 'partOf' (optional)", required = true, example = "type=REGION")
             @RequestParam Map<String, String> queryMap) {
@@ -211,7 +211,7 @@ public class AdministrativeAreaController {
     @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS, 
                keyGenerator = "queryMapKeyGenerator", 
                cacheManager = "hourCacheManager",
-               condition = "#result != null && #result.status == true")
+               unless = "#result == null || #result.status != true")
     public AdministrativeAreaResponseDto<? extends AdministrativeAreaDto> searchOne(
             @Parameter(description = "Query parameters: 'type' (required), 'code' (required), 'partOf' (optional)", required = true, example = "type=REGION&code=001")
             @RequestParam Map<String, String> queryMap) {
