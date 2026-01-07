@@ -83,64 +83,17 @@ public class CacheConfig {
                 .build();
     }
 
-    @Bean("hourCacheManager")
-    public RedisCacheManager hourCacheManager(RedisConnectionFactory connectionFactory) {
-        Jackson2JsonRedisSerializer<Object> serializer = createJsonSerializer();
-        
-        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig() //
-                .entryTtl(Duration.ofHours(1)) //
-                .disableCachingNullValues()
-                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer));
-
-        return RedisCacheManager.builder(connectionFactory) //
-                .cacheDefaults(config) //
-                .build();
-    }
-
-    @Bean("_24HourCacheManager")
-    public RedisCacheManager _24HourCacheManager(RedisConnectionFactory connectionFactory) {
-        Jackson2JsonRedisSerializer<Object> serializer = createJsonSerializer();
-        
-        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig() //
-                .entryTtl(Duration.ofDays(1)) //
-                .disableCachingNullValues()
-                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer));
-
-        return RedisCacheManager.builder(connectionFactory) //
-                .cacheDefaults(config) //
-                .build();
-    }
-
-    @Bean("weekCacheManager")
-    public RedisCacheManager weekCacheManager(RedisConnectionFactory connectionFactory) {
-        Jackson2JsonRedisSerializer<Object> serializer = createJsonSerializer();
-        
-        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig() //
-                .entryTtl(Duration.ofDays(7)) //
-                .disableCachingNullValues()
-                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer));
-
-        return RedisCacheManager.builder(connectionFactory) //
-                .cacheDefaults(config) //
-                .build();
-    }
-
-
-    @Bean("monthCacheManager")
-    public RedisCacheManager monthCacheManager(RedisConnectionFactory connectionFactory) {
-        Jackson2JsonRedisSerializer<Object> serializer = createJsonSerializer();
-        
-        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig() //
-                .entryTtl(Duration.ofDays(30)) //
-                .disableCachingNullValues()
-                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer));
-
-        return RedisCacheManager.builder(connectionFactory) //
-                .cacheDefaults(config) //
-                .build();
-    }
+    /**
+     * Note: Additional cache managers (hourCacheManager, weekCacheManager, etc.) were removed
+     * because we now use service-level caching with explicit TTLs via CacheHelperService.
+     * 
+     * The primary cacheManager is kept for:
+     * - CacheTestController (uses @Cacheable)
+     * - MonitoringConfig (health checks)
+     * 
+     * Service-level caching uses RedisTemplate directly with keys like:
+     * "AdministrativeAreas::searchList:type=REGION"
+     * 
+     * Cache eviction is handled via CacheHelperService.evictAll() in service methods.
+     */
 }

@@ -15,7 +15,7 @@ import com.wanfadger.AdministrativeareaApi.shared.administrativeareaexceptions.M
 import com.wanfadger.AdministrativeareaApi.shared.administrativeareaexceptions.NotFoundException;
 import com.wanfadger.AdministrativeareaApi.shared.reponses.AdministrativeAreaResponseDto;
 import com.wanfadger.AdministrativeareaApi.shared.util.CacheKeys;
-import com.wanfadger.AdministrativeareaApi.shared.util.ServiceLevelCacheHelper;
+import com.wanfadger.AdministrativeareaApi.shared.util.CacheHelperService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
@@ -40,7 +40,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     private final DbCountyService dbCountyService;
     private final DbSubCountyService dbSubCountyService;
     private final DbParishService dbParishService;
-    private final ServiceLevelCacheHelper cacheHelper;
+    private final CacheHelperService cacheHelper;
 
     private boolean notNullEmpty(String value) {
         return value != null && !value.isEmpty();
@@ -120,6 +120,10 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 Region region = convertDtoRegion(dto, administrativeAreaType);
 
                 dbRegionService.dbNew(region);
+                
+                // Evict service-level cache after write operation
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS);
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS_FILTER);
 
                 yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>("success", "success"), HttpStatus.CREATED);
             }
@@ -137,6 +141,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 subRegion.setRegion(region);
 
                 dbSubRegionService.dbNew(subRegion);
+                
+                // Evict service-level cache after write operation
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS);
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS_FILTER);
+                
                 yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>("success", "success"), HttpStatus.CREATED);
             }
             case LOCALGOVERNMENT -> {
@@ -154,6 +163,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 localGovernment.setSubRegion(subRegion);
 
                 dbLocalGovernmentService.dbNew(localGovernment);
+                
+                // Evict service-level cache after write operation
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS);
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS_FILTER);
+                
                 yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>("success", "success"), HttpStatus.CREATED);
             }
 
@@ -172,6 +186,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 county.setLocalGovernment(localGovernment);
 
                 dbCountyService.dbNew(county);
+                
+                // Evict service-level cache after write operation
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS);
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS_FILTER);
+                
                 yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>("success", "success"), HttpStatus.CREATED);
             }
 
@@ -190,6 +209,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 subCounty.setCounty(county);
 
                 dbSubCountyService.dbNew(subCounty);
+                
+                // Evict service-level cache after write operation
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS);
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS_FILTER);
+                
                 yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>("success", "success"), HttpStatus.CREATED);
             }
 
@@ -208,6 +232,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 parish.setSubCounty(subCounty);
 
                 dbParishService.dbNew(parish);
+                
+                // Evict service-level cache after write operation
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS);
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS_FILTER);
+                
                 yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>("success", "success"), HttpStatus.CREATED);
             }
         };
@@ -284,6 +313,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
 
                 dbRegionService.dbNew(regions);
+                
+                // Evict service-level cache after write operation
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS);
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS_FILTER);
+                
                 yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>("success", "successfully added " + regions.size() + " administrative areas"), HttpStatus.CREATED);
 
             }
@@ -299,6 +333,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
 
                 dbSubRegionService.dbNew(subRegions);
+                
+                // Evict service-level cache after write operation
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS);
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS_FILTER);
+                
                 yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>("success", "successfully added " + subRegions.size() + " administrative areas"), HttpStatus.CREATED);
             }
             case LOCALGOVERNMENT -> {
@@ -313,6 +352,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
 
                 dbLocalGovernmentService.dbNew(localGovernments);
+                
+                // Evict service-level cache after write operation
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS);
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS_FILTER);
+                
                 yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>("success", "successfully added " + localGovernments.size() + " administrative areas"), HttpStatus.CREATED);
             }
 
@@ -328,6 +372,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
 
                 dbCountyService.dbNew(counties);
+                
+                // Evict service-level cache after write operation
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS);
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS_FILTER);
+                
                 yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>("success", "successfully added " + counties.size() + " administrative areas"), HttpStatus.CREATED);
             }
 
@@ -343,6 +392,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
 
                 dbSubCountyService.dbNew(subCounties);
+                
+                // Evict service-level cache after write operation
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS);
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS_FILTER);
+                
                 yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>("success", "successfully added " + subCounties.size() + " administrative areas"), HttpStatus.CREATED);
             }
 
@@ -358,6 +412,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
 
                 dbParishService.dbNew(parishes);
+                
+                // Evict service-level cache after write operation
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS);
+                cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS_FILTER);
+                
                 yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>("success", "successfully added " + parishes.size() + " administrative areas"), HttpStatus.CREATED);
 
             }
@@ -368,7 +427,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     @Override
     public AdministrativeAreaResponseDto<CodeNameDto> filterOne(Map<String, String> queryMap) {
         // Check cache first
-        String cacheKey = ServiceLevelCacheHelper.generateKey("filterOne", queryMap);
+        String cacheKey = CacheHelperService.generateKey("filterOne", queryMap);
         ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDto>> typeRef = 
             new ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDto>>() {};
         
@@ -451,7 +510,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     @Override
     public AdministrativeAreaResponseDto<List<CodeNameDto>> filterList(Map<String, String> queryMap) {
         // Check cache first
-        String cacheKey = ServiceLevelCacheHelper.generateKey("filterList", queryMap);
+        String cacheKey = CacheHelperService.generateKey("filterList", queryMap);
         ParameterizedTypeReference<AdministrativeAreaResponseDto<List<CodeNameDto>>> typeRef = 
             new ParameterizedTypeReference<AdministrativeAreaResponseDto<List<CodeNameDto>>>() {};
         
@@ -556,7 +615,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     @Override
     public AdministrativeAreaResponseDto<List<CodeNameDto>> getParishByPartOf(Map<String, String> queryMap) {
         // Check cache first
-        String cacheKey = ServiceLevelCacheHelper.generateKey("getParishByPartOf", queryMap);
+        String cacheKey = CacheHelperService.generateKey("getParishByPartOf", queryMap);
         ParameterizedTypeReference<AdministrativeAreaResponseDto<List<CodeNameDto>>> typeRef = 
             new ParameterizedTypeReference<AdministrativeAreaResponseDto<List<CodeNameDto>>>() {};
         
@@ -673,7 +732,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     @Override
     public AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> searchList(Map<String, String> queryMap) {
         // Check cache first
-        String cacheKey = ServiceLevelCacheHelper.generateKey("searchList", queryMap);
+        String cacheKey = CacheHelperService.generateKey("searchList", queryMap);
         ParameterizedTypeReference<AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>>> typeRef = 
             new ParameterizedTypeReference<AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>>>() {};
         
@@ -765,7 +824,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     @Override
     public AdministrativeAreaResponseDto<? extends AdministrativeAreaDto> searchOne(Map<String, String> queryMap) {
         // Check cache first
-        String cacheKey = ServiceLevelCacheHelper.generateKey("searchOne", queryMap);
+        String cacheKey = CacheHelperService.generateKey("searchOne", queryMap);
         ParameterizedTypeReference<AdministrativeAreaResponseDto<? extends AdministrativeAreaDto>> typeRef = 
             new ParameterizedTypeReference<AdministrativeAreaResponseDto<? extends AdministrativeAreaDto>>() {};
         
@@ -831,6 +890,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     public AdministrativeAreaResponseDto<String> upload(List<AdministrativeAreaExcelDto> dtoList) {
 //        System.out.println(dtoList);
         uploadAdministrativeAreas(dtoList);
+        
+        // Evict service-level cache after bulk upload
+        cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS);
+        cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS_FILTER);
+        
         return new AdministrativeAreaResponseDto<>("Successfully updated " + dtoList.size());
     }
 
@@ -1142,7 +1206,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
         AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
 
-        return switch (administrativeAreaType) {
+        AdministrativeAreaResponseDto<String> result = switch (administrativeAreaType) {
             case REGION -> {
                 Region region = dbRegionService.dbByCode(dto.getCode()).orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
                 if (notNullEmpty(dto.getName())) {
@@ -1315,7 +1379,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 yield new AdministrativeAreaResponseDto<>("SUCCESS");
             }
         };
-
+        
+        // Evict service-level cache after update operation
+        cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS);
+        cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS_FILTER);
+        
+        return result;
     }
 
 

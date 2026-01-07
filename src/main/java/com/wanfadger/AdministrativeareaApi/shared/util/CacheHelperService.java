@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ServiceLevelCacheHelper {
+public class CacheHelperService {
 
     private final RedisTemplate<?, ?> redisTemplate;
     

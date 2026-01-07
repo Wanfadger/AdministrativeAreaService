@@ -3,7 +3,6 @@ package com.wanfadger.AdministrativeareaApi.controller;
 import com.wanfadger.AdministrativeareaApi.dto.*;
 import com.wanfadger.AdministrativeareaApi.service.administrativearea.AdministrativeAreaService;
 import com.wanfadger.AdministrativeareaApi.shared.reponses.AdministrativeAreaResponseDto;
-import com.wanfadger.AdministrativeareaApi.shared.util.CacheKeys;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -13,7 +12,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -42,7 +40,6 @@ public class AdministrativeAreaController {
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @PostMapping(value = "/one", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-    @CacheEvict(value = {CacheKeys.ADMINISTRATIVE_AREAS , CacheKeys.ADMINISTRATIVE_AREAS_FILTER}, allEntries = true)
     public ResponseEntity<AdministrativeAreaResponseDto<String>> newOne(
             @Parameter(description = "Query parameters: 'type' (required) - Administrative area type", required = true, example = "type=REGION")
             @RequestParam Map<String, String> queryMap, 
@@ -61,7 +58,6 @@ public class AdministrativeAreaController {
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @PostMapping(value = "/list", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-    @CacheEvict(value = {CacheKeys.ADMINISTRATIVE_AREAS , CacheKeys.ADMINISTRATIVE_AREAS_FILTER}, allEntries = true)
     public ResponseEntity<AdministrativeAreaResponseDto<String>> newList(
             @Parameter(description = "Query parameters: 'type' (required) - Administrative area type", required = true)
             @RequestParam Map<String, String> queryMap, 
@@ -80,7 +76,6 @@ public class AdministrativeAreaController {
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @PostMapping(value = "/upload", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-    @CacheEvict(value = {CacheKeys.ADMINISTRATIVE_AREAS , CacheKeys.ADMINISTRATIVE_AREAS_FILTER}, allEntries = true)
     public AdministrativeAreaResponseDto<String> upload(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "List of administrative areas in Excel format", required = true)
             @RequestBody List<AdministrativeAreaExcelDto> administrativeAreaExcelDtos) {
@@ -99,7 +94,6 @@ public class AdministrativeAreaController {
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @PutMapping(value = "/one", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-    @CacheEvict(value = {CacheKeys.ADMINISTRATIVE_AREAS , CacheKeys.ADMINISTRATIVE_AREAS_FILTER}, allEntries = true)
     public AdministrativeAreaResponseDto<String> updateOne(
             @Parameter(description = "Query parameters: 'type' (required) - Administrative area type", required = true)
             @RequestParam Map<String, String> queryMap, 
