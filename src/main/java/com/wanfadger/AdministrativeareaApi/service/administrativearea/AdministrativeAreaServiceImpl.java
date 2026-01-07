@@ -426,7 +426,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public AdministrativeAreaResponseDto<CodeNameDto> filterOne(Map<String, String> queryMap) {
+    public AdministrativeAreaResponseDto<CodeNameDTO> filterOne(Map<String, String> queryMap) {
         String cacheKey = CacheHelperService.generateKey(queryMap);
         String type = queryMap.get("type");
         String code = queryMap.get("code");
@@ -446,9 +446,9 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         switch (administrativeAreaType) {
             case REGION -> {
                 // Check cache first
-                ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDto>> typeRef = 
-                    new ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDto>>() {};
-                AdministrativeAreaResponseDto<CodeNameDto> cached = 
+                ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDTO>> typeRef = 
+                    new ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDTO>>() {};
+                AdministrativeAreaResponseDto<CodeNameDTO> cached = 
                     cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS_FILTER, cacheKey, typeRef);
                 
                 if (cached != null) {
@@ -460,7 +460,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area Code");
                 }
                 Region region = dbRegionService.dbByCode(code).orElseThrow(() -> new NotFoundException("Region not found"));
-                AdministrativeAreaResponseDto<CodeNameDto> result = new AdministrativeAreaResponseDto<>(new CodeNameDto(region.getCode(), region.getName()));
+                AdministrativeAreaResponseDto<CodeNameDTO> result = new AdministrativeAreaResponseDto<>(new CodeNameDTO(region.getCode(), region.getName()));
                 
                 // Cache the result (7 days TTL)
                 if (result.isStatus()) {
@@ -471,9 +471,9 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             }
             case SUBREGION -> {
                 // Check cache first
-                ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDto>> typeRef = 
-                    new ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDto>>() {};
-                AdministrativeAreaResponseDto<CodeNameDto> cached = 
+                ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDTO>> typeRef = 
+                    new ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDTO>>() {};
+                AdministrativeAreaResponseDto<CodeNameDTO> cached = 
                     cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS_FILTER, cacheKey, typeRef);
                 
                 if (cached != null) {
@@ -485,7 +485,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area Code");
                 }
                 SubRegion subRegion = dbSubRegionService.dbByCode(code).orElseThrow(() -> new NotFoundException("SubRegion not found"));
-                AdministrativeAreaResponseDto<CodeNameDto> result = new AdministrativeAreaResponseDto<>(new CodeNameDto(subRegion.getCode(), subRegion.getName()));
+                AdministrativeAreaResponseDto<CodeNameDTO> result = new AdministrativeAreaResponseDto<>(new CodeNameDTO(subRegion.getCode(), subRegion.getName()));
                 
                 // Cache the result (7 days TTL)
                 if (result.isStatus()) {
@@ -496,9 +496,9 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             }
             case LOCALGOVERNMENT -> {
                 // Check cache first
-                ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDto>> typeRef = 
-                    new ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDto>>() {};
-                AdministrativeAreaResponseDto<CodeNameDto> cached = 
+                ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDTO>> typeRef = 
+                    new ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDTO>>() {};
+                AdministrativeAreaResponseDto<CodeNameDTO> cached = 
                     cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS_FILTER, cacheKey, typeRef);
                 
                 if (cached != null) {
@@ -510,7 +510,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area Code");
                 }
                 LocalGovernment localGovernment = dbLocalGovernmentService.dbByCode(code).orElseThrow(() -> new NotFoundException("LocalGovernment not found"));
-                AdministrativeAreaResponseDto<CodeNameDto> result = new AdministrativeAreaResponseDto<>(new CodeNameDto(localGovernment.getCode(), localGovernment.getName()));
+                AdministrativeAreaResponseDto<CodeNameDTO> result = new AdministrativeAreaResponseDto<>(new CodeNameDTO(localGovernment.getCode(), localGovernment.getName()));
                 
                 // Cache the result (7 days TTL)
                 if (result.isStatus()) {
@@ -521,9 +521,9 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             }
             case COUNTY -> {
                 // Check cache first
-                ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDto>> typeRef = 
-                    new ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDto>>() {};
-                AdministrativeAreaResponseDto<CodeNameDto> cached = 
+                ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDTO>> typeRef = 
+                    new ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDTO>>() {};
+                AdministrativeAreaResponseDto<CodeNameDTO> cached = 
                     cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS_FILTER, cacheKey, typeRef);
                 
                 if (cached != null) {
@@ -535,7 +535,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area Code");
                 }
                 County county = dbCountyService.dbByCode(code).orElseThrow(() -> new NotFoundException("County not found"));
-                AdministrativeAreaResponseDto<CodeNameDto> result = new AdministrativeAreaResponseDto<>(new CodeNameDto(county.getCode(), county.getName()));
+                AdministrativeAreaResponseDto<CodeNameDTO> result = new AdministrativeAreaResponseDto<>(new CodeNameDTO(county.getCode(), county.getName()));
                 
                 // Cache the result (7 days TTL)
                 if (result.isStatus()) {
@@ -546,9 +546,9 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             }
             case SUBCOUNTY -> {
                 // Check cache first
-                ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDto>> typeRef = 
-                    new ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDto>>() {};
-                AdministrativeAreaResponseDto<CodeNameDto> cached = 
+                ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDTO>> typeRef = 
+                    new ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDTO>>() {};
+                AdministrativeAreaResponseDto<CodeNameDTO> cached = 
                     cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS_FILTER, cacheKey, typeRef);
                 
                 if (cached != null) {
@@ -560,7 +560,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area Code");
                 }
                 SubCounty subCounty = dbSubCountyService.dbByCode(code).orElseThrow(() -> new NotFoundException("SubCounty not found"));
-                AdministrativeAreaResponseDto<CodeNameDto> result = new AdministrativeAreaResponseDto<>(new CodeNameDto(subCounty.getCode(), subCounty.getName()));
+                AdministrativeAreaResponseDto<CodeNameDTO> result = new AdministrativeAreaResponseDto<>(new CodeNameDTO(subCounty.getCode(), subCounty.getName()));
                 
                 // Cache the result (7 days TTL)
                 if (result.isStatus()) {
@@ -571,9 +571,9 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             }
             case PARISH -> {
                 // Check cache first
-                ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDto>> typeRef = 
-                    new ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDto>>() {};
-                AdministrativeAreaResponseDto<CodeNameDto> cached = 
+                ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDTO>> typeRef = 
+                    new ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDTO>>() {};
+                AdministrativeAreaResponseDto<CodeNameDTO> cached = 
                     cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS_FILTER, cacheKey, typeRef);
                 
                 if (cached != null) {
@@ -585,7 +585,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area Code");
                 }
                 Parish parish = dbParishService.dbByCode(code).orElseThrow(() -> new NotFoundException("Parish not found"));
-                AdministrativeAreaResponseDto<CodeNameDto> result = new AdministrativeAreaResponseDto<>(new CodeNameDto(parish.getCode(), parish.getName()));
+                AdministrativeAreaResponseDto<CodeNameDTO> result = new AdministrativeAreaResponseDto<>(new CodeNameDTO(parish.getCode(), parish.getName()));
                 
                 // Cache the result (7 days TTL)
                 if (result.isStatus()) {
@@ -599,7 +599,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public AdministrativeAreaResponseDto<List<CodeNameDto>> filterList(Map<String, String> queryMap) {
+    public AdministrativeAreaResponseDto<List<CodeNameDTO>> filterList(Map<String, String> queryMap) {
         String cacheKey = CacheHelperService.generateKey(queryMap);
         String type = queryMap.get("type");
         String partOf = queryMap.get("partOf");
@@ -616,13 +616,13 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
 
         // Check cache and fetch from database using independent switch blocks
-        // All cases return the same type (CodeNameDto), so we use the same ParameterizedTypeReference
-        ParameterizedTypeReference<AdministrativeAreaResponseDto<List<CodeNameDto>>> typeRef = 
-            new ParameterizedTypeReference<AdministrativeAreaResponseDto<List<CodeNameDto>>>() {};
+        // All cases return the same type (CodeNameDTO), so we use the same ParameterizedTypeReference
+        ParameterizedTypeReference<AdministrativeAreaResponseDto<List<CodeNameDTO>>> typeRef = 
+            new ParameterizedTypeReference<AdministrativeAreaResponseDto<List<CodeNameDTO>>>() {};
 
         switch (administrativeAreaType) {
             case REGION -> {
-                AdministrativeAreaResponseDto<List<CodeNameDto>> cached = 
+                AdministrativeAreaResponseDto<List<CodeNameDTO>> cached = 
                     cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS_FILTER, cacheKey, typeRef);
                 
                 if (cached != null) {
@@ -630,11 +630,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 }
                 
                 // Cache miss - fetch from database
-                List<CodeNameDto> codeNameDtoList = dbRegionService.dbList().parallelStream()
-                    .map(region -> new CodeNameDto(region.getCode(), region.getName()))
-                    .sorted(Comparator.comparing(CodeNameDto::getCode))
+                List<CodeNameDTO> codeNameDtoList = dbRegionService.dbList().parallelStream()
+                    .map(region -> new CodeNameDTO(region.getCode(), region.getName()))
+                    .sorted(Comparator.comparing(CodeNameDTO::getCode))
                     .toList();
-                AdministrativeAreaResponseDto<List<CodeNameDto>> result = new AdministrativeAreaResponseDto<>(codeNameDtoList);
+                AdministrativeAreaResponseDto<List<CodeNameDTO>> result = new AdministrativeAreaResponseDto<>(codeNameDtoList);
                 
                 // Cache the result (7 days TTL)
                 if (result.isStatus()) {
@@ -644,7 +644,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 return result;
             }
             case SUBREGION -> {
-                AdministrativeAreaResponseDto<List<CodeNameDto>> cached = 
+                AdministrativeAreaResponseDto<List<CodeNameDTO>> cached = 
                     cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS_FILTER, cacheKey, typeRef);
                 
                 if (cached != null) {
@@ -656,11 +656,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area partOf");
                 }
                 
-                List<CodeNameDto> codeNameDtoList = dbSubRegionService.dbByRegionCode(partOf).parallelStream()
-                    .map(subRegion -> new CodeNameDto(subRegion.getCode(), subRegion.getName()))
-                    .sorted(Comparator.comparing(CodeNameDto::getCode))
+                List<CodeNameDTO> codeNameDtoList = dbSubRegionService.dbByRegionCode(partOf).parallelStream()
+                    .map(subRegion -> new CodeNameDTO(subRegion.getCode(), subRegion.getName()))
+                    .sorted(Comparator.comparing(CodeNameDTO::getCode))
                     .toList();
-                AdministrativeAreaResponseDto<List<CodeNameDto>> result = new AdministrativeAreaResponseDto<>(codeNameDtoList);
+                AdministrativeAreaResponseDto<List<CodeNameDTO>> result = new AdministrativeAreaResponseDto<>(codeNameDtoList);
                 
                 // Cache the result (7 days TTL)
                 if (result.isStatus()) {
@@ -670,7 +670,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 return result;
             }
             case LOCALGOVERNMENT -> {
-                AdministrativeAreaResponseDto<List<CodeNameDto>> cached = 
+                AdministrativeAreaResponseDto<List<CodeNameDTO>> cached = 
                     cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS_FILTER, cacheKey, typeRef);
                 
                 if (cached != null) {
@@ -682,11 +682,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area partOf");
                 }
                 
-                List<CodeNameDto> codeNameDtoList = dbLocalGovernmentService.dbBySubRegionCode(partOf).parallelStream()
-                    .map(localGovernment -> new CodeNameDto(localGovernment.getCode(), localGovernment.getName()))
-                    .sorted(Comparator.comparing(CodeNameDto::getCode))
+                List<CodeNameDTO> codeNameDtoList = dbLocalGovernmentService.dbBySubRegionCode(partOf).parallelStream()
+                    .map(localGovernment -> new CodeNameDTO(localGovernment.getCode(), localGovernment.getName()))
+                    .sorted(Comparator.comparing(CodeNameDTO::getCode))
                     .toList();
-                AdministrativeAreaResponseDto<List<CodeNameDto>> result = new AdministrativeAreaResponseDto<>(codeNameDtoList);
+                AdministrativeAreaResponseDto<List<CodeNameDTO>> result = new AdministrativeAreaResponseDto<>(codeNameDtoList);
                 
                 // Cache the result (7 days TTL)
                 if (result.isStatus()) {
@@ -696,7 +696,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 return result;
             }
             case COUNTY -> {
-                AdministrativeAreaResponseDto<List<CodeNameDto>> cached = 
+                AdministrativeAreaResponseDto<List<CodeNameDTO>> cached = 
                     cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS_FILTER, cacheKey, typeRef);
                 
                 if (cached != null) {
@@ -708,11 +708,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area partOf");
                 }
                 
-                List<CodeNameDto> codeNameDtoList = dbCountyService.dbAllByLocalGovernmentCode(partOf).parallelStream()
-                    .map(county -> new CodeNameDto(county.getCode(), county.getName()))
-                    .sorted(Comparator.comparing(CodeNameDto::getCode))
+                List<CodeNameDTO> codeNameDtoList = dbCountyService.dbAllByLocalGovernmentCode(partOf).parallelStream()
+                    .map(county -> new CodeNameDTO(county.getCode(), county.getName()))
+                    .sorted(Comparator.comparing(CodeNameDTO::getCode))
                     .toList();
-                AdministrativeAreaResponseDto<List<CodeNameDto>> result = new AdministrativeAreaResponseDto<>(codeNameDtoList);
+                AdministrativeAreaResponseDto<List<CodeNameDTO>> result = new AdministrativeAreaResponseDto<>(codeNameDtoList);
                 
                 // Cache the result (7 days TTL)
                 if (result.isStatus()) {
@@ -722,7 +722,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 return result;
             }
             case SUBCOUNTY -> {
-                AdministrativeAreaResponseDto<List<CodeNameDto>> cached = 
+                AdministrativeAreaResponseDto<List<CodeNameDTO>> cached = 
                     cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS_FILTER, cacheKey, typeRef);
                 
                 if (cached != null) {
@@ -734,11 +734,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area partOf");
                 }
                 
-                List<CodeNameDto> codeNameDtoList = dbSubCountyService.dbByCountyCode(partOf).parallelStream()
-                    .map(subCounty -> new CodeNameDto(subCounty.getCode(), subCounty.getName()))
-                    .sorted(Comparator.comparing(CodeNameDto::getCode))
+                List<CodeNameDTO> codeNameDtoList = dbSubCountyService.dbByCountyCode(partOf).parallelStream()
+                    .map(subCounty -> new CodeNameDTO(subCounty.getCode(), subCounty.getName()))
+                    .sorted(Comparator.comparing(CodeNameDTO::getCode))
                     .toList();
-                AdministrativeAreaResponseDto<List<CodeNameDto>> result = new AdministrativeAreaResponseDto<>(codeNameDtoList);
+                AdministrativeAreaResponseDto<List<CodeNameDTO>> result = new AdministrativeAreaResponseDto<>(codeNameDtoList);
                 
                 // Cache the result (7 days TTL)
                 if (result.isStatus()) {
@@ -748,7 +748,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 return result;
             }
             case PARISH -> {
-                AdministrativeAreaResponseDto<List<CodeNameDto>> cached = 
+                AdministrativeAreaResponseDto<List<CodeNameDTO>> cached = 
                     cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS_FILTER, cacheKey, typeRef);
                 
                 if (cached != null) {
@@ -760,11 +760,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area partOf");
                 }
                 
-                List<CodeNameDto> codeNameDtoList = dbParishService.dbBySubCountyCode(partOf).parallelStream()
-                    .map(parish -> new CodeNameDto(parish.getCode(), parish.getName()))
-                    .sorted(Comparator.comparing(CodeNameDto::getCode))
+                List<CodeNameDTO> codeNameDtoList = dbParishService.dbBySubCountyCode(partOf).parallelStream()
+                    .map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
+                    .sorted(Comparator.comparing(CodeNameDTO::getCode))
                     .toList();
-                AdministrativeAreaResponseDto<List<CodeNameDto>> result = new AdministrativeAreaResponseDto<>(codeNameDtoList);
+                AdministrativeAreaResponseDto<List<CodeNameDTO>> result = new AdministrativeAreaResponseDto<>(codeNameDtoList);
                 
                 // Cache the result (7 days TTL)
                 if (result.isStatus()) {
@@ -778,7 +778,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public AdministrativeAreaResponseDto<List<CodeNameDto>> getParishByPartOf(Map<String, String> queryMap) {
+    public AdministrativeAreaResponseDto<List<CodeNameDTO>> getParishByPartOf(Map<String, String> queryMap) {
         String cacheKey = CacheHelperService.generateKey(queryMap);
         String type = queryMap.get("type");
         String partOfCode = queryMap.get("partOfCode");
@@ -795,13 +795,13 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
 
         // Check cache and fetch from database using independent switch blocks
-        // All cases return the same type (CodeNameDto), so we use the same ParameterizedTypeReference
-        ParameterizedTypeReference<AdministrativeAreaResponseDto<List<CodeNameDto>>> typeRef = 
-            new ParameterizedTypeReference<AdministrativeAreaResponseDto<List<CodeNameDto>>>() {};
+        // All cases return the same type (CodeNameDTO), so we use the same ParameterizedTypeReference
+        ParameterizedTypeReference<AdministrativeAreaResponseDto<List<CodeNameDTO>>> typeRef = 
+            new ParameterizedTypeReference<AdministrativeAreaResponseDto<List<CodeNameDTO>>>() {};
 
         switch (administrativeAreaType) {
             case REGION -> {
-                AdministrativeAreaResponseDto<List<CodeNameDto>> cached = 
+                AdministrativeAreaResponseDto<List<CodeNameDTO>> cached = 
                     cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS, cacheKey, typeRef);
                 
                 if (cached != null) {
@@ -818,12 +818,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     .map(County::getCode).distinct().toList();
                 List<String> subCounties = dbSubCountyService.dbByCountyCodes(countyCodes).parallelStream()
                     .map(SubCounty::getCode).distinct().toList();
-                List<CodeNameDto> codeNameDtoList = dbParishService.dbBySubCountyCodes(subCounties).parallelStream()
-                    .map(parish -> new CodeNameDto(parish.getCode(), parish.getName()))
+                List<CodeNameDTO> codeNameDtoList = dbParishService.dbBySubCountyCodes(subCounties).parallelStream()
+                    .map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
                     .distinct()
                     .toList();
                 
-                AdministrativeAreaResponseDto<List<CodeNameDto>> result = new AdministrativeAreaResponseDto<>(codeNameDtoList);
+                AdministrativeAreaResponseDto<List<CodeNameDTO>> result = new AdministrativeAreaResponseDto<>(codeNameDtoList);
                 
                 // Cache the result (7 days TTL)
                 if (result.isStatus()) {
@@ -833,7 +833,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 return result;
             }
             case SUBREGION -> {
-                AdministrativeAreaResponseDto<List<CodeNameDto>> cached = 
+                AdministrativeAreaResponseDto<List<CodeNameDTO>> cached = 
                     cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS, cacheKey, typeRef);
                 
                 if (cached != null) {
@@ -852,12 +852,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     .map(County::getCode).distinct().toList();
                 List<String> subCounties = dbSubCountyService.dbByCountyCodes(countyCodes).parallelStream()
                     .map(SubCounty::getCode).distinct().toList();
-                List<CodeNameDto> codeNameDtoList = dbParishService.dbBySubCountyCodes(subCounties).parallelStream()
-                    .map(parish -> new CodeNameDto(parish.getCode(), parish.getName()))
-                    .sorted(Comparator.comparing(CodeNameDto::getCode))
+                List<CodeNameDTO> codeNameDtoList = dbParishService.dbBySubCountyCodes(subCounties).parallelStream()
+                    .map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
+                    .sorted(Comparator.comparing(CodeNameDTO::getCode))
                     .toList();
                 
-                AdministrativeAreaResponseDto<List<CodeNameDto>> result = new AdministrativeAreaResponseDto<>(codeNameDtoList);
+                AdministrativeAreaResponseDto<List<CodeNameDTO>> result = new AdministrativeAreaResponseDto<>(codeNameDtoList);
                 
                 // Cache the result (7 days TTL)
                 if (result.isStatus()) {
@@ -867,7 +867,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 return result;
             }
             case LOCALGOVERNMENT -> {
-                AdministrativeAreaResponseDto<List<CodeNameDto>> cached = 
+                AdministrativeAreaResponseDto<List<CodeNameDTO>> cached = 
                     cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS, cacheKey, typeRef);
                 
                 if (cached != null) {
@@ -884,12 +884,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     .map(County::getCode).distinct().toList();
                 List<String> subCountyCodes = dbSubCountyService.dbByCountyCodes(countyCodes).parallelStream()
                     .map(SubCounty::getCode).distinct().toList();
-                List<CodeNameDto> codeNameDtoList = dbParishService.dbBySubCountyCodes(subCountyCodes).parallelStream()
-                    .map(parish -> new CodeNameDto(parish.getCode(), parish.getName()))
-                    .sorted(Comparator.comparing(CodeNameDto::getCode))
+                List<CodeNameDTO> codeNameDtoList = dbParishService.dbBySubCountyCodes(subCountyCodes).parallelStream()
+                    .map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
+                    .sorted(Comparator.comparing(CodeNameDTO::getCode))
                     .toList();
                 
-                AdministrativeAreaResponseDto<List<CodeNameDto>> result = new AdministrativeAreaResponseDto<>(codeNameDtoList);
+                AdministrativeAreaResponseDto<List<CodeNameDTO>> result = new AdministrativeAreaResponseDto<>(codeNameDtoList);
                 
                 // Cache the result (7 days TTL)
                 if (result.isStatus()) {
@@ -899,7 +899,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 return result;
             }
             case COUNTY -> {
-                AdministrativeAreaResponseDto<List<CodeNameDto>> cached = 
+                AdministrativeAreaResponseDto<List<CodeNameDTO>> cached = 
                     cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS, cacheKey, typeRef);
                 
                 if (cached != null) {
@@ -914,12 +914,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 // Get all parishes under county
                 List<String> subCountyCodes = dbSubCountyService.dbByCountyCode(partOfCode).parallelStream()
                     .map(SubCounty::getCode).distinct().toList();
-                List<CodeNameDto> codeNameDtoList = dbParishService.dbBySubCountyCodes(subCountyCodes).parallelStream()
-                    .map(parish -> new CodeNameDto(parish.getCode(), parish.getName()))
-                    .sorted(Comparator.comparing(CodeNameDto::getCode))
+                List<CodeNameDTO> codeNameDtoList = dbParishService.dbBySubCountyCodes(subCountyCodes).parallelStream()
+                    .map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
+                    .sorted(Comparator.comparing(CodeNameDTO::getCode))
                     .toList();
                 
-                AdministrativeAreaResponseDto<List<CodeNameDto>> result = new AdministrativeAreaResponseDto<>(codeNameDtoList);
+                AdministrativeAreaResponseDto<List<CodeNameDTO>> result = new AdministrativeAreaResponseDto<>(codeNameDtoList);
                 
                 // Cache the result (7 days TTL)
                 if (result.isStatus()) {
@@ -929,7 +929,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 return result;
             }
             case SUBCOUNTY -> {
-                AdministrativeAreaResponseDto<List<CodeNameDto>> cached = 
+                AdministrativeAreaResponseDto<List<CodeNameDTO>> cached = 
                     cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS, cacheKey, typeRef);
                 
                 if (cached != null) {
@@ -941,12 +941,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area partOf");
                 }
                 
-                List<CodeNameDto> codeNameDtoList = dbParishService.dbBySubCountyCode(partOfCode).parallelStream()
-                    .map(parish -> new CodeNameDto(parish.getCode(), parish.getName()))
-                    .sorted(Comparator.comparing(CodeNameDto::getCode))
+                List<CodeNameDTO> codeNameDtoList = dbParishService.dbBySubCountyCode(partOfCode).parallelStream()
+                    .map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
+                    .sorted(Comparator.comparing(CodeNameDTO::getCode))
                     .toList();
                 
-                AdministrativeAreaResponseDto<List<CodeNameDto>> result = new AdministrativeAreaResponseDto<>(codeNameDtoList);
+                AdministrativeAreaResponseDto<List<CodeNameDTO>> result = new AdministrativeAreaResponseDto<>(codeNameDtoList);
                 
                 // Cache the result (7 days TTL)
                 if (result.isStatus()) {
@@ -957,7 +957,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             }
             case PARISH -> {
                 // No parishes under a parish
-                AdministrativeAreaResponseDto<List<CodeNameDto>> result = new AdministrativeAreaResponseDto<>(Collections.emptyList());
+                AdministrativeAreaResponseDto<List<CodeNameDTO>> result = new AdministrativeAreaResponseDto<>(Collections.emptyList());
                 
                 // Cache the result (7 days TTL)
                 if (result.isStatus()) {

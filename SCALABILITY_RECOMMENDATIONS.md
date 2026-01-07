@@ -180,7 +180,7 @@ private String generateCode(AdministrativeAreaType type) {
 
 ```java
 @GetMapping("/filterList")
-public AdministrativeAreaResponseDto<Page<CodeNameDto>> filterList(
+public AdministrativeAreaResponseDto<Page<CodeNameDTO>> filterList(
     @RequestParam Map<String, String> queryMap,
     @PageableDefault(size = 50) Pageable pageable) {
     // Implementation with Pageable

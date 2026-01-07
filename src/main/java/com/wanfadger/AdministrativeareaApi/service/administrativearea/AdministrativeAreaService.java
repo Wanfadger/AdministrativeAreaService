@@ -12,9 +12,9 @@ public interface AdministrativeAreaService {
     ResponseEntity<AdministrativeAreaResponseDto<String>> newOne(Map<String , String> queryMap, NewAdministrativeAreaDto dto);
     ResponseEntity<AdministrativeAreaResponseDto<String>> newList(Map<String , String> queryMap , List<NewAdministrativeAreaDto> dtos);
 
-    AdministrativeAreaResponseDto<CodeNameDto> filterOne(Map<String ,String> queryMap);
-    AdministrativeAreaResponseDto<List<CodeNameDto>> filterList(Map<String ,String> queryMap);
-    AdministrativeAreaResponseDto<List<CodeNameDto>> getParishByPartOf(Map<String, String> queryMap);
+    AdministrativeAreaResponseDto<CodeNameDTO> filterOne(Map<String ,String> queryMap);
+    AdministrativeAreaResponseDto<List<CodeNameDTO>> filterList(Map<String ,String> queryMap);
+    AdministrativeAreaResponseDto<List<CodeNameDTO>> getParishByPartOf(Map<String, String> queryMap);
 
     AdministrativeAreaResponseDto<?> searchList(Map<String ,String> queryMap);
     AdministrativeAreaResponseDto<?> searchOne(Map<String, String> queryMap);

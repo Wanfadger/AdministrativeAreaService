@@ -115,7 +115,7 @@ public class AdministrativeAreaController {
             @ApiResponse(responseCode = "400", description = "Missing required parameters")
     })
     @GetMapping(value = "/filterOne", produces = MediaType.APPLICATION_JSON_VALUE)
-    public AdministrativeAreaResponseDto<CodeNameDto> filterOne(
+    public AdministrativeAreaResponseDto<CodeNameDTO> filterOne(
             @Parameter(description = "Query parameters: 'type' (required), 'code' (required), 'partOf' (optional)", required = true, example = "type=REGION&code=001")
             @RequestParam Map<String, String> queryMap) {
         return administrativeAreaService.filterOne(queryMap);
@@ -133,7 +133,7 @@ public class AdministrativeAreaController {
             @ApiResponse(responseCode = "400", description = "Missing required parameters")
     })
     @GetMapping(value = "/filterList", produces = MediaType.APPLICATION_JSON_VALUE)
-    public AdministrativeAreaResponseDto<List<CodeNameDto>> filterList(
+    public AdministrativeAreaResponseDto<List<CodeNameDTO>> filterList(
             @Parameter(description = "Query parameters: 'type' (required), 'partOf' (optional)", required = true, example = "type=REGION")
             @RequestParam Map<String, String> queryMap ) {
         return administrativeAreaService.filterList(queryMap);
@@ -149,7 +149,7 @@ public class AdministrativeAreaController {
             @ApiResponse(responseCode = "400", description = "Missing required parameters")
     })
     @GetMapping(value = "/parishListByPartOf", produces = MediaType.APPLICATION_JSON_VALUE)
-    public AdministrativeAreaResponseDto<List<CodeNameDto>> getParishByPartOf(
+    public AdministrativeAreaResponseDto<List<CodeNameDTO>> getParishByPartOf(
             @Parameter(description = "Query parameters: 'type' (required - parent type), 'partOfCode' (required - parent code)", required = true, example = "type=REGION&partOfCode=001")
             @RequestParam Map<String, String> queryMap) {
         return administrativeAreaService.getParishByPartOf(queryMap);
