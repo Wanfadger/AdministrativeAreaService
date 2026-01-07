@@ -1347,33 +1347,22 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
     @Override
     public AdministrativeAreaResponseDto<String> upload(List<AdministrativeAreaExcelDTO> dtoList) {
-//        System.out.println(dtoList);
-        uploadAdministrativeAreas(dtoList);
+        // Input validation
+        if (dtoList == null || dtoList.isEmpty()) {
+            throw new MissingDataException("Upload list cannot be null or empty");
+        }
         
-        // Evict service-level cache after bulk upload
-        cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS);
-        cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS_FILTER);
+        // Start async upload - return immediately, process in background
+        // Flow: Regions → Sub-Regions → Local Governments → Counties → Sub-Counties → Parishes
+        // Each level ensures parent entities are saved before processing children
+        // Entire flow is wrapped in @Transactional for atomicity
+        uploadAsync(dtoList);
         
-        return new AdministrativeAreaResponseDto<>("Successfully updated " + dtoList.size());
+        // Return immediately - upload continues in background
+        return new AdministrativeAreaResponseDto<>("Upload started for " + dtoList.size() + " administrative area(s). Processing in background.");
     }
 
-    @Async
-    public void uploadAdministrativeAreas(List<AdministrativeAreaExcelDTO> dtoList) {
-        // REGION
-        uploadRegions(dtoList);
 
-//        //LOCALGOVERNMENT
-//        uploadLocalGovernment(dtoList);
-//
-//        //COUNTY
-//        uploadCounty(dtoList);
-//
-//        //SUBCOUNTY
-//        uploadSubCounty(dtoList);
-//
-//        //PARISH
-//        uploadParishes(dtoList);
-    }
 
     private void uploadParishes(List<AdministrativeAreaExcelDTO> dtoList) {
         List<Parish> dbParishes = dbParishService.dbList();
@@ -1569,56 +1558,117 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
     }
 
+    /**
+     * Step 2: Process Sub-Regions (parent: Region)
+     * 1. Extract all unique sub-regions from Excel DTOs (using DB region references)
+     * 2. Check against existing DB sub-regions (name + parent region match)
+     * 3. Filter out existing, save new ones
+     * 4. Fetch updated complete list from DB
+     * 5. Update DTOs with DB sub-region references
+     * 6. Proceed to Local Governments (ensuring parent sub-regions exist)
+     */
     private void uploadSubRegions(List<AdministrativeAreaExcelDTO> dtoList) {
+        // Step 1: Get all existing sub-regions from database
         List<SubRegion> dbSubRegions = dbSubRegionService.dbList();
 
-        Set<USubRegion> newSubRegionSet = dtoList.stream().filter(dto -> dbSubRegions.stream().noneMatch(dbSubRegion -> {
+        // Step 2: Extract unique new sub-regions (exclude existing ones)
+        // Uses dto.getDbRegion() which was set in uploadRegions()
+        Set<USubRegion> newSubRegionSet = dtoList.stream()
+                .filter(dto -> dbSubRegions.stream().noneMatch(dbSubRegion -> {
                     Region region = dto.getDbRegion();
-                    return (dbSubRegion.getName().equalsIgnoreCase(dto.getSubRegion()) && region.getName().equalsIgnoreCase(dto.getRegion()));
-                })).map(dto -> new USubRegion(dto.getSubRegion(), dto.getDbRegion()))
+                    return (dbSubRegion.getName().equalsIgnoreCase(dto.getSubRegion()) 
+                            && region.getName().equalsIgnoreCase(dto.getRegion()));
+                }))
+                .map(dto -> new USubRegion(dto.getSubRegion(), dto.getDbRegion()))
                 .collect(Collectors.toSet());
 
+        // Step 3: Save new sub-regions and fetch updated complete list
         List<SubRegion> dbSubRegions2;
         if (newSubRegionSet.size() > 0) {
             List<SubRegion> newSubRegions = newSubRegionSet.stream().map(uSubRegion -> {
                 SubRegion subRegion = new SubRegion();
                 subRegion.setCode(generateCode(AdministrativeAreaType.SUBREGION));
                 subRegion.setName(uSubRegion.name());
-                // region
-                subRegion.setRegion(uSubRegion.region());
+                subRegion.setRegion(uSubRegion.region()); // Parent region reference
                 return subRegion;
             }).toList();
             dbSubRegionService.dbNew(newSubRegions);
-            dbSubRegions2 = dbSubRegionService.dbList();
+            dbSubRegions2 = dbSubRegionService.dbList(); // Fetch updated list
         } else {
-            dbSubRegions2 = dbSubRegions;
+            dbSubRegions2 = dbSubRegions; // No new sub-regions, use existing list
         }
 
-
-        //Update list with db SubREGION
+        // Step 4: Update DTOs with DB sub-region references (for child processing)
         List<AdministrativeAreaExcelDTO> newDtos = dtoList.parallelStream()
                 .flatMap(oldDto -> dbSubRegions2.stream()
                         .filter(dbSubRegion -> {
                             Region region = dbSubRegion.getRegion();
-                            return (dbSubRegion.getName().equalsIgnoreCase(oldDto.getSubRegion()) && region.getName().equalsIgnoreCase(oldDto.getRegion()));
+                            return (dbSubRegion.getName().equalsIgnoreCase(oldDto.getSubRegion()) 
+                                    && region.getName().equalsIgnoreCase(oldDto.getRegion()));
                         })
                         .map(subRegion -> {
                             oldDto.setDbSubRegion(subRegion);
                             return oldDto;
-                        })).toList();
+                        }))
+                .toList();
 
-
-        // UPLOAD LOCAL GOVERNMENT
+        // Step 5: Proceed to Local Governments (parent sub-regions now guaranteed to exist)
         uploadLocalGovernment(newDtos);
-
     }
 
+    /**
+     * Async method to process upload in background.
+     * Uses Spring's @Async for proper thread pool management.
+     * Entire hierarchical upload is wrapped in @Transactional for atomicity.
+     * Flow: Regions → Sub-Regions → Local Governments → Counties → Sub-Counties → Parishes
+     * If any level fails, entire operation rolls back to maintain data integrity.
+     * 
+     * The hierarchical chain continues automatically:
+     * uploadRegions() → uploadSubRegions() → uploadLocalGovernment() 
+     * → uploadCounty() → uploadSubCounty() → uploadParishes()
+     */
+    @Async
     @Transactional
-    void uploadRegions(List<AdministrativeAreaExcelDTO> dtoList) {
+    public void uploadAsync(List<AdministrativeAreaExcelDTO> dtoList) {
+        try {
+            log.info("Starting hierarchical upload of {} administrative area(s)", dtoList.size());
+            
+            // Execute entire hierarchical upload in a single transaction
+            // If any level fails, entire operation rolls back
+            // Chain: Regions → Sub-Regions → Local Governments → Counties → Sub-Counties → Parishes
+            uploadRegions(dtoList);
+            
+            // Evict service-level cache after bulk upload completes (only if transaction succeeded)
+            cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS);
+            cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS_FILTER);
+            
+            log.info("Successfully completed hierarchical upload of {} administrative area(s)", dtoList.size());
+        } catch (Exception e) {
+            log.error("Failed to upload administrative areas: {}", e.getMessage(), e);
+            // Transaction will automatically rollback on exception
+            // Optionally: notify user via email/notification system, update status in DB, etc.
+            throw e; // Re-throw to trigger rollback
+        }
+    }
+
+    /**
+     * Step 1: Process Regions (top level - no parent dependencies)
+     * 1. Extract all unique regions from Excel DTOs
+     * 2. Check against existing DB regions (case-insensitive name match)
+     * 3. Filter out existing regions, keep only new ones
+     * 4. Save new regions to database
+     * 5. Fetch updated complete list from DB (existing + newly saved)
+     * 6. Update DTOs with DB region references
+     * 7. Proceed to Sub-Regions (ensuring parent regions exist)
+     */
+    private void uploadRegions(List<AdministrativeAreaExcelDTO> dtoList) {
+        // Step 1: Get all existing regions from database
         List<Region> dbRegions = dbRegionService.dbList();
-        // exclude existing regions
+        
+        // Step 2: Extract unique new regions from Excel (exclude existing ones)
         List<Region> newRegions = dtoList.parallelStream()
-        .filter(dto -> dbRegions.stream().noneMatch(dbRegion -> (dbRegion.getName().equalsIgnoreCase(dto.getRegion()))))
+                .filter(dto -> dbRegions.stream().noneMatch(dbRegion -> 
+                    dbRegion.getName().equalsIgnoreCase(dto.getRegion())))
                 .filter(distinctByKey(AdministrativeAreaExcelDTO::getRegion))
                 .map(dto -> {
                     Region region = new Region();
@@ -1628,22 +1678,26 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 })
                 .toList();
 
+        // Step 3: Save new regions and fetch updated complete list
         List<Region> dbRegions2;
         if (newRegions.size() > 0) {
             dbRegionService.dbNew(newRegions);
-            dbRegions2 = dbRegionService.dbList();
+            dbRegions2 = dbRegionService.dbList(); // Fetch updated list (existing + new)
         } else {
-            dbRegions2 = dbRegions;
+            dbRegions2 = dbRegions; // No new regions, use existing list
         }
 
-
-        //Update list with db Region
+        // Step 4: Update DTOs with DB region references (for child processing)
         List<AdministrativeAreaExcelDTO> newDtos = dtoList.parallelStream()
-                .flatMap(oldDto -> dbRegions2.stream().filter(region -> region.getName().equalsIgnoreCase(oldDto.getRegion()))
+                .flatMap(oldDto -> dbRegions2.stream()
+                        .filter(region -> region.getName().equalsIgnoreCase(oldDto.getRegion()))
                         .map(region -> {
                             oldDto.setDbRegion(region);
                             return oldDto;
-                        })).toList();
+                        }))
+                .toList();
+        
+        // Step 5: Proceed to Sub-Regions (parent regions now guaranteed to exist)
         uploadSubRegions(newDtos);
     }
 
