@@ -15,6 +15,4 @@ public interface DbRegionService {
 
     Optional<Region> dbByName(String name);
     Optional<Region> dbByCode(String code);
-//    List<CodeNameProjection> dbCodeNameList();
-//    Optional<CodeNameProjection> dbCodeName(String code);
 }
