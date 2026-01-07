@@ -55,6 +55,25 @@ public class CacheWarmer {
             // Warm searchList cache
             administrativeAreaService.searchList(queryMap);
             log.debug("Warmed cache for: type=REGION (searchList)");
+
+            Map<String, String> subRegionQuery = Map.of("type", "SUB REGION");
+            String subRegionKey = CacheHelperService.generateKey(subRegionQuery);
+            log.info("Warming cache for SUB REGION - generated key: '{}'", subRegionKey);
+            administrativeAreaService.searchList(subRegionQuery);
+            log.info("Warmed cache for: type=SUB REGION (searchList) with key: '{}'", subRegionKey);
+
+            administrativeAreaService.searchList(Map.of("type", "LOCAL GOVERNMENT"));
+            log.debug("Warmed cache for: type=LOCAL GOVERNMENT (searchList)");
+
+            administrativeAreaService.searchList(Map.of("type", "COUNTY"));
+            log.debug("Warmed cache for: type=COUNTY (searchList)");
+
+            administrativeAreaService.searchList(Map.of("type", "SUB COUNTY"));
+            log.debug("Warmed cache for: type=SUB COUNTY (searchList)");
+
+            administrativeAreaService.searchList(Map.of("type", "PARISH"));
+            log.debug("Warmed cache for: type=PARISH (searchList)");
+
             
         } catch (Exception e) {
             log.warn("Failed to warm region cache: {}", e.getMessage());
