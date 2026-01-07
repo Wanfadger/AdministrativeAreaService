@@ -10,7 +10,11 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -133,6 +137,78 @@ public class CacheHelperService {
         } catch (Exception e) {
             log.warn("Failed to evict all cache entries for {}: {}", cacheName, e.getMessage());
         }
+    }
+
+    /**
+     * Get cache diagnostic information for troubleshooting
+     * 
+     * Returns information about Redis connection, cache keys, and cache statistics.
+     * Uses SCAN instead of KEYS for non-blocking operation.
+     * 
+     * @return Map containing cache diagnostic information
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getCacheInfo() {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            // Redis connection info
+            result.put("redisConnection", "connected");
+            var connectionFactory = redisTemplate.getConnectionFactory();
+            if (connectionFactory != null) {
+                result.put("connectionFactory", connectionFactory.getClass().getSimpleName());
+            } else {
+                result.put("connectionFactory", "unknown");
+            }
+            
+            // Use SCAN instead of KEYS for non-blocking operation
+            RedisTemplate<String, Object> template = (RedisTemplate<String, Object>) redisTemplate;
+            Set<String> allKeys = new HashSet<>();
+            List<String> sampleKeys = new ArrayList<>();
+            List<String> cacheNamespaceKeys = new ArrayList<>();
+            
+            ScanOptions options = ScanOptions.scanOptions()
+                    .match("*")
+                    .count(100)
+                    .build();
+            
+            try (Cursor<String> cursor = template.scan(options)) {
+                int count = 0;
+                while (cursor.hasNext() && count < 1000) { // Limit scan to prevent long operations
+                    String key = cursor.next();
+                    allKeys.add(key);
+                    
+                    // Collect sample keys (first 10)
+                    if (sampleKeys.size() < 10) {
+                        sampleKeys.add(key);
+                    }
+                    
+                    // Collect cache namespace keys (AdministrativeAreas, AdministrativeAreaFilters)
+                    if (key.contains("AdministrativeAreas") || key.contains("AdministrativeAreaFilters")) {
+                        if (cacheNamespaceKeys.size() < 20) { // Limit to 20 examples
+                            cacheNamespaceKeys.add(key);
+                        }
+                    }
+                    
+                    count++;
+                }
+            }
+            
+            result.put("totalKeys", allKeys.size());
+            result.put("sampleKeys", sampleKeys);
+            result.put("cacheNamespaceKeys", cacheNamespaceKeys);
+            result.put("cacheNamespaceKeyCount", cacheNamespaceKeys.size());
+            result.put("status", "success");
+            
+        } catch (Exception e) {
+            log.warn("Error retrieving cache info: {}", e.getMessage());
+            result.put("redisConnection", "error");
+            result.put("status", "error");
+            result.put("error", e.getMessage());
+            result.put("errorClass", e.getClass().getSimpleName());
+        }
+        
+        return result;
     }
 
     /**
