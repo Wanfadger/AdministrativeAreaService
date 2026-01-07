@@ -14,6 +14,10 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
+@Table(indexes = {
+    @Index(name = "idx_subcounty_code", columnList = "code"),
+    @Index(name = "idx_subcounty_name", columnList = "name")
+})
 public class SubCounty extends BaseEntity {
 
     @Column(nullable = false)

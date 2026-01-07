@@ -12,6 +12,10 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
+@Table(indexes = {
+    @Index(name = "idx_parish_code", columnList = "code"),
+    @Index(name = "idx_parish_name", columnList = "name")
+})
 public class Parish extends BaseEntity {
 
     @Column(nullable = false)

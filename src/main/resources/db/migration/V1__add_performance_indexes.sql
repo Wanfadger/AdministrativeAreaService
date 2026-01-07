@@ -1,37 +1,22 @@
 -- Performance Indexes for Administrative Area API
--- This migration adds critical indexes to improve query performance
--- Note: This migration will only create indexes if the tables exist
--- Tables are created by Hibernate's ddl-auto=update before this migration runs
+-- This migration adds critical indexes that cannot be created via JPA annotations:
+-- 1. Function-based indexes (LOWER(name)) - JPA annotations cannot create these
+-- 2. Foreign key indexes - Not automatically created by Hibernate
+-- 3. Composite indexes - Better managed via SQL for complex patterns
+--
+-- Note: Simple code and name indexes are handled by @Table annotations in entity classes.
+-- This migration focuses on indexes that require SQL expressions or are not auto-created.
+--
+-- Execution order:
+-- 1. Hibernate creates tables and simple indexes from @Table annotations (if ddl-auto=update)
+-- 2. Flyway runs this migration to add complex indexes
+-- 3. IF NOT EXISTS ensures idempotency if indexes already exist
 
 -- Function to safely create index only if table exists
 DO $$
 BEGIN
-    -- Code indexes (most frequently queried field)
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'region') THEN
-        CREATE INDEX IF NOT EXISTS idx_region_code ON region(code);
-    END IF;
-    
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'subregion') THEN
-        CREATE INDEX IF NOT EXISTS idx_subregion_code ON subregion(code);
-    END IF;
-    
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'localgovernment') THEN
-        CREATE INDEX IF NOT EXISTS idx_localgovernment_code ON localgovernment(code);
-    END IF;
-    
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'county') THEN
-        CREATE INDEX IF NOT EXISTS idx_county_code ON county(code);
-    END IF;
-    
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'subcounty') THEN
-        CREATE INDEX IF NOT EXISTS idx_subcounty_code ON subcounty(code);
-    END IF;
-    
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'parish') THEN
-        CREATE INDEX IF NOT EXISTS idx_parish_code ON parish(code);
-    END IF;
-
-    -- Name indexes (case-insensitive lookups)
+    -- Name indexes with LOWER() for case-insensitive lookups
+    -- These cannot be created via JPA @Table annotations (function-based indexes)
     IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'region') THEN
         CREATE INDEX IF NOT EXISTS idx_region_name_lower ON region(LOWER(name));
     END IF;

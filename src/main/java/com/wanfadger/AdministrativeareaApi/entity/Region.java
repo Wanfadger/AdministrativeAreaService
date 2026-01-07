@@ -3,22 +3,26 @@ package com.wanfadger.AdministrativeareaApi.entity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
+@Table(indexes = {
+    @Index(name = "idx_region_code", columnList = "code"),
+    @Index(name = "idx_region_name", columnList = "name")
+})
 public class Region extends BaseEntity {
 
     @Column(unique = true , nullable = false)

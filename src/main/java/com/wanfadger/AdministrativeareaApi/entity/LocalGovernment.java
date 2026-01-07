@@ -7,15 +7,17 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
+@Table(indexes = {
+    @Index(name = "idx_localgovernment_code", columnList = "code"),
+    @Index(name = "idx_localgovernment_name", columnList = "name")
+})
 public class LocalGovernment extends BaseEntity {
 
     @Column(unique = true , nullable = false)
