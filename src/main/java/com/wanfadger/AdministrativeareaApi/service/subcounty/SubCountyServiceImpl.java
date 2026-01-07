@@ -4,6 +4,8 @@ package com.wanfadger.AdministrativeareaApi.service.subcounty;
 import com.wanfadger.AdministrativeareaApi.entity.SubCounty;
 import com.wanfadger.AdministrativeareaApi.repository.SubCountyRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -28,6 +30,11 @@ public class SubCountyServiceImpl implements DbSubCountyService  {
     @Override
     public List<SubCounty> dbList() {
         return subCountyRepository.findAll();
+    }
+
+    @Override
+    public Page<SubCounty> dbList(Pageable pageable) {
+        return subCountyRepository.findAll(pageable);
     }
 
     @Override

@@ -2,6 +2,8 @@ package com.wanfadger.AdministrativeareaApi.repository;
 
 
 import com.wanfadger.AdministrativeareaApi.entity.Parish;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -16,6 +18,10 @@ public interface ParishRepository extends JpaRepository<Parish, String> {
     @Override
     @EntityGraph(attributePaths = {"subCounty.county.localGovernment.subRegion.region"} , type = EntityGraph.EntityGraphType.FETCH)
     List<Parish> findAll();
+
+    @Override
+    @EntityGraph(attributePaths = {"subCounty.county.localGovernment.subRegion.region"} , type = EntityGraph.EntityGraphType.FETCH)
+    Page<Parish> findAll(Pageable pageable);
 
     @Override
     @EntityGraph(attributePaths = {"subCounty.county.localGovernment.subRegion.region"} , type = EntityGraph.EntityGraphType.FETCH)

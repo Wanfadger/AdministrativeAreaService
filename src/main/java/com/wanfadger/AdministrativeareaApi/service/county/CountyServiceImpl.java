@@ -4,6 +4,8 @@ import com.wanfadger.AdministrativeareaApi.entity.County;
 import com.wanfadger.AdministrativeareaApi.repository.CountyRepository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -28,6 +30,11 @@ public class CountyServiceImpl implements DbCountyService  {
     @Override
     public List<County> dbList() {
         return countyRepository.findAll();
+    }
+
+    @Override
+    public Page<County> dbList(Pageable pageable) {
+        return countyRepository.findAll(pageable);
     }
 
     @Override

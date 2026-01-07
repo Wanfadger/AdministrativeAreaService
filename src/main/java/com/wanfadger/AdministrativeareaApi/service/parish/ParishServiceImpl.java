@@ -4,6 +4,8 @@ package com.wanfadger.AdministrativeareaApi.service.parish;
 import com.wanfadger.AdministrativeareaApi.entity.Parish;
 import com.wanfadger.AdministrativeareaApi.repository.ParishRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -28,6 +30,11 @@ public class ParishServiceImpl implements DbParishService {
     @Override
     public List<Parish> dbList() {
         return parishRepository.findAll();
+    }
+
+    @Override
+    public Page<Parish> dbList(Pageable pageable) {
+        return parishRepository.findAll(pageable);
     }
 
     @Override

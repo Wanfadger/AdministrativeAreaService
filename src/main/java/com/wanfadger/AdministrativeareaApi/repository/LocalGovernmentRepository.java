@@ -2,6 +2,8 @@ package com.wanfadger.AdministrativeareaApi.repository;
 
 
 import com.wanfadger.AdministrativeareaApi.entity.LocalGovernment;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -18,6 +20,9 @@ public interface LocalGovernmentRepository extends JpaRepository<LocalGovernment
     @EntityGraph(attributePaths = {"subRegion.region"} , type = EntityGraph.EntityGraphType.FETCH)
     List<LocalGovernment> findAll();
 
+    @Override
+    @EntityGraph(attributePaths = {"subRegion.region"} , type = EntityGraph.EntityGraphType.FETCH)
+    Page<LocalGovernment> findAll(Pageable pageable);
 
     @EntityGraph(attributePaths = {"subRegion.region"} , type = EntityGraph.EntityGraphType.FETCH)
     List<LocalGovernment> findAllBySubRegion_Code(String regionCode);

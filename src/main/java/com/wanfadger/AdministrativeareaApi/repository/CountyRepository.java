@@ -2,6 +2,8 @@ package com.wanfadger.AdministrativeareaApi.repository;
 
 import com.wanfadger.AdministrativeareaApi.entity.County;
 import lombok.NonNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -19,6 +21,9 @@ public interface CountyRepository extends JpaRepository<County, String> {
     @NonNull
     List<County> findAll();
 
+    @Override
+    @EntityGraph(attributePaths = {"localGovernment.subRegion.region"} , type = EntityGraph.EntityGraphType.FETCH)
+    Page<County> findAll(Pageable pageable);
 
     @EntityGraph(attributePaths = {"localGovernment.subRegion.region"} , type = EntityGraph.EntityGraphType.FETCH)
     @NonNull

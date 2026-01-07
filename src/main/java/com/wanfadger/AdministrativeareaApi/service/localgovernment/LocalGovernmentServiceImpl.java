@@ -4,6 +4,8 @@ package com.wanfadger.AdministrativeareaApi.service.localgovernment;
 import com.wanfadger.AdministrativeareaApi.entity.LocalGovernment;
 import com.wanfadger.AdministrativeareaApi.repository.LocalGovernmentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -28,6 +30,11 @@ public class LocalGovernmentServiceImpl implements DbLocalGovernmentService  {
     @Override
     public List<LocalGovernment> dbList() {
         return localGovernmentRepository.findAll();
+    }
+
+    @Override
+    public Page<LocalGovernment> dbList(Pageable pageable) {
+        return localGovernmentRepository.findAll(pageable);
     }
 
     @Override

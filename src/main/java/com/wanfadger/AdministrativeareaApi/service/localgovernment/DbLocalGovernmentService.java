@@ -2,6 +2,8 @@ package com.wanfadger.AdministrativeareaApi.service.localgovernment;
 
 
 import com.wanfadger.AdministrativeareaApi.entity.LocalGovernment;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -12,6 +14,7 @@ public interface DbLocalGovernmentService {
     List<LocalGovernment> dbNew(List<LocalGovernment> localGovernments);
 
     List<LocalGovernment> dbList();
+    Page<LocalGovernment> dbList(Pageable pageable);
     List<LocalGovernment> dbBySubRegionCode(String subRegionCode);
     List<LocalGovernment> dbBySubRegionCodes(List<String> subRegionCodes);
 
