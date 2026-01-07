@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode
 @NoArgsConstructor
 @AllArgsConstructor
-public class CountyDto extends AdministrativeAreaDto {
-    private LocalGovernmentDto localGovernment;
+public class CountyDTO extends AdministrativeAreaDTO {
+    private LocalGovernmentDTO localGovernment;
 }

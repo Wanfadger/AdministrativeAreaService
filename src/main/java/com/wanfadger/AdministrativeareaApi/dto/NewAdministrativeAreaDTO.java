@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Schema(description = "Data transfer object for creating a new administrative area")
-public class NewAdministrativeAreaDto {
+public class NewAdministrativeAreaDTO {
     @Schema(description = "Name of the administrative area", example = "Central Region", required = true)
     private String name;
     

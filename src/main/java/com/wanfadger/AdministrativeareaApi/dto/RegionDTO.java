@@ -5,5 +5,5 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode
-public class RegionDto extends AdministrativeAreaDto  {
+public class RegionDTO extends AdministrativeAreaDTO {
 }

@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode
 @NoArgsConstructor
 @AllArgsConstructor
-public class SubRegionDto extends AdministrativeAreaDto{
-    private RegionDto region;
+public class SubRegionDTO extends AdministrativeAreaDTO {
+    private RegionDTO region;
 }

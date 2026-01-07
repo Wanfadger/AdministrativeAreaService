@@ -118,17 +118,17 @@ This application uses **service-level caching** with clean JSON storage for cros
 
 ```java
 @Override
-public AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> searchList(
+public AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDTO>> searchList(
         Map<String, String> queryMap) {
     
     // 1. Generate cache key (method name not needed - cache namespace provides separation)
     String cacheKey = CacheHelperService.generateKey(queryMap);
     
     // 2. Check cache
-    ParameterizedTypeReference<AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>>> typeRef = 
-        new ParameterizedTypeReference<AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>>>() {};
+    ParameterizedTypeReference<AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDTO>>> typeRef = 
+        new ParameterizedTypeReference<AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDTO>>>() {};
     
-    AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> cached = 
+    AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDTO>> cached = 
         cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS, cacheKey, typeRef);
     
     if (cached != null) {
@@ -136,7 +136,7 @@ public AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> sear
     }
     
     // 3. Cache miss - fetch from database
-    AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> result = 
+    AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDTO>> result = 
         // ... database query logic ...
     
     // 4. Cache successful responses only
@@ -153,7 +153,7 @@ public AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> sear
 ```java
 @Override
 public ResponseEntity<AdministrativeAreaResponseDto<String>> newOne(
-        Map<String, String> queryMap, NewAdministrativeAreaDto dto) {
+        Map<String, String> queryMap, NewAdministrativeAreaDTO dto) {
     
     // 1. Perform database operation
     // ... create logic ...
@@ -262,7 +262,7 @@ cacheHelper.evictAll(CacheKeys.ADMINISTRATIVE_AREAS_FILTER);
   "status": true,
   "data": [
     {
-      "@class": "com.wanfadger.AdministrativeareaApi.dto.RegionDto",
+      "@class": "com.wanfadger.AdministrativeareaApi.dto.RegionDTO",
       "code": "001",
       ...
     }
@@ -431,7 +431,7 @@ spring.data.redis.port=6379
 @GetMapping("/searchList")
 @Cacheable(value = CacheKeys.ADMINISTRATIVE_AREAS, 
            keyGenerator = "queryMapKeyGenerator")
-public AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> searchList(...) {
+public AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDTO>> searchList(...) {
     return service.searchList(...);
 }
 ```
@@ -439,14 +439,14 @@ public AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> sear
 **After:**
 ```java
 @GetMapping("/searchList")
-public AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> searchList(...) {
+public AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDTO>> searchList(...) {
     return service.searchList(...); // Caching handled in service
 }
 ```
 
 **Service Implementation:**
 ```java
-public AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDto>> searchList(...) {
+public AdministrativeAreaResponseDto<List<? extends AdministrativeAreaDTO>> searchList(...) {
     // Cache check, database query, cache put - all in service
 }
 ```

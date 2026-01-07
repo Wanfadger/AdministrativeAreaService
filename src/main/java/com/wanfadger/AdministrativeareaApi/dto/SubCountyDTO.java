@@ -7,8 +7,8 @@ import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode
-@AllArgsConstructor
 @NoArgsConstructor
-public   class UpdateAdministrativeAreaDto extends NewAdministrativeAreaDto {
-    private String code;
+@AllArgsConstructor
+public class SubCountyDTO extends AdministrativeAreaDTO {
+    private CountyDTO county;
 }

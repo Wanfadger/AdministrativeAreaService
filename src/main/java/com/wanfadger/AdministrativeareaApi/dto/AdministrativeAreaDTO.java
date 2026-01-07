@@ -11,7 +11,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 @NoArgsConstructor
 @Schema(description = "Complete administrative area data with location coordinates")
-public class AdministrativeAreaDto implements Serializable {
+public class AdministrativeAreaDTO implements Serializable {
     @Schema(description = "Unique code of the administrative area", example = "001")
     private String code;
     
@@ -24,4 +24,3 @@ public class AdministrativeAreaDto implements Serializable {
     @Schema(description = "Longitude coordinate", example = "32.5825")
     private String longitude;
 }
-

@@ -61,7 +61,7 @@ public class CacheHelperService {
             
             // Convert LinkedHashMap (from clean JSON) to target type
             // Using exact type-specific ParameterizedTypeReference ensures proper deserialization
-            // to the exact DTO type (e.g., SubRegionDto with all fields including 'region')
+            // to the exact DTO type (e.g., SubRegionDTO with all fields including 'region')
             String json = objectMapper.writeValueAsString(cached);
             T result = objectMapper.readValue(json, 
                 objectMapper.getTypeFactory().constructType(typeReference.getType()));

@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 //@JsonIgnoreProperties(ignoreUnknown = true)
-public class AdministrativeAreaExcelDto {
+public class AdministrativeAreaExcelDTO {
 
     @JsonProperty("REGION")
     private String region;

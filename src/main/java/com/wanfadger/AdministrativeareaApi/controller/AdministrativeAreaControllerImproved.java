@@ -67,7 +67,7 @@ public class AdministrativeAreaControllerImproved {
                     })
             @RequestParam Map<String, String> queryMap, 
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Administrative area data", required = true)
-            @RequestBody NewAdministrativeAreaDto dto) {
+            @RequestBody NewAdministrativeAreaDTO dto) {
         return administrativeAreaService.newOne(queryMap, dto);
     }
 
@@ -90,7 +90,7 @@ public class AdministrativeAreaControllerImproved {
             @Parameter(description = "Query parameters: 'type' (required) - Administrative area type", required = true)
             @RequestParam Map<String, String> queryMap, 
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "List of administrative areas to create", required = true)
-            @RequestBody List<NewAdministrativeAreaDto> dtos) {
+            @RequestBody List<NewAdministrativeAreaDTO> dtos) {
         return administrativeAreaService.newList(queryMap, dtos);
     }
 
@@ -108,7 +108,7 @@ public class AdministrativeAreaControllerImproved {
     @PostMapping(value = "/upload", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public AdministrativeAreaResponseDto<String> upload(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "List of administrative areas in Excel format", required = true)
-            @RequestBody List<AdministrativeAreaExcelDto> administrativeAreaExcelDtos) {
+            @RequestBody List<AdministrativeAreaExcelDTO> administrativeAreaExcelDtos) {
         return administrativeAreaService.upload(administrativeAreaExcelDtos);
     }
 
@@ -132,7 +132,7 @@ public class AdministrativeAreaControllerImproved {
             @Parameter(description = "Query parameters: 'type' (required) - Administrative area type", required = true)
             @RequestParam Map<String, String> queryMap, 
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Updated administrative area data (must include 'code')", required = true)
-            @RequestBody UpdateAdministrativeAreaDto dto) {
+            @RequestBody UpdateAdministrativeAreaDTO dto) {
         return administrativeAreaService.updateOne(queryMap, dto);
     }
 
