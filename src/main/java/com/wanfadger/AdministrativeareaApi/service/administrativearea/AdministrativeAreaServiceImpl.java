@@ -1,6 +1,7 @@
 package com.wanfadger.AdministrativeareaApi.service.administrativearea;
 
 import com.wanfadger.AdministrativeareaApi.dto.*;
+import com.wanfadger.AdministrativeareaApi.dto.reponses.AdministrativeAreaResponseDto;
 import com.wanfadger.AdministrativeareaApi.dto.uniqueDtos.*;
 import com.wanfadger.AdministrativeareaApi.entity.*;
 import com.wanfadger.AdministrativeareaApi.service.county.DbCountyService;
@@ -13,7 +14,6 @@ import com.wanfadger.AdministrativeareaApi.shared.administrativeareaexceptions.A
 import com.wanfadger.AdministrativeareaApi.shared.administrativeareaexceptions.InvalidException;
 import com.wanfadger.AdministrativeareaApi.shared.administrativeareaexceptions.MissingDataException;
 import com.wanfadger.AdministrativeareaApi.shared.administrativeareaexceptions.NotFoundException;
-import com.wanfadger.AdministrativeareaApi.shared.reponses.AdministrativeAreaResponseDto;
 import com.wanfadger.AdministrativeareaApi.shared.util.CacheKeys;
 import com.wanfadger.AdministrativeareaApi.shared.util.CacheHelperService;
 import lombok.RequiredArgsConstructor;
@@ -987,12 +987,9 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         String type = queryMap.get("type");
         String partOf = queryMap.get("partOf");
 
-        Optional<AdministrativeAreaType> optionalAdministrativeAreaType = AdministrativeAreaType.fromStr(type);
-        if (optionalAdministrativeAreaType.isEmpty()) {
-            throw new MissingDataException("Missing Administrative Area Type");
-        }
+        AdministrativeAreaType administrativeAreaType = AdministrativeAreaType.fromStr(type)
+        .orElseThrow(() -> new MissingDataException("Unsupported Administrative Area Type: " + type));
 
-        AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
 
         // Use type-specific ParameterizedTypeReference in each case to preserve all data
         switch (administrativeAreaType) {
@@ -1154,6 +1151,8 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 return result;
             }
             case PARISH -> {
+                long startTime = System.currentTimeMillis();
+                
                 // Check cache with specific type
                 ParameterizedTypeReference<AdministrativeAreaResponseDto<List<ParishDTO>>> typeRef = 
                     new ParameterizedTypeReference<AdministrativeAreaResponseDto<List<ParishDTO>>>() {};
@@ -1161,10 +1160,14 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS, cacheKey, typeRef);
                 
                 if (cached != null) {
+                    long cacheHitTime = System.currentTimeMillis() - startTime;
+                    log.info("PARISH cache HIT - Response time: {}ms, Cache key: {}, Records: {}", 
+                        cacheHitTime, cacheKey, cached.getData() != null ? ((List<?>) cached.getData()).size() : 0);
                     return cached;
                 }
                 
                 // Cache miss - fetch from database
+                long dbStartTime = System.currentTimeMillis();
                 List<ParishDTO> parishDtos;
                 if (notNullEmpty(partOf)) {
                     parishDtos = dbParishService.dbBySubCountyCode(partOf).parallelStream()
@@ -1177,12 +1180,18 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                         .sorted(Comparator.comparing(ParishDTO::getCode))
                         .toList();
                 }
+                long dbFetchTime = System.currentTimeMillis() - dbStartTime;
+                
                 AdministrativeAreaResponseDto<List<ParishDTO>> result = new AdministrativeAreaResponseDto<>(parishDtos);
                 
                 // Cache the result (1 hour TTL)
                 if (result.isStatus()) {
                     cacheHelper.put(CacheKeys.ADMINISTRATIVE_AREAS, cacheKey, result, 1, TimeUnit.HOURS);
                 }
+                
+                long totalTime = System.currentTimeMillis() - startTime;
+                log.info("PARISH cache MISS - Total response time: {}ms (DB fetch: {}ms, Processing: {}ms), Cache key: {}, Records: {}", 
+                    totalTime, dbFetchTime, totalTime - dbFetchTime, cacheKey, parishDtos.size());
                 
                 return result;
             }

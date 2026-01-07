@@ -1,4 +1,4 @@
-package com.wanfadger.AdministrativeareaApi.shared.reponses;
+package com.wanfadger.AdministrativeareaApi.dto.reponses;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

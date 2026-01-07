@@ -1,4 +1,4 @@
-package com.wanfadger.AdministrativeareaApi.shared.reponses;
+package com.wanfadger.AdministrativeareaApi.dto.reponses;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

@@ -1,8 +1,9 @@
 package com.wanfadger.AdministrativeareaApi.controller;
 
 import com.wanfadger.AdministrativeareaApi.dto.*;
+import com.wanfadger.AdministrativeareaApi.dto.reponses.AdministrativeAreaResponseDto;
 import com.wanfadger.AdministrativeareaApi.service.administrativearea.AdministrativeAreaService;
-import com.wanfadger.AdministrativeareaApi.shared.reponses.AdministrativeAreaResponseDto;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;

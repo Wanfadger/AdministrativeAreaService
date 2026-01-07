@@ -1,7 +1,8 @@
 package com.wanfadger.AdministrativeareaApi.service.administrativearea;
 
 import com.wanfadger.AdministrativeareaApi.dto.*;
-import com.wanfadger.AdministrativeareaApi.shared.reponses.AdministrativeAreaResponseDto;
+import com.wanfadger.AdministrativeareaApi.dto.reponses.AdministrativeAreaResponseDto;
+
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
