@@ -115,7 +115,10 @@ public class ServiceLevelCacheHelper {
     }
 
     /**
-     * Generate cache key from query map (same logic as QueryMapKeyGenerator)
+     * Generate cache key from query map
+     * 
+     * Creates deterministic cache keys by sorting query parameters alphabetically.
+     * This ensures consistent keys regardless of Map iteration order.
      */
     public static String generateKey(String methodName, java.util.Map<String, String> queryMap) {
         if (queryMap == null || queryMap.isEmpty()) {

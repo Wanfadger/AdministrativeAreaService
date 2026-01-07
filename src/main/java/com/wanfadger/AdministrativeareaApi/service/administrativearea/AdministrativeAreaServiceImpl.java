@@ -367,6 +367,19 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
     @Override
     public AdministrativeAreaResponseDto<CodeNameDto> filterOne(Map<String, String> queryMap) {
+        // Check cache first
+        String cacheKey = ServiceLevelCacheHelper.generateKey("filterOne", queryMap);
+        ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDto>> typeRef = 
+            new ParameterizedTypeReference<AdministrativeAreaResponseDto<CodeNameDto>>() {};
+        
+        AdministrativeAreaResponseDto<CodeNameDto> cached = 
+            cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS_FILTER, cacheKey, typeRef);
+        
+        if (cached != null) {
+            return cached;
+        }
+
+        // Cache miss - fetch from database
         String type = queryMap.get("type");
         String code = queryMap.get("code");
 
@@ -382,7 +395,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
         AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
 
-        return switch (administrativeAreaType) {
+        AdministrativeAreaResponseDto<CodeNameDto> result = switch (administrativeAreaType) {
             case REGION -> {
                 if (!notNullEmpty(code)) {
                     throw new MissingDataException("Missing Administrative Area Code");
@@ -427,10 +440,29 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             }
         };
 
+        // Cache the result (7 days TTL)
+        if (result != null && result.isStatus()) {
+            cacheHelper.put(CacheKeys.ADMINISTRATIVE_AREAS_FILTER, cacheKey, result, 7, TimeUnit.DAYS);
+        }
+
+        return result;
     }
 
     @Override
     public AdministrativeAreaResponseDto<List<CodeNameDto>> filterList(Map<String, String> queryMap) {
+        // Check cache first
+        String cacheKey = ServiceLevelCacheHelper.generateKey("filterList", queryMap);
+        ParameterizedTypeReference<AdministrativeAreaResponseDto<List<CodeNameDto>>> typeRef = 
+            new ParameterizedTypeReference<AdministrativeAreaResponseDto<List<CodeNameDto>>>() {};
+        
+        AdministrativeAreaResponseDto<List<CodeNameDto>> cached = 
+            cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS_FILTER, cacheKey, typeRef);
+        
+        if (cached != null) {
+            return cached;
+        }
+
+        // Cache miss - fetch from database
         String type = queryMap.get("type");
         String partOf = queryMap.get("partOf");
 
@@ -447,7 +479,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
         AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
 
-        return switch (administrativeAreaType) {
+        AdministrativeAreaResponseDto<List<CodeNameDto>> result = switch (administrativeAreaType) {
             case REGION -> {
                 List<CodeNameDto> codeNameDtoList = dbRegionService.dbList().parallelStream()
                         .map(region -> new CodeNameDto(region.getCode() , region.getName()))
@@ -513,10 +545,29 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             }
         };
 
+        // Cache the result (7 days TTL)
+        if (result != null && result.isStatus()) {
+            cacheHelper.put(CacheKeys.ADMINISTRATIVE_AREAS_FILTER, cacheKey, result, 7, TimeUnit.DAYS);
+        }
+
+        return result;
     }
 
     @Override
     public AdministrativeAreaResponseDto<List<CodeNameDto>> getParishByPartOf(Map<String, String> queryMap) {
+        // Check cache first
+        String cacheKey = ServiceLevelCacheHelper.generateKey("getParishByPartOf", queryMap);
+        ParameterizedTypeReference<AdministrativeAreaResponseDto<List<CodeNameDto>>> typeRef = 
+            new ParameterizedTypeReference<AdministrativeAreaResponseDto<List<CodeNameDto>>>() {};
+        
+        AdministrativeAreaResponseDto<List<CodeNameDto>> cached = 
+            cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS, cacheKey, typeRef);
+        
+        if (cached != null) {
+            return cached;
+        }
+
+        // Cache miss - fetch from database
         String type = queryMap.get("type");
         String partOfCode = queryMap.get("partOfCode");
 
@@ -533,7 +584,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
         AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
 
-        return switch (administrativeAreaType) {
+        AdministrativeAreaResponseDto<List<CodeNameDto>> result = switch (administrativeAreaType) {
             case REGION -> {
                 // get reg subRegs
                 // get sub Lgs
@@ -611,6 +662,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             case PARISH -> new AdministrativeAreaResponseDto<>(Collections.emptyList());
         };
 
+        // Cache the result (7 days TTL)
+        if (result != null && result.isStatus()) {
+            cacheHelper.put(CacheKeys.ADMINISTRATIVE_AREAS, cacheKey, result, 7, TimeUnit.DAYS);
+        }
+
+        return result;
     }
 
     @Override
@@ -707,6 +764,19 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
     @Override
     public AdministrativeAreaResponseDto<? extends AdministrativeAreaDto> searchOne(Map<String, String> queryMap) {
+        // Check cache first
+        String cacheKey = ServiceLevelCacheHelper.generateKey("searchOne", queryMap);
+        ParameterizedTypeReference<AdministrativeAreaResponseDto<? extends AdministrativeAreaDto>> typeRef = 
+            new ParameterizedTypeReference<AdministrativeAreaResponseDto<? extends AdministrativeAreaDto>>() {};
+        
+        AdministrativeAreaResponseDto<? extends AdministrativeAreaDto> cached = 
+            cacheHelper.get(CacheKeys.ADMINISTRATIVE_AREAS, cacheKey, typeRef);
+        
+        if (cached != null) {
+            return cached;
+        }
+
+        // Cache miss - fetch from database
         String type = queryMap.get("type");
         String code = queryMap.get("code");
 
@@ -721,7 +791,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
         AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
 
-        return switch (administrativeAreaType) {
+        AdministrativeAreaResponseDto<? extends AdministrativeAreaDto> result = switch (administrativeAreaType) {
             case REGION -> {
                 Region region = dbRegionService.dbByCode(code).orElseThrow(() -> new NotFoundException("Region  not found"));
                 yield new AdministrativeAreaResponseDto<>(convertRegionDto(region));
@@ -749,6 +819,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             }
         };
 
+        // Cache the result (1 hour TTL)
+        if (result != null && result.isStatus()) {
+            cacheHelper.put(CacheKeys.ADMINISTRATIVE_AREAS, cacheKey, result, 1, TimeUnit.HOURS);
+        }
+
+        return result;
     }
 
     @Override
