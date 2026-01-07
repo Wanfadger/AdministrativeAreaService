@@ -1,6 +1,5 @@
 package com.wanfadger.AdministrativeareaApi.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wanfadger.AdministrativeareaApi.entity.*;
 import lombok.AllArgsConstructor;
