@@ -26,14 +26,15 @@ import com.wanfadger.AdministrativeareaApi.shared.SharedService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
+import com.wanfadger.AdministrativeareaApi.repository.specification.GenericSpecification;
+import com.wanfadger.AdministrativeareaApi.enums.MatchType;
+import com.wanfadger.AdministrativeareaApi.dto.SearchCriteria;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -192,18 +193,16 @@ public class SubCountyServiceImpl implements SubCountyService {
 
     @Override
     public ResponseDTO<List<SubCountyDTO>> list(String countyCode) {
-        List<SubCountyDTO> subCountyDTOs;
+        Specification<SubCounty> spec = Specification.where(null);
         if (countyCode != null && !countyCode.isEmpty()) {
-            subCountyDTOs = subCountyRepository.findAllByCounty_Code(countyCode).stream()
-                    .map(this::convertSubCountyDTO)
-                    .sorted(Comparator.comparing(SubCountyDTO::getCode))
-                    .toList();
-        } else {
-            subCountyDTOs = subCountyRepository.findAll().stream()
-                    .map(this::convertSubCountyDTO)
-                    .sorted(Comparator.comparing(SubCountyDTO::getCode))
-                    .toList();
+            spec = spec
+                    .and(new GenericSpecification<>(new SearchCriteria("county.code", countyCode, MatchType.EQUALS)));
         }
+
+        List<SubCountyDTO> subCountyDTOs = subCountyRepository.findAll(spec).stream()
+                .map(this::convertSubCountyDTO)
+                .sorted(Comparator.comparing(SubCountyDTO::getCode))
+                .toList();
         return new ResponseDTO<>(subCountyDTOs);
     }
 
@@ -216,20 +215,15 @@ public class SubCountyServiceImpl implements SubCountyService {
 
     @Override
     public ResponseDTO<List<SubCountyDTO>> search(String name, String code) {
-        SubCounty subCounty = new SubCounty();
+        Specification<SubCounty> spec = Specification.where(null);
         if (name != null && !name.isEmpty()) {
-            subCounty.setName(name);
+            spec = spec.and(new GenericSpecification<>(new SearchCriteria("name", name, MatchType.CONTAINS)));
         }
         if (code != null && !code.isEmpty()) {
-            subCounty.setCode(code);
+            spec = spec.and(new GenericSpecification<>(new SearchCriteria("code", code, MatchType.EQUALS)));
         }
 
-        ExampleMatcher matcher = ExampleMatcher.matching()
-                .withIgnoreCase()
-                .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING);
-
-        Example<SubCounty> example = Example.of(subCounty, matcher);
-        List<SubCountyDTO> subCountyDtos = subCountyRepository.findAll(example).stream()
+        List<SubCountyDTO> subCountyDtos = subCountyRepository.findAll(spec).stream()
                 .map(this::convertSubCountyDTO)
                 .sorted(Comparator.comparing(SubCountyDTO::getCode))
                 .toList();
@@ -304,12 +298,14 @@ public class SubCountyServiceImpl implements SubCountyService {
 
     @Override
     public List<SubCounty> findAllByCountyCode(String countyCode) {
-        return subCountyRepository.findAllByCounty_Code(countyCode);
+        return subCountyRepository
+                .findAll(new GenericSpecification<>(new SearchCriteria("county.code", countyCode, MatchType.EQUALS)));
     }
 
     @Override
     public List<SubCounty> findAllByCountyCodes(List<String> countyCodes) {
-        return subCountyRepository.findAllByCountyCodes(countyCodes);
+        return subCountyRepository
+                .findAll(new GenericSpecification<>(new SearchCriteria("county.code", countyCodes, MatchType.IN)));
     }
 
     @Override

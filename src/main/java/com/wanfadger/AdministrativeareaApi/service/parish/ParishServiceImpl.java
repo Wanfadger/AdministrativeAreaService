@@ -28,8 +28,10 @@ import com.wanfadger.AdministrativeareaApi.shared.SharedService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
+import com.wanfadger.AdministrativeareaApi.repository.specification.GenericSpecification;
+import com.wanfadger.AdministrativeareaApi.enums.MatchType;
+import com.wanfadger.AdministrativeareaApi.dto.SearchCriteria;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -158,18 +160,16 @@ public class ParishServiceImpl implements ParishService {
 
     @Override
     public ResponseDTO<List<ParishDTO>> list(String subCountyCode) {
-        List<ParishDTO> parishDTOs;
+        Specification<Parish> spec = Specification.where(null);
         if (subCountyCode != null && !subCountyCode.isEmpty()) {
-            parishDTOs = parishRepository.findAllBySubCounty_Code(subCountyCode).stream()
-                    .map(this::convertParishDTO)
-                    .sorted(Comparator.comparing(ParishDTO::getCode))
-                    .toList();
-        } else {
-            parishDTOs = parishRepository.findAll().stream()
-                    .map(this::convertParishDTO)
-                    .sorted(Comparator.comparing(ParishDTO::getCode))
-                    .toList();
+            spec = spec.and(
+                    new GenericSpecification<>(new SearchCriteria("subCounty.code", subCountyCode, MatchType.EQUALS)));
         }
+
+        List<ParishDTO> parishDTOs = parishRepository.findAll(spec).stream()
+                .map(this::convertParishDTO)
+                .sorted(Comparator.comparing(ParishDTO::getCode))
+                .toList();
         return new ResponseDTO<>(parishDTOs);
     }
 
@@ -182,20 +182,15 @@ public class ParishServiceImpl implements ParishService {
 
     @Override
     public ResponseDTO<List<ParishDTO>> search(String name, String code) {
-        Parish parish = new Parish();
+        Specification<Parish> spec = Specification.where(null);
         if (name != null && !name.isEmpty()) {
-            parish.setName(name);
+            spec = spec.and(new GenericSpecification<>(new SearchCriteria("name", name, MatchType.CONTAINS)));
         }
         if (code != null && !code.isEmpty()) {
-            parish.setCode(code);
+            spec = spec.and(new GenericSpecification<>(new SearchCriteria("code", code, MatchType.EQUALS)));
         }
 
-        ExampleMatcher matcher = ExampleMatcher.matching()
-                .withIgnoreCase()
-                .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING);
-
-        Example<Parish> example = Example.of(parish, matcher);
-        List<ParishDTO> parishDtos = parishRepository.findAll(example).stream()
+        List<ParishDTO> parishDtos = parishRepository.findAll(spec).stream()
                 .map(this::convertParishDTO)
                 .sorted(Comparator.comparing(ParishDTO::getCode))
                 .toList();
@@ -251,12 +246,14 @@ public class ParishServiceImpl implements ParishService {
 
     @Override
     public List<Parish> findAllBySubCountyCode(String subCountyCode) {
-        return parishRepository.findAllBySubCounty_Code(subCountyCode);
+        return parishRepository.findAll(
+                new GenericSpecification<>(new SearchCriteria("subCounty.code", subCountyCode, MatchType.EQUALS)));
     }
 
     @Override
     public List<Parish> findAllBySubCountyCodes(List<String> subCountyCodes) {
-        return parishRepository.findAllBySubCountyCodes(subCountyCodes);
+        return parishRepository.findAll(
+                new GenericSpecification<>(new SearchCriteria("subCounty.code", subCountyCodes, MatchType.IN)));
     }
 
     @Override

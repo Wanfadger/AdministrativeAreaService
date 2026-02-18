@@ -6,14 +6,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface CountyRepository extends JpaRepository<County, Long> {
+public interface CountyRepository extends JpaRepository<County, Long>, JpaSpecificationExecutor<County> {
 
     @Override
     @EntityGraph(attributePaths = { "localGovernment.subRegion.region" }, type = EntityGraph.EntityGraphType.FETCH)
@@ -29,14 +29,6 @@ public interface CountyRepository extends JpaRepository<County, Long> {
     @NonNull
     Optional<County> findByCodeIgnoreCase(@NonNull String code);
 
-    List<County> findAllByCodeIgnoreCase(@NonNull String code);
-
     Optional<County> findByNameIgnoreCaseAndLocalGovernment_Code(String name, String localGovernmentCode);
-
-    @EntityGraph(attributePaths = { "localGovernment.subRegion.region" }, type = EntityGraph.EntityGraphType.FETCH)
-    List<County> findAllByLocalGovernment_Code(String localGovernmentCode);
-
-    @Query("SELECT C FROM County C WHERE C.localGovernment.code IN :codes")
-    List<County> findAllByLocalGovernmentCodes(List<String> codes);
 
 }

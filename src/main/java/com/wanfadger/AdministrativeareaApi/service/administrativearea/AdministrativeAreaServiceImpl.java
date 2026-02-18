@@ -12,6 +12,13 @@ import com.wanfadger.AdministrativeareaApi.service.parish.ParishService;
 import com.wanfadger.AdministrativeareaApi.service.region.RegionService;
 import com.wanfadger.AdministrativeareaApi.service.subRegion.SubRegionService;
 import com.wanfadger.AdministrativeareaApi.service.subcounty.SubCountyService;
+import com.wanfadger.AdministrativeareaApi.repository.specification.GenericSpecification;
+import com.wanfadger.AdministrativeareaApi.enums.MatchType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -33,7 +40,9 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     private final SubCountyService subCountyService;
     private final ParishService parishService;
 
-    // Repositories needed for cross-cutting logic (getParishByPartOf)
+    // Repositories needed for cross-cutting logic (getParishByPartOf and
+    // advancedSearch)
+    private final RegionRepository regionRepository;
     private final SubRegionRepository subRegionRepository;
     private final LocalGovernmentRepository localGovernmentRepository;
     private final CountyRepository countyRepository;
@@ -198,64 +207,83 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         // Retaining original logic as this is a cross-cutting traversal
         switch (type) {
             case REGION -> {
-                List<String> subRegionCodes = subRegionRepository.findAllByRegion_Code(partOfCode).parallelStream()
-                        .map(SubRegion::getCode).distinct().toList();
-                List<String> lgCodes = localGovernmentRepository.findAllBySubRegionCodes(subRegionCodes)
-                        .parallelStream()
-                        .map(LocalGovernment::getCode).distinct().toList();
-                List<String> countyCodes = countyRepository.findAllByLocalGovernmentCodes(lgCodes).parallelStream()
-                        .map(County::getCode).distinct().toList();
-                List<String> subCounties = subCountyRepository.findAllByCountyCodes(countyCodes).parallelStream()
-                        .map(SubCounty::getCode).distinct().toList();
-                List<CodeNameDTO> codeNameDtoList = parishRepository.findAllBySubCountyCodes(subCounties)
-                        .parallelStream()
-                        .map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
-                        .distinct()
-                        .toList();
+                List<String> subRegionCodes = subRegionRepository
+                        .findAll(new GenericSpecification<>(
+                                new SearchCriteria("region.code", partOfCode, MatchType.EQUALS)))
+                        .parallelStream().map(SubRegion::getCode).distinct().toList();
+                List<String> lgCodes = localGovernmentRepository
+                        .findAll(new GenericSpecification<>(
+                                new SearchCriteria("subRegion.code", subRegionCodes, MatchType.IN)))
+                        .parallelStream().map(LocalGovernment::getCode).distinct().toList();
+                List<String> countyCodes = countyRepository
+                        .findAll(new GenericSpecification<>(
+                                new SearchCriteria("localGovernment.code", lgCodes, MatchType.IN)))
+                        .parallelStream().map(County::getCode).distinct().toList();
+                List<String> subCounties = subCountyRepository
+                        .findAll(new GenericSpecification<>(
+                                new SearchCriteria("county.code", countyCodes, MatchType.IN)))
+                        .parallelStream().map(SubCounty::getCode).distinct().toList();
+                List<CodeNameDTO> codeNameDtoList = parishRepository
+                        .findAll(new GenericSpecification<>(
+                                new SearchCriteria("subCounty.code", subCounties, MatchType.IN)))
+                        .parallelStream().map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
+                        .distinct().toList();
                 return new ResponseDTO<>(codeNameDtoList);
             }
             case SUBREGION -> {
-                List<String> lgCodes = localGovernmentRepository.findAllBySubRegion_Code(partOfCode).parallelStream()
-                        .map(LocalGovernment::getCode).distinct().toList();
-                List<String> countyCodes = countyRepository.findAllByLocalGovernmentCodes(lgCodes).parallelStream()
-                        .map(County::getCode).distinct().toList();
-                List<String> subCounties = subCountyRepository.findAllByCountyCodes(countyCodes).parallelStream()
-                        .map(SubCounty::getCode).distinct().toList();
-                List<CodeNameDTO> codeNameDtoList = parishRepository.findAllBySubCountyCodes(subCounties)
-                        .parallelStream()
-                        .map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
-                        .sorted(Comparator.comparing(CodeNameDTO::getCode))
-                        .toList();
+                List<String> lgCodes = localGovernmentRepository
+                        .findAll(new GenericSpecification<>(
+                                new SearchCriteria("subRegion.code", partOfCode, MatchType.EQUALS)))
+                        .parallelStream().map(LocalGovernment::getCode).distinct().toList();
+                List<String> countyCodes = countyRepository
+                        .findAll(new GenericSpecification<>(
+                                new SearchCriteria("localGovernment.code", lgCodes, MatchType.IN)))
+                        .parallelStream().map(County::getCode).distinct().toList();
+                List<String> subCounties = subCountyRepository
+                        .findAll(new GenericSpecification<>(
+                                new SearchCriteria("county.code", countyCodes, MatchType.IN)))
+                        .parallelStream().map(SubCounty::getCode).distinct().toList();
+                List<CodeNameDTO> codeNameDtoList = parishRepository
+                        .findAll(new GenericSpecification<>(
+                                new SearchCriteria("subCounty.code", subCounties, MatchType.IN)))
+                        .parallelStream().map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
+                        .sorted(Comparator.comparing(CodeNameDTO::getCode)).toList();
                 return new ResponseDTO<>(codeNameDtoList);
             }
             case LOCALGOVERNMENT -> {
-                List<String> countyCodes = countyRepository.findAllByLocalGovernment_Code(partOfCode).parallelStream()
-                        .map(County::getCode).distinct().toList();
-                List<String> subCountyCodes = subCountyRepository.findAllByCountyCodes(countyCodes).parallelStream()
-                        .map(SubCounty::getCode).distinct().toList();
-                List<CodeNameDTO> codeNameDtoList = parishRepository.findAllBySubCountyCodes(subCountyCodes)
-                        .parallelStream()
-                        .map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
-                        .sorted(Comparator.comparing(CodeNameDTO::getCode))
-                        .toList();
+                List<String> countyCodes = countyRepository
+                        .findAll(new GenericSpecification<>(
+                                new SearchCriteria("localGovernment.code", partOfCode, MatchType.EQUALS)))
+                        .parallelStream().map(County::getCode).distinct().toList();
+                List<String> subCountyCodes = subCountyRepository
+                        .findAll(new GenericSpecification<>(
+                                new SearchCriteria("county.code", countyCodes, MatchType.IN)))
+                        .parallelStream().map(SubCounty::getCode).distinct().toList();
+                List<CodeNameDTO> codeNameDtoList = parishRepository
+                        .findAll(new GenericSpecification<>(
+                                new SearchCriteria("subCounty.code", subCountyCodes, MatchType.IN)))
+                        .parallelStream().map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
+                        .sorted(Comparator.comparing(CodeNameDTO::getCode)).toList();
                 return new ResponseDTO<>(codeNameDtoList);
             }
             case COUNTY -> {
-                List<String> subCountyCodes = subCountyRepository.findAllByCounty_Code(partOfCode).parallelStream()
-                        .map(SubCounty::getCode).distinct().toList();
-                List<CodeNameDTO> codeNameDtoList = parishRepository.findAllBySubCountyCodes(subCountyCodes)
-                        .parallelStream()
-                        .map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
-                        .sorted(Comparator.comparing(CodeNameDTO::getCode))
-                        .toList();
+                List<String> subCountyCodes = subCountyRepository
+                        .findAll(new GenericSpecification<>(
+                                new SearchCriteria("county.code", partOfCode, MatchType.EQUALS)))
+                        .parallelStream().map(SubCounty::getCode).distinct().toList();
+                List<CodeNameDTO> codeNameDtoList = parishRepository
+                        .findAll(new GenericSpecification<>(
+                                new SearchCriteria("subCounty.code", subCountyCodes, MatchType.IN)))
+                        .parallelStream().map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
+                        .sorted(Comparator.comparing(CodeNameDTO::getCode)).toList();
                 return new ResponseDTO<>(codeNameDtoList);
             }
             case SUBCOUNTY -> {
-                List<CodeNameDTO> codeNameDtoList = parishRepository.findAllBySubCounty_Code(partOfCode)
-                        .parallelStream()
-                        .map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
-                        .sorted(Comparator.comparing(CodeNameDTO::getCode))
-                        .toList();
+                List<CodeNameDTO> codeNameDtoList = parishRepository
+                        .findAll(new GenericSpecification<>(
+                                new SearchCriteria("subCounty.code", partOfCode, MatchType.EQUALS)))
+                        .parallelStream().map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
+                        .sorted(Comparator.comparing(CodeNameDTO::getCode)).toList();
                 return new ResponseDTO<>(codeNameDtoList);
             }
             case PARISH -> {
@@ -370,5 +398,80 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             case SUBCOUNTY -> subCountyService.delete(code);
             case PARISH -> parishService.delete(code);
         };
+    }
+
+    @Override
+    public ResponseDTO<?> advancedSearch(Map<String, String> queryMap) {
+        String typeStr = queryMap.get("type");
+        if (!notNullEmpty(typeStr))
+            throw new MissingDataException("Missing Administrative Area Type");
+
+        AdministrativeAreaType type = AdministrativeAreaType.fromStr(typeStr)
+                .orElseThrow(() -> new MissingDataException("Invalid Administrative Area Type"));
+
+        // 1. Convert to a mutable map to remove reserved keys
+        Map<String, String> filters = new HashMap<>(queryMap);
+
+        // 2. Extract Pagination & Sorting
+        int page = Optional.ofNullable(filters.remove("page")).map(Integer::parseInt).orElse(1);
+        int size = Optional.ofNullable(filters.remove("size")).map(Integer::parseInt).orElse(10);
+        String sortBy = Optional.ofNullable(filters.remove("sortBy")).orElse("id");
+        String sortDirection = Optional.ofNullable(filters.remove("sortDirection")).orElse("ASC");
+        filters.remove("type"); // Remove type as it's used for routing
+
+        page = page <= 0 ? 0 : page - 1;
+
+        Pageable pageable = PageRequest.of(page, size,
+                Sort.by(sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy));
+
+        // 3. Build Specification
+        Specification<?> spec = buildSpecification(filters);
+
+        // 4. Execute Search based on type
+        return executeSearch(type, spec, pageable);
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private Specification<?> buildSpecification(Map<String, String> filters) {
+        Specification spec = Specification.where(null);
+
+        for (Map.Entry<String, String> entry : filters.entrySet()) {
+            String fullKey = entry.getKey();
+            String value = entry.getValue();
+
+            // Determine Operator (Default: EQUALS)
+            String key = fullKey;
+            MatchType matchType = MatchType.EQUALS;
+
+            if (fullKey.contains(":")) {
+                String[] parts = fullKey.split(":", 2);
+                key = parts[0];
+                try {
+                    matchType = MatchType.valueOf(parts[1].toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    log.warn("Invalid MatchType: {}, defaulting to EQUALS", parts[1]);
+                }
+            }
+
+            spec = spec.and(new GenericSpecification<>(new SearchCriteria(key, value, matchType)));
+        }
+        return spec;
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private ResponseDTO<?> executeSearch(AdministrativeAreaType type, Specification spec, Pageable pageable) {
+        Page<?> resultPage = switch (type) {
+            case REGION -> regionRepository.findAll(spec, pageable);
+            case SUBREGION -> subRegionRepository.findAll(spec, pageable);
+            case LOCALGOVERNMENT -> localGovernmentRepository.findAll(spec, pageable);
+            case COUNTY -> countyRepository.findAll(spec, pageable);
+            case SUBCOUNTY -> subCountyRepository.findAll(spec, pageable);
+            case PARISH -> parishRepository.findAll(spec, pageable);
+        };
+
+        // For simplicity, returning the content list as per previous search pattern,
+        // but ideally should return a paginated DTO.
+        // Given existing response types, I'll return the list of data.
+        return new ResponseDTO<>(resultPage.getContent());
     }
 }

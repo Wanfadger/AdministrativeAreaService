@@ -22,8 +22,10 @@ import com.wanfadger.AdministrativeareaApi.shared.SharedService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
+import com.wanfadger.AdministrativeareaApi.repository.specification.GenericSpecification;
+import com.wanfadger.AdministrativeareaApi.enums.MatchType;
+import com.wanfadger.AdministrativeareaApi.dto.SearchCriteria;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -150,18 +152,16 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
 
     @Override
     public ResponseDTO<List<LocalGovernmentDTO>> list(String subRegionCode) {
-        List<LocalGovernmentDTO> localGovernmentDtos;
+        Specification<LocalGovernment> spec = Specification.where(null);
         if (subRegionCode != null && !subRegionCode.isEmpty()) {
-            localGovernmentDtos = localGovernmentRepository.findAllBySubRegion_Code(subRegionCode).stream()
-                    .map(this::convertLocalGovernmentDTO)
-                    .sorted(Comparator.comparing(LocalGovernmentDTO::getCode))
-                    .toList();
-        } else {
-            localGovernmentDtos = localGovernmentRepository.findAll().stream()
-                    .map(this::convertLocalGovernmentDTO)
-                    .sorted(Comparator.comparing(LocalGovernmentDTO::getCode))
-                    .toList();
+            spec = spec.and(
+                    new GenericSpecification<>(new SearchCriteria("subRegion.code", subRegionCode, MatchType.EQUALS)));
         }
+
+        List<LocalGovernmentDTO> localGovernmentDtos = localGovernmentRepository.findAll(spec).stream()
+                .map(this::convertLocalGovernmentDTO)
+                .sorted(Comparator.comparing(LocalGovernmentDTO::getCode))
+                .toList();
         return new ResponseDTO<>(localGovernmentDtos);
     }
 
@@ -174,20 +174,15 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
 
     @Override
     public ResponseDTO<List<LocalGovernmentDTO>> search(String name, String code) {
-        LocalGovernment localGovernment = new LocalGovernment();
+        Specification<LocalGovernment> spec = Specification.where(null);
         if (name != null && !name.isEmpty()) {
-            localGovernment.setName(name);
+            spec = spec.and(new GenericSpecification<>(new SearchCriteria("name", name, MatchType.CONTAINS)));
         }
         if (code != null && !code.isEmpty()) {
-            localGovernment.setCode(code);
+            spec = spec.and(new GenericSpecification<>(new SearchCriteria("code", code, MatchType.EQUALS)));
         }
 
-        ExampleMatcher matcher = ExampleMatcher.matching()
-                .withIgnoreCase()
-                .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING);
-
-        Example<LocalGovernment> example = Example.of(localGovernment, matcher);
-        List<LocalGovernmentDTO> localGovernmentDtos = localGovernmentRepository.findAll(example).stream()
+        List<LocalGovernmentDTO> localGovernmentDtos = localGovernmentRepository.findAll(spec).stream()
                 .map(this::convertLocalGovernmentDTO)
                 .sorted(Comparator.comparing(LocalGovernmentDTO::getCode))
                 .toList();
@@ -265,12 +260,14 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
 
     @Override
     public List<LocalGovernment> findAllBySubRegionCode(String subRegionCode) {
-        return localGovernmentRepository.findAllBySubRegion_Code(subRegionCode);
+        return localGovernmentRepository.findAll(
+                new GenericSpecification<>(new SearchCriteria("subRegion.code", subRegionCode, MatchType.EQUALS)));
     }
 
     @Override
     public List<LocalGovernment> findAllBySubRegionCodes(List<String> subRegionCodes) {
-        return localGovernmentRepository.findAllBySubRegionCodes(subRegionCodes);
+        return localGovernmentRepository.findAll(
+                new GenericSpecification<>(new SearchCriteria("subRegion.code", subRegionCodes, MatchType.IN)));
     }
 
     @Override

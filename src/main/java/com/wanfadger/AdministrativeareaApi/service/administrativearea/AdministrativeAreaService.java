@@ -27,6 +27,8 @@ public interface AdministrativeAreaService {
 
         ResponseDTO<?> searchOne(Map<String, String> queryMap);
 
+        ResponseDTO<?> advancedSearch(Map<String, String> queryMap);
+
         ResponseDTO<String> upload(List<AdministrativeAreaExcelDTO> administrativeAreaExcelDtos);
 
         ResponseDTO<String> updateOne(Map<String, String> queryMap, UpdateAdministrativeAreaDTO dto);

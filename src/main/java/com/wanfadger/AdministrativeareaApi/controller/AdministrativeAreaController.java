@@ -23,7 +23,7 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @CrossOrigin()
-@RequestMapping("/AdministrativeAreas")
+@RequestMapping("/api/v1/administrative-areas")
 @Tag(name = "Administrative Areas", description = "API for managing Ugandan administrative areas (Region, Sub-Region, Local Government, County, Sub-County, Parish)")
 public class AdministrativeAreaController {
 
@@ -87,7 +87,7 @@ public class AdministrativeAreaController {
                         @ApiResponse(responseCode = "404", description = "Administrative area not found"),
                         @ApiResponse(responseCode = "400", description = "Missing required parameters")
         })
-        @GetMapping(value = "/filterOne", produces = MediaType.APPLICATION_JSON_VALUE)
+        @GetMapping(value = "/filter-one", produces = MediaType.APPLICATION_JSON_VALUE)
         public ResponseDTO<CodeNameDTO> filterOne(
                         @Parameter(description = "Query parameters: 'type' (required), 'code' (required), 'partOf' (optional)", required = true, example = "type=REGION&code=001") @RequestParam Map<String, String> queryMap) {
                 return administrativeAreaService.filterOne(queryMap);
@@ -136,6 +136,58 @@ public class AdministrativeAreaController {
         public ResponseDTO<?> searchOne(
                         @Parameter(description = "Query parameters: 'type' (required), 'code' (required), 'partOf' (optional)", required = true, example = "type=REGION&code=001") @RequestParam Map<String, String> queryMap) {
                 return administrativeAreaService.searchOne(queryMap);
+        }
+
+        @Operation(summary = "Advanced Search", description = """
+                        Retrieves a paginated list of administrative areas based on search criteria.
+
+                        ### Flexible Filtering
+                        Supports filtering using the format `field:operator=value`.
+
+                        **Available Operators:**
+                        - `EQUALS` (default): Exact match
+                        - `NOT_EQUALS`: Not equal to
+                        - `CONTAINS`: Case-insensitive partial match
+                        - `NOT_CONTAINS`: Case-insensitive partial non-match
+                        - `GT`: Greater than
+                        - `LT`: Less than
+                        - `GTE`: Greater than or equal to
+                        - `LTE`: Less than or equal to
+                        - `IN`: Checks if value is present in a list (comma-separated)
+
+                        **Examples:**
+                        - `name:contains=Central`
+                        - `code:equals=001`
+                        - `region.name:contains=Western` (for SubRegions)
+
+                        **Filterable Properties (Full Paths Supported):**
+                        - `id` (Long: EQUALS, NOT_EQUALS, GT, LT, GTE, LTE, IN)
+                        - `name` (String: EQUALS, NOT_EQUALS, CONTAINS, NOT_CONTAINS, IN)
+                        - `code` (String: EQUALS, NOT_EQUALS, CONTAINS, NOT_CONTAINS, IN)
+                        - `latitude` (Double: EQUALS, GT, LT, etc.)
+                        - `longitude` (Double: EQUALS, GT, LT, etc.)
+                        - `archived` (Boolean: EQUALS)
+                        - **Nested Paths (e.g. for SubRegions):**
+                            - `region.name`, `region.code`
+                            - `subRegion.region.name` (for LocalGovernments)
+                            - `localGovernment.subRegion.region.code` (for Counties)
+                            - `county.localGovernment.subRegion.region.name` (for SubCounties)
+                            - `subCounty.county.localGovernment.subRegion.region.code` (for Parishes)
+
+                        Defaults to `EQUALS` if no operator is specified.
+                        """, parameters = {
+                        @Parameter(name = "type", description = "Administrative area type (REGION, SUBREGION, LOCALGOVERNMENT, COUNTY, SUBCOUNTY, PARISH)", required = true, schema = @Schema(type = "string")),
+                        @Parameter(name = "page", description = "Page number (1-based)", schema = @Schema(type = "integer", defaultValue = "1")),
+                        @Parameter(name = "size", description = "Page size (max 1000 for seeding validation)", schema = @Schema(type = "integer", defaultValue = "10")),
+                        @Parameter(name = "sortBy", description = "Sort field (e.g., name, code, id)", schema = @Schema(type = "string", defaultValue = "id")),
+                        @Parameter(name = "sortDirection", description = "Sort direction (ASC/DESC)", schema = @Schema(type = "string", defaultValue = "ASC"))
+        }, responses = {
+                        @ApiResponse(responseCode = "200", description = "Successfully retrieved results", content = @Content(schema = @Schema(implementation = ResponseDTO.class)))
+        })
+        @GetMapping(value = "/advancedSearch", produces = MediaType.APPLICATION_JSON_VALUE)
+        public ResponseDTO<?> advancedSearch(
+                        @Parameter(hidden = true) @RequestParam Map<String, String> queryMap) {
+                return administrativeAreaService.advancedSearch(queryMap);
         }
 
         @Operation(summary = "Soft delete an administrative area", description = "Marks an administrative area as 'archived'. Requires 'type' and 'code' query parameters. Cache is automatically evicted after deletion.")

@@ -24,8 +24,10 @@ import com.wanfadger.AdministrativeareaApi.shared.SharedService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
+import com.wanfadger.AdministrativeareaApi.repository.specification.GenericSpecification;
+import com.wanfadger.AdministrativeareaApi.enums.MatchType;
+import com.wanfadger.AdministrativeareaApi.dto.SearchCriteria;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -153,18 +155,16 @@ public class CountyServiceImpl implements CountyService {
 
     @Override
     public ResponseDTO<List<CountyDTO>> list(String localGovernmentCode) {
-        List<CountyDTO> countyDtos;
+        Specification<County> spec = Specification.where(null);
         if (localGovernmentCode != null && !localGovernmentCode.isEmpty()) {
-            countyDtos = countyRepository.findAllByLocalGovernment_Code(localGovernmentCode).stream()
-                    .map(this::convertCountyDTO)
-                    .sorted(Comparator.comparing(CountyDTO::getCode))
-                    .toList();
-        } else {
-            countyDtos = countyRepository.findAll().stream()
-                    .map(this::convertCountyDTO)
-                    .sorted(Comparator.comparing(CountyDTO::getCode))
-                    .toList();
+            spec = spec.and(new GenericSpecification<>(
+                    new SearchCriteria("localGovernment.code", localGovernmentCode, MatchType.EQUALS)));
         }
+
+        List<CountyDTO> countyDtos = countyRepository.findAll(spec).stream()
+                .map(this::convertCountyDTO)
+                .sorted(Comparator.comparing(CountyDTO::getCode))
+                .toList();
         return new ResponseDTO<>(countyDtos);
     }
 
@@ -177,20 +177,15 @@ public class CountyServiceImpl implements CountyService {
 
     @Override
     public ResponseDTO<List<CountyDTO>> search(String name, String code) {
-        County county = new County();
+        Specification<County> spec = Specification.where(null);
         if (name != null && !name.isEmpty()) {
-            county.setName(name);
+            spec = spec.and(new GenericSpecification<>(new SearchCriteria("name", name, MatchType.CONTAINS)));
         }
         if (code != null && !code.isEmpty()) {
-            county.setCode(code);
+            spec = spec.and(new GenericSpecification<>(new SearchCriteria("code", code, MatchType.EQUALS)));
         }
 
-        ExampleMatcher matcher = ExampleMatcher.matching()
-                .withIgnoreCase()
-                .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING);
-
-        Example<County> example = Example.of(county, matcher);
-        List<CountyDTO> countyDtos = countyRepository.findAll(example).stream()
+        List<CountyDTO> countyDtos = countyRepository.findAll(spec).stream()
                 .map(this::convertCountyDTO)
                 .sorted(Comparator.comparing(CountyDTO::getCode))
                 .toList();
@@ -260,12 +255,14 @@ public class CountyServiceImpl implements CountyService {
 
     @Override
     public List<County> findAllByLocalGovernmentCode(String localGovernmentCode) {
-        return countyRepository.findAllByLocalGovernment_Code(localGovernmentCode);
+        return countyRepository.findAll(new GenericSpecification<>(
+                new SearchCriteria("localGovernment.code", localGovernmentCode, MatchType.EQUALS)));
     }
 
     @Override
     public List<County> findAllByLocalGovernmentCodes(List<String> localGovernmentCodes) {
-        return countyRepository.findAllByLocalGovernmentCodes(localGovernmentCodes);
+        return countyRepository.findAll(new GenericSpecification<>(
+                new SearchCriteria("localGovernment.code", localGovernmentCodes, MatchType.IN)));
     }
 
     @Override

@@ -15,8 +15,10 @@ import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
+import com.wanfadger.AdministrativeareaApi.repository.specification.GenericSpecification;
+import com.wanfadger.AdministrativeareaApi.enums.MatchType;
+import com.wanfadger.AdministrativeareaApi.dto.SearchCriteria;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -131,20 +133,15 @@ public class RegionServiceImpl implements RegionService {
 
     @Override
     public ResponseDTO<List<RegionDTO>> search(String name, String code) {
-        Region region = new Region();
+        Specification<Region> spec = Specification.where(null);
         if (name != null && !name.isEmpty()) {
-            region.setName(name);
+            spec = spec.and(new GenericSpecification<>(new SearchCriteria("name", name, MatchType.CONTAINS)));
         }
         if (code != null && !code.isEmpty()) {
-            region.setCode(code);
+            spec = spec.and(new GenericSpecification<>(new SearchCriteria("code", code, MatchType.EQUALS)));
         }
 
-        ExampleMatcher matcher = ExampleMatcher.matching()
-                .withIgnoreCase()
-                .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING);
-
-        Example<Region> example = Example.of(region, matcher);
-        List<RegionDTO> regionDtos = regionRepository.findAll(example).stream()
+        List<RegionDTO> regionDtos = regionRepository.findAll(spec).stream()
                 .map(this::convertRegionDTO)
                 .sorted(Comparator.comparing(RegionDTO::getCode))
                 .toList();

@@ -20,8 +20,10 @@ import com.wanfadger.AdministrativeareaApi.shared.SharedService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
+import com.wanfadger.AdministrativeareaApi.repository.specification.GenericSpecification;
+import com.wanfadger.AdministrativeareaApi.enums.MatchType;
+import com.wanfadger.AdministrativeareaApi.dto.SearchCriteria;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -179,18 +181,16 @@ public class SubRegionServiceImpl implements SubRegionService {
 
     @Override
     public ResponseDTO<List<SubRegionDTO>> list(String regionCode) {
-        List<SubRegionDTO> subRegionDTOs;
+        Specification<SubRegion> spec = Specification.where(null);
         if (regionCode != null && !regionCode.isEmpty()) {
-            subRegionDTOs = subRegionRepository.findAllByRegion_Code(regionCode).stream()
-                    .map(this::convertSubRegionDTO)
-                    .sorted(Comparator.comparing(SubRegionDTO::getCode))
-                    .toList();
-        } else {
-            subRegionDTOs = subRegionRepository.findAll().stream()
-                    .map(this::convertSubRegionDTO)
-                    .sorted(Comparator.comparing(SubRegionDTO::getCode))
-                    .toList();
+            spec = spec
+                    .and(new GenericSpecification<>(new SearchCriteria("region.code", regionCode, MatchType.EQUALS)));
         }
+
+        List<SubRegionDTO> subRegionDTOs = subRegionRepository.findAll(spec).stream()
+                .map(this::convertSubRegionDTO)
+                .sorted(Comparator.comparing(SubRegionDTO::getCode))
+                .toList();
         return new ResponseDTO<>(subRegionDTOs);
     }
 
@@ -203,20 +203,15 @@ public class SubRegionServiceImpl implements SubRegionService {
 
     @Override
     public ResponseDTO<List<SubRegionDTO>> search(String name, String code) {
-        SubRegion subRegion = new SubRegion();
+        Specification<SubRegion> spec = Specification.where(null);
         if (name != null && !name.isEmpty()) {
-            subRegion.setName(name);
+            spec = spec.and(new GenericSpecification<>(new SearchCriteria("name", name, MatchType.CONTAINS)));
         }
         if (code != null && !code.isEmpty()) {
-            subRegion.setCode(code);
+            spec = spec.and(new GenericSpecification<>(new SearchCriteria("code", code, MatchType.EQUALS)));
         }
 
-        ExampleMatcher matcher = ExampleMatcher.matching()
-                .withIgnoreCase()
-                .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING);
-
-        Example<SubRegion> example = Example.of(subRegion, matcher);
-        List<SubRegionDTO> subRegionDTOs = subRegionRepository.findAll(example).stream()
+        List<SubRegionDTO> subRegionDTOs = subRegionRepository.findAll(spec).stream()
                 .map(this::convertSubRegionDTO)
                 .sorted(Comparator.comparing(SubRegionDTO::getCode))
                 .toList();
@@ -288,7 +283,8 @@ public class SubRegionServiceImpl implements SubRegionService {
 
     @Override
     public List<SubRegion> findAllByRegionCode(String regionCode) {
-        return subRegionRepository.findAllByRegion_Code(regionCode);
+        return subRegionRepository
+                .findAll(new GenericSpecification<>(new SearchCriteria("region.code", regionCode, MatchType.EQUALS)));
     }
 
     @Override
