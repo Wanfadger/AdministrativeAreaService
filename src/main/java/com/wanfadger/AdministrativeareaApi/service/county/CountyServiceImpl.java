@@ -275,6 +275,15 @@ public class CountyServiceImpl implements CountyService {
 
     }
 
+    @Override
+    @Transactional
+    public ResponseDTO<String> delete(String code) {
+        County county = countyRepository.findByCodeIgnoreCase(code)
+                .orElseThrow(() -> new NotFoundException("County not found"));
+        countyRepository.delete(county);
+        return new ResponseDTO<>("SUCCESS", "County deleted successfully");
+    }
+
     private String generateCode() {
         return sharedService.generateCode(AdministrativeAreaType.COUNTY);
     }

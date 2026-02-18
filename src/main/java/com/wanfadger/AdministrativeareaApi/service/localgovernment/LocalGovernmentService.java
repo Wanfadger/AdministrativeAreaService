@@ -15,6 +15,8 @@ public interface LocalGovernmentService {
 
     ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto);
 
+    ResponseDTO<String> delete(String code);
+
     ResponseDTO<List<LocalGovernmentDTO>> list(String subRegionCode);
 
     ResponseDTO<LocalGovernmentDTO> getByCode(String code);

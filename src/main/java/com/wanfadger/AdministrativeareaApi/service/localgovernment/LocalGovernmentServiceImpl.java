@@ -280,6 +280,15 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
 
     }
 
+    @Override
+    @Transactional
+    public ResponseDTO<String> delete(String code) {
+        LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(code)
+                .orElseThrow(() -> new NotFoundException("Local Government not found"));
+        localGovernmentRepository.delete(localGovernment);
+        return new ResponseDTO<>("SUCCESS", "Local Government deleted successfully");
+    }
+
     private String generateCode() {
         return sharedService.generateCode(AdministrativeAreaType.LOCALGOVERNMENT);
     }

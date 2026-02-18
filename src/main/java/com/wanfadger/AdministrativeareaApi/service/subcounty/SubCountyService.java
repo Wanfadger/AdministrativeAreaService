@@ -15,6 +15,8 @@ public interface SubCountyService {
 
     ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto);
 
+    ResponseDTO<String> delete(String code);
+
     ResponseDTO<List<SubCountyDTO>> list(String countyCode);
 
     ResponseDTO<SubCountyDTO> getByCode(String code);

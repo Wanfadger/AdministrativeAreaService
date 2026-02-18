@@ -15,6 +15,8 @@ public interface ParishService {
 
     ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto);
 
+    ResponseDTO<String> delete(String code);
+
     ResponseDTO<List<ParishDTO>> list(String subCountyCode);
 
     ResponseDTO<ParishDTO> getByCode(String code);

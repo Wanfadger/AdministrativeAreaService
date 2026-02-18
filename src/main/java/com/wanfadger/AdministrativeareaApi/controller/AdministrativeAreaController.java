@@ -138,4 +138,17 @@ public class AdministrativeAreaController {
                 return administrativeAreaService.searchOne(queryMap);
         }
 
+        @Operation(summary = "Soft delete an administrative area", description = "Marks an administrative area as 'archived'. Requires 'type' and 'code' query parameters. Cache is automatically evicted after deletion.")
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "Administrative area deleted successfully"),
+                        @ApiResponse(responseCode = "404", description = "Administrative area not found"),
+                        @ApiResponse(responseCode = "400", description = "Missing required parameters"),
+                        @ApiResponse(responseCode = "500", description = "Internal server error")
+        })
+        @DeleteMapping(value = "/one", produces = MediaType.APPLICATION_JSON_VALUE)
+        public ResponseDTO<String> deleteOne(
+                        @Parameter(description = "Query parameters: 'type' (required), 'code' (required)", required = true, example = "type=REGION&code=001") @RequestParam Map<String, String> queryMap) {
+                return administrativeAreaService.deleteOne(queryMap);
+        }
+
 }

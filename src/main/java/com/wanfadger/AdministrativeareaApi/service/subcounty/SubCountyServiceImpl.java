@@ -319,6 +319,15 @@ public class SubCountyServiceImpl implements SubCountyService {
 
     }
 
+    @Override
+    @Transactional
+    public ResponseDTO<String> delete(String code) {
+        SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(code)
+                .orElseThrow(() -> new NotFoundException("Sub County not found"));
+        subCountyRepository.delete(subCounty);
+        return new ResponseDTO<>("SUCCESS", "Sub County deleted successfully");
+    }
+
     private String generateCode() {
         return sharedService.generateCode(AdministrativeAreaType.SUBCOUNTY);
     }

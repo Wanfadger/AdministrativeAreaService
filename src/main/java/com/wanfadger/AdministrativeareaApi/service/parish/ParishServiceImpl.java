@@ -266,6 +266,15 @@ public class ParishServiceImpl implements ParishService {
 
     }
 
+    @Override
+    @Transactional
+    public ResponseDTO<String> delete(String code) {
+        Parish parish = parishRepository.findByCodeIgnoreCase(code)
+                .orElseThrow(() -> new NotFoundException("Parish not found"));
+        parishRepository.delete(parish);
+        return new ResponseDTO<>("SUCCESS", "Parish deleted successfully");
+    }
+
     private String generateCode() {
         return sharedService.generateCode(AdministrativeAreaType.PARISH);
     }

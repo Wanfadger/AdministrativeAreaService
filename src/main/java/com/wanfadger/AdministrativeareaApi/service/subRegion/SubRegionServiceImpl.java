@@ -298,6 +298,15 @@ public class SubRegionServiceImpl implements SubRegionService {
 
     }
 
+    @Override
+    @Transactional
+    public ResponseDTO<String> delete(String code) {
+        SubRegion subRegion = subRegionRepository.findByCodeIgnoreCase(code)
+                .orElseThrow(() -> new NotFoundException("Sub Region not found"));
+        subRegionRepository.delete(subRegion);
+        return new ResponseDTO<>("SUCCESS", "Sub Region deleted successfully");
+    }
+
     private String generateCode() {
         return sharedService.generateCode(AdministrativeAreaType.SUBREGION);
     }

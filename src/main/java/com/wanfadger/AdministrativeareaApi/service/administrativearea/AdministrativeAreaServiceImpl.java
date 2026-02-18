@@ -348,4 +348,27 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             case PARISH -> parishService.update(code, dto);
         };
     }
+
+    @Override
+    public ResponseDTO<String> deleteOne(Map<String, String> queryMap) {
+        String typeStr = queryMap.get("type");
+        String code = queryMap.get("code");
+
+        if (!notNullEmpty(typeStr))
+            throw new MissingDataException("Missing Administrative Area Type");
+        if (!notNullEmpty(code))
+            throw new MissingDataException("Missing Administrative Area Code");
+
+        AdministrativeAreaType type = AdministrativeAreaType.fromStr(typeStr)
+                .orElseThrow(() -> new MissingDataException("Missing Administrative Area Type"));
+
+        return switch (type) {
+            case REGION -> regionService.delete(code);
+            case SUBREGION -> subRegionService.delete(code);
+            case LOCALGOVERNMENT -> localGovernmentService.delete(code);
+            case COUNTY -> countyService.delete(code);
+            case SUBCOUNTY -> subCountyService.delete(code);
+            case PARISH -> parishService.delete(code);
+        };
+    }
 }

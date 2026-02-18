@@ -29,5 +29,7 @@ public interface RegionService {
 
     void upload(List<AdministrativeAreaExcelDTO> dtoList);
 
+    ResponseDTO<String> delete(String code);
+
     void saveAll(List<Region> regions);
 }

@@ -31,5 +31,7 @@ public interface SubRegionService {
 
     void upload(List<AdministrativeAreaExcelDTO> dtoList);
 
+    ResponseDTO<String> delete(String code);
+
     void saveAll(List<SubRegion> subRegions);
 }

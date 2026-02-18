@@ -10,6 +10,7 @@ CREATE TABLE region (
     description VARCHAR(255),
     latitude DOUBLE PRECISION,
     longitude DOUBLE PRECISION,
+    archived BOOLEAN DEFAULT FALSE NOT NULL,
     created_date_time TIMESTAMP(6),
     updated_date_time TIMESTAMP(6)
 );
@@ -23,6 +24,7 @@ CREATE TABLE sub_region (
     description VARCHAR(255),
     latitude DOUBLE PRECISION,
     longitude DOUBLE PRECISION,
+    archived BOOLEAN DEFAULT FALSE NOT NULL,
     created_date_time TIMESTAMP(6),
     updated_date_time TIMESTAMP(6),
     region_id BIGINT NOT NULL,
@@ -38,6 +40,7 @@ CREATE TABLE local_government (
     description VARCHAR(255),
     latitude DOUBLE PRECISION,
     longitude DOUBLE PRECISION,
+    archived BOOLEAN DEFAULT FALSE NOT NULL,
     created_date_time TIMESTAMP(6),
     updated_date_time TIMESTAMP(6),
     sub_region_id BIGINT NOT NULL,
@@ -53,6 +56,7 @@ CREATE TABLE county (
     description VARCHAR(255),
     latitude DOUBLE PRECISION,
     longitude DOUBLE PRECISION,
+    archived BOOLEAN DEFAULT FALSE NOT NULL,
     created_date_time TIMESTAMP(6),
     updated_date_time TIMESTAMP(6),
     local_government_id BIGINT NOT NULL,
@@ -68,6 +72,7 @@ CREATE TABLE sub_county (
     description VARCHAR(255),
     latitude DOUBLE PRECISION,
     longitude DOUBLE PRECISION,
+    archived BOOLEAN DEFAULT FALSE NOT NULL,
     created_date_time TIMESTAMP(6),
     updated_date_time TIMESTAMP(6),
     county_id BIGINT NOT NULL,
@@ -83,6 +88,7 @@ CREATE TABLE parish (
     description VARCHAR(255),
     latitude DOUBLE PRECISION,
     longitude DOUBLE PRECISION,
+    archived BOOLEAN DEFAULT FALSE NOT NULL,
     created_date_time TIMESTAMP(6),
     updated_date_time TIMESTAMP(6),
     sub_county_id BIGINT NOT NULL,
@@ -107,6 +113,14 @@ CREATE INDEX idx_county_code ON county (code);
 CREATE INDEX idx_sub_county_code ON sub_county (code);
 CREATE INDEX idx_parish_code ON parish (code);
 
+-- Archived column indexes (for soft delete performance)
+CREATE INDEX idx_region_archived ON region(archived);
+CREATE INDEX idx_sub_region_archived ON sub_region(archived);
+CREATE INDEX idx_local_government_archived ON local_government(archived);
+CREATE INDEX idx_county_archived ON county(archived);
+CREATE INDEX idx_sub_county_archived ON sub_county(archived);
+CREATE INDEX idx_parish_archived ON parish(archived);
+
 -- Foreign key indexes (Critical for JOINs)
 CREATE INDEX idx_sub_region_region_id ON sub_region (region_id);
 CREATE INDEX idx_local_government_sub_region_id ON local_government (sub_region_id);
@@ -119,4 +133,5 @@ CREATE INDEX idx_sub_region_name_region ON sub_region (LOWER(name), region_id);
 CREATE INDEX idx_local_government_name_sub_region ON local_government (LOWER(name), sub_region_id);
 CREATE INDEX idx_county_name_local_government ON county (LOWER(name), local_government_id);
 CREATE INDEX idx_sub_county_name_county ON sub_county (LOWER(name), county_id);
+
 

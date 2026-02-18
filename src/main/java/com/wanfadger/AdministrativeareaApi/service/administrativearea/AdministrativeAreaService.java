@@ -1,6 +1,7 @@
 package com.wanfadger.AdministrativeareaApi.service.administrativearea;
 
 import com.wanfadger.AdministrativeareaApi.dto.*;
+import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 
 import org.springframework.http.ResponseEntity;
@@ -29,5 +30,7 @@ public interface AdministrativeAreaService {
         ResponseDTO<String> upload(List<AdministrativeAreaExcelDTO> administrativeAreaExcelDtos);
 
         ResponseDTO<String> updateOne(Map<String, String> queryMap, UpdateAdministrativeAreaDTO dto);
+
+        ResponseDTO<String> deleteOne(Map<String, String> queryMap);
 
 }

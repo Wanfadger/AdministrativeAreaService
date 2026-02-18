@@ -212,6 +212,15 @@ public class RegionServiceImpl implements RegionService {
 
     }
 
+    @Override
+    @Transactional
+    public ResponseDTO<String> delete(String code) {
+        Region region = regionRepository.findByCodeIgnoreCase(code)
+                .orElseThrow(() -> new NotFoundException("Region not found"));
+        regionRepository.delete(region);
+        return new ResponseDTO<>("SUCCESS", "Region deleted successfully");
+    }
+
     private String generateCode() {
         return sharedService.generateCode(AdministrativeAreaType.REGION);
     }
