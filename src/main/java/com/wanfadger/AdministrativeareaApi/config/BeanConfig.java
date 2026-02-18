@@ -1,4 +1,4 @@
-package com.wanfadger.AdministrativeareaApi.beanConfig;
+package com.wanfadger.AdministrativeareaApi.config;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class AdministrativeAreaBeanConfigurations {
+public class BeanConfig {
 
     @Bean
     public ObjectMapper objectMapper(){

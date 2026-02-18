@@ -1,4 +1,4 @@
-package com.wanfadger.AdministrativeareaApi.beanConfig;
+package com.wanfadger.AdministrativeareaApi.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -19,7 +19,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 import java.time.Duration;
 
 @Configuration
-public class CacheConfig {
+public class RedisConfig {
 
     @Value("${spring.data.redis.host}")
     String host;
@@ -31,32 +31,28 @@ public class CacheConfig {
     String password;
 
     @Bean
-    public JedisConnectionFactory jedisConnectionFactory(){
+    public JedisConnectionFactory jedisConnectionFactory() {
         // Configure connection pool for production readiness
         JedisPoolConfig poolConfig = new JedisPoolConfig();
-        poolConfig.setMaxTotal(200);  // Maximum connections
-        poolConfig.setMaxIdle(50);     // Maximum idle connections
-        poolConfig.setMinIdle(10);     // Minimum idle connections
+        poolConfig.setMaxTotal(200); // Maximum connections
+        poolConfig.setMaxIdle(50); // Maximum idle connections
+        poolConfig.setMinIdle(10); // Minimum idle connections
         poolConfig.setMaxWaitMillis(5000); // Max wait time for connection
-        poolConfig.setTestOnBorrow(true);  // Test connection before use
-        poolConfig.setTestOnReturn(true);   // Test connection on return
-        poolConfig.setTestWhileIdle(true);  // Test idle connections
+        poolConfig.setTestOnBorrow(true); // Test connection before use
+        poolConfig.setTestOnReturn(true); // Test connection on return
+        poolConfig.setTestWhileIdle(true); // Test idle connections
         poolConfig.setBlockWhenExhausted(true); // Block when pool exhausted
-        
+
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(host, port);
         if (password != null && !password.isEmpty()) {
             config.setPassword(password);
         }
-        
+
         JedisConnectionFactory factory = new JedisConnectionFactory(config);
         factory.setPoolConfig(poolConfig);
         factory.setTimeout(2000); // 2 seconds timeout
         return factory;
     }
-
-
-
-
 
     /**
      * Creates a JSON serializer without Java class metadata
@@ -68,7 +64,7 @@ public class CacheConfig {
         ObjectMapper mapper = new ObjectMapper();
         // Don't include type information - pure JSON without Java class metadata
         mapper.deactivateDefaultTyping();
-        
+
         // Use constructor that takes ObjectMapper (non-deprecated approach)
         return new Jackson2JsonRedisSerializer<>(mapper, Object.class);
     }
@@ -87,16 +83,16 @@ public class CacheConfig {
         return redisTemplate;
     }
 
-
     @Bean
     @Primary
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
         Jackson2JsonRedisSerializer<Object> serializer = createJsonSerializer();
-        
+
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig() //
-                .entryTtl(Duration.ofMinutes(30))   // Added TTL (was missing)
+                .entryTtl(Duration.ofMinutes(30)) // Added TTL (was missing)
                 .disableCachingNullValues()
-                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+                .serializeKeysWith(
+                        RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer));
 
         return RedisCacheManager.builder(connectionFactory) //
@@ -105,8 +101,10 @@ public class CacheConfig {
     }
 
     /**
-     * Note: Additional cache managers (hourCacheManager, weekCacheManager, etc.) were removed
-     * because we now use service-level caching with explicit TTLs via CacheHelperService.
+     * Note: Additional cache managers (hourCacheManager, weekCacheManager, etc.)
+     * were removed
+     * because we now use service-level caching with explicit TTLs via
+     * CacheHelperService.
      * 
      * The primary cacheManager is kept for:
      * - MonitoringConfig (health checks)
@@ -115,6 +113,7 @@ public class CacheConfig {
      * Service-level caching uses RedisTemplate directly with keys like:
      * "AdministrativeAreas::code=123&type=REGION"
      * 
-     * Cache eviction is handled via CacheHelperService.evictAll() in service methods.
+     * Cache eviction is handled via CacheHelperService.evictAll() in service
+     * methods.
      */
 }
