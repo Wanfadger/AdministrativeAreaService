@@ -1,6 +1,8 @@
 package com.wanfadger.AdministrativeareaApi.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import lombok.AllArgsConstructor;
@@ -40,6 +42,10 @@ public class BaseEntity {
     private Double longitude;
 
     private String description;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private AdministrativeAreaType areaType;
 
     @CreationTimestamp
     @Column(updatable = false)

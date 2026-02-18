@@ -43,7 +43,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Transactional(readOnly = true)
-    private String generateCode(AreaType administrativeAreaType) {
+    private String generateCode(AdministrativeAreaType administrativeAreaType) {
         return switch (administrativeAreaType) {
             case REGION -> {
                 String code;
@@ -98,7 +98,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     @Override
     public ResponseEntity<ResponseDTO<String>> newOne(Map<String, String> queryMap,
             NewAdministrativeAreaDTO dto) {
-        AreaType administrativeAreaType = AreaType
+        AdministrativeAreaType administrativeAreaType = AdministrativeAreaType
                 .fromStr(queryMap.get("type"))
                 .orElseThrow(() -> new MissingDataException("Missing Administrative Area Type"));
 
@@ -242,7 +242,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         };
     }
 
-    private Parish convertDtoParish(NewAdministrativeAreaDTO dto, AreaType administrativeAreaType) {
+    private Parish convertDtoParish(NewAdministrativeAreaDTO dto, AdministrativeAreaType administrativeAreaType) {
         Parish parish = new Parish();
         parish.setName(dto.getName());
         parish.setLatitude(dto.getLatitude() != null ? Double.valueOf(dto.getLatitude()) : null);
@@ -251,7 +251,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         return parish;
     }
 
-    private SubCounty convertDtoSubCounty(NewAdministrativeAreaDTO dto, AreaType administrativeAreaType) {
+    private SubCounty convertDtoSubCounty(NewAdministrativeAreaDTO dto, AdministrativeAreaType administrativeAreaType) {
         SubCounty subCounty = new SubCounty();
         subCounty.setName(dto.getName());
         subCounty.setLatitude(dto.getLatitude() != null ? Double.valueOf(dto.getLatitude()) : null);
@@ -260,7 +260,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         return subCounty;
     }
 
-    private County convertDtoCounty(NewAdministrativeAreaDTO dto, AreaType administrativeAreaType) {
+    private County convertDtoCounty(NewAdministrativeAreaDTO dto, AdministrativeAreaType administrativeAreaType) {
         County county = new County();
         county.setName(dto.getName());
         county.setLatitude(dto.getLatitude() != null ? Double.valueOf(dto.getLatitude()) : null);
@@ -270,7 +270,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     private LocalGovernment convertDtoLocalGovernment(NewAdministrativeAreaDTO dto,
-            AreaType administrativeAreaType) {
+            AdministrativeAreaType administrativeAreaType) {
         LocalGovernment localGovernment = new LocalGovernment();
         localGovernment.setName(dto.getName());
         localGovernment.setLatitude(dto.getLatitude() != null ? Double.valueOf(dto.getLatitude()) : null);
@@ -279,7 +279,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         return localGovernment;
     }
 
-    private SubRegion convertDtoSubRegion(NewAdministrativeAreaDTO dto, AreaType administrativeAreaType) {
+    private SubRegion convertDtoSubRegion(NewAdministrativeAreaDTO dto, AdministrativeAreaType administrativeAreaType) {
         SubRegion subRegion = new SubRegion();
         subRegion.setName(dto.getName());
         subRegion.setLatitude(notNullEmpty(dto.getLatitude()) ? Double.valueOf(dto.getLatitude()) : null);
@@ -288,7 +288,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         return subRegion;
     }
 
-    private Region convertDtoRegion(NewAdministrativeAreaDTO dto, AreaType administrativeAreaType) {
+    private Region convertDtoRegion(NewAdministrativeAreaDTO dto, AdministrativeAreaType administrativeAreaType) {
         Region region = new Region();
         region.setName(dto.getName());
         region.setDescription(dto.getDescription());
@@ -301,13 +301,13 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     @Override
     public ResponseEntity<ResponseDTO<String>> newList(Map<String, String> queryMap,
             List<NewAdministrativeAreaDTO> dtos) {
-        Optional<AreaType> optionalAdministrativeAreaType = AreaType
+        Optional<AdministrativeAreaType> optionalAdministrativeAreaType = AdministrativeAreaType
                 .fromStr(queryMap.get("type"));
         if (optionalAdministrativeAreaType.isEmpty()) {
             throw new MissingDataException("Missing Administrative Area Type");
         }
 
-        AreaType administrativeAreaType = optionalAdministrativeAreaType.get();
+        AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
 
         return switch (administrativeAreaType) {
             case REGION -> {
@@ -448,12 +448,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             throw new MissingDataException("Missing Administrative Area Type");
         }
 
-        Optional<AreaType> optionalAdministrativeAreaType = AreaType.fromStr(type);
+        Optional<AdministrativeAreaType> optionalAdministrativeAreaType = AdministrativeAreaType.fromStr(type);
         if (optionalAdministrativeAreaType.isEmpty()) {
             throw new MissingDataException("Missing Administrative Area Type");
         }
 
-        AreaType administrativeAreaType = optionalAdministrativeAreaType.get();
+        AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
 
         switch (administrativeAreaType) {
             case REGION -> {
@@ -524,12 +524,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             throw new MissingDataException("Missing Administrative Area Type");
         }
 
-        Optional<AreaType> optionalAdministrativeAreaType = AreaType.fromStr(type);
+        Optional<AdministrativeAreaType> optionalAdministrativeAreaType = AdministrativeAreaType.fromStr(type);
         if (optionalAdministrativeAreaType.isEmpty()) {
             throw new MissingDataException("Missing Administrative Area Type");
         }
 
-        AreaType administrativeAreaType = optionalAdministrativeAreaType.get();
+        AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
 
         switch (administrativeAreaType) {
             case REGION -> {
@@ -605,12 +605,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             throw new MissingDataException("Missing Administrative Area Type");
         }
 
-        Optional<AreaType> optionalAdministrativeAreaType = AreaType.fromStr(type);
+        Optional<AdministrativeAreaType> optionalAdministrativeAreaType = AdministrativeAreaType.fromStr(type);
         if (optionalAdministrativeAreaType.isEmpty()) {
             throw new MissingDataException("Missing Administrative Area Type");
         }
 
-        AreaType administrativeAreaType = optionalAdministrativeAreaType.get();
+        AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
 
         switch (administrativeAreaType) {
             case REGION -> {
@@ -706,7 +706,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         String type = queryMap.get("type");
         String partOf = queryMap.get("partOf");
 
-        AreaType administrativeAreaType = AreaType.fromStr(type)
+        AdministrativeAreaType administrativeAreaType = AdministrativeAreaType.fromStr(type)
                 .orElseThrow(() -> new MissingDataException("Unsupported Administrative Area Type: " + type));
 
         switch (administrativeAreaType) {
@@ -806,12 +806,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             throw new MissingDataException("Missing required data");
         }
 
-        Optional<AreaType> optionalAdministrativeAreaType = AreaType.fromStr(type);
+        Optional<AdministrativeAreaType> optionalAdministrativeAreaType = AdministrativeAreaType.fromStr(type);
         if (optionalAdministrativeAreaType.isEmpty()) {
             throw new MissingDataException("Missing Administrative Area Type");
         }
 
-        AreaType administrativeAreaType = optionalAdministrativeAreaType.get();
+        AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
 
         switch (administrativeAreaType) {
             case REGION -> {
@@ -869,7 +869,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         if (newParishSet.size() > 0) {
             List<Parish> newParishes = newParishSet.stream().map(UP -> {
                 Parish parish = new Parish();
-                parish.setCode(generateCode(AreaType.PARISH));
+                parish.setCode(generateCode(AdministrativeAreaType.PARISH));
                 parish.setName(UP.name());
                 parish.setSubCounty(UP.subCounty());
                 return parish;
@@ -900,7 +900,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         if (newSubCountySet.size() > 0) {
             List<SubCounty> newSubCounties = newSubCountySet.stream().map(dto -> {
                 SubCounty subCounty = new SubCounty();
-                subCounty.setCode(generateCode(AreaType.SUBCOUNTY));
+                subCounty.setCode(generateCode(AdministrativeAreaType.SUBCOUNTY));
                 subCounty.setName(dto.name());
                 subCounty.setCounty(dto.county());
                 return subCounty;
@@ -956,7 +956,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         if (newCountSet.size() > 0) {
             List<County> newCounties = newCountSet.stream().map(UC -> {
                 County county = new County();
-                county.setCode(generateCode(AreaType.COUNTY));
+                county.setCode(generateCode(AdministrativeAreaType.COUNTY));
                 county.setName(UC.name());
                 county.setLocalGovernment(UC.localGovernment());
                 return county;
@@ -1008,7 +1008,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         if (newLocalGovernmentSet.size() > 0) {
             List<LocalGovernment> newLocalGovernments = newLocalGovernmentSet.stream().map(uL -> {
                 LocalGovernment localGovernment = new LocalGovernment();
-                localGovernment.setCode(generateCode(AreaType.LOCALGOVERNMENT));
+                localGovernment.setCode(generateCode(AdministrativeAreaType.LOCALGOVERNMENT));
                 localGovernment.setName(uL.name());
                 localGovernment.setSubRegion(uL.subRegion());
                 return localGovernment;
@@ -1070,7 +1070,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         if (newSubRegionSet.size() > 0) {
             List<SubRegion> newSubRegions = newSubRegionSet.stream().map(uSubRegion -> {
                 SubRegion subRegion = new SubRegion();
-                subRegion.setCode(generateCode(AreaType.SUBREGION));
+                subRegion.setCode(generateCode(AdministrativeAreaType.SUBREGION));
                 subRegion.setName(uSubRegion.name());
                 subRegion.setRegion(uSubRegion.region()); // Parent region reference
                 return subRegion;
@@ -1155,7 +1155,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 .filter(distinctByKey(AdministrativeAreaExcelDTO::getRegion))
                 .map(dto -> {
                     Region region = new Region();
-                    region.setCode(generateCode(AreaType.REGION));
+                    region.setCode(generateCode(AdministrativeAreaType.REGION));
                     region.setName(dto.getRegion());
                     return region;
                 })
@@ -1196,12 +1196,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             UpdateAdministrativeAreaDTO dto) {
         String type = queryMap.get("type");
 
-        Optional<AreaType> optionalAdministrativeAreaType = AreaType.fromStr(type);
+        Optional<AdministrativeAreaType> optionalAdministrativeAreaType = AdministrativeAreaType.fromStr(type);
         if (optionalAdministrativeAreaType.isEmpty()) {
             throw new MissingDataException("Missing Administrative Area Type");
         }
 
-        AreaType administrativeAreaType = optionalAdministrativeAreaType.get();
+        AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
 
         ResponseDTO<String> result = switch (administrativeAreaType) {
             case REGION -> {
@@ -1395,7 +1395,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                         .orElseGet(() -> {
                             Region newRegion = new Region();
                             newRegion.setName(dto.getRegion());
-                            newRegion.setCode(generateCode(AreaType.REGION));
+                            newRegion.setCode(generateCode(AdministrativeAreaType.REGION));
                             return regionRepository.save(newRegion);
                         });
 
@@ -1406,7 +1406,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                                 SubRegion newSubRegion = new SubRegion();
                                 newSubRegion.setName(dto.getSubRegion());
                                 newSubRegion.setRegion(region);
-                                newSubRegion.setCode(generateCode(AreaType.SUBREGION));
+                                newSubRegion.setCode(generateCode(AdministrativeAreaType.SUBREGION));
                                 return subRegionRepository.save(newSubRegion);
                             });
 
@@ -1417,7 +1417,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                                     LocalGovernment newLg = new LocalGovernment();
                                     newLg.setName(dto.getLocalGovernment());
                                     newLg.setSubRegion(subRegion);
-                                    newLg.setCode(generateCode(AreaType.LOCALGOVERNMENT));
+                                    newLg.setCode(generateCode(AdministrativeAreaType.LOCALGOVERNMENT));
                                     return localGovernmentRepository.save(newLg);
                                 });
 
@@ -1428,7 +1428,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                                         County newCounty = new County();
                                         newCounty.setName(dto.getCounty());
                                         newCounty.setLocalGovernment(localGovernment);
-                                        newCounty.setCode(generateCode(AreaType.COUNTY));
+                                        newCounty.setCode(generateCode(AdministrativeAreaType.COUNTY));
                                         return countyRepository.save(newCounty);
                                     });
 
@@ -1439,7 +1439,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                                             SubCounty newSubCounty = new SubCounty();
                                             newSubCounty.setName(dto.getSubCounty());
                                             newSubCounty.setCounty(county);
-                                            newSubCounty.setCode(generateCode(AreaType.SUBCOUNTY));
+                                            newSubCounty.setCode(generateCode(AdministrativeAreaType.SUBCOUNTY));
                                             return subCountyRepository.save(newSubCounty);
                                         });
 
@@ -1450,7 +1450,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                                                 Parish newParish = new Parish();
                                                 newParish.setName(dto.getParish());
                                                 newParish.setSubCounty(subCounty);
-                                                newParish.setCode(generateCode(AreaType.PARISH));
+                                                newParish.setCode(generateCode(AdministrativeAreaType.PARISH));
                                                 return parishRepository.save(newParish);
                                             });
                                 }
