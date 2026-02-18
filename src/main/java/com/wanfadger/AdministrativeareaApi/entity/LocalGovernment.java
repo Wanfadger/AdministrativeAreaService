@@ -17,9 +17,9 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(indexes = {
-        @Index(name = "idx_localgovernment_code", columnList = "code"),
-        @Index(name = "idx_localgovernment_name", columnList = "name")
+@Table(name = "local_government", indexes = {
+        @Index(name = "idx_local_government_code", columnList = "code"),
+        @Index(name = "idx_local_government_name", columnList = "name")
 })
 @SuperBuilder
 public class LocalGovernment extends BaseEntity {
@@ -28,7 +28,7 @@ public class LocalGovernment extends BaseEntity {
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY, targetEntity = SubRegion.class)
-    @JoinColumn(nullable = false)
+    @JoinColumn(name = "sub_region_id", nullable = false)
     private SubRegion subRegion;
 
     @Builder.Default

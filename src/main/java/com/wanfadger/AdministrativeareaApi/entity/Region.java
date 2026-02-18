@@ -22,7 +22,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(indexes = {
+@Table(name = "region", indexes = {
         @Index(name = "idx_region_code", columnList = "code"),
         @Index(name = "idx_region_name", columnList = "name")
 })

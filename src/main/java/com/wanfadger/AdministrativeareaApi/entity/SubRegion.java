@@ -17,9 +17,9 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(indexes = {
-        @Index(name = "idx_subregion_code", columnList = "code"),
-        @Index(name = "idx_subregion_name", columnList = "name")
+@Table(name = "sub_region", indexes = {
+        @Index(name = "idx_sub_region_code", columnList = "code"),
+        @Index(name = "idx_sub_region_name", columnList = "name")
 })
 @SuperBuilder
 public class SubRegion extends BaseEntity {
@@ -28,7 +28,7 @@ public class SubRegion extends BaseEntity {
     private String name;
 
     @ManyToOne(targetEntity = Region.class, cascade = CascadeType.PERSIST)
-    @JoinColumn(nullable = false)
+    @JoinColumn(name = "region_id", nullable = false)
     private Region region;
 
     @Builder.Default

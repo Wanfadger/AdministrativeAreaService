@@ -37,16 +37,17 @@ public class BaseEntity {
 
     private String description;
 
-    @Column(nullable = false)
+    @Column(name = "area_type", nullable = false)
     @Enumerated(EnumType.STRING)
     private AdministrativeAreaType areaType;
 
     @CreationTimestamp
-    @Column(updatable = false)
+    @Column(name = "created_date_time", updatable = false)
     @Schema(description = "Date and time when the area was created", example = "2024-03-27T14:30:00")
     private LocalDateTime createdDateTime;
 
     @UpdateTimestamp
+    @Column(name = "updated_date_time")
     @Schema(description = "Date and time when the area was last updated", example = "2024-03-27T14:30:00")
     private LocalDateTime updatedDateTime;
 

@@ -13,7 +13,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(indexes = {
+@Table(name = "parish", indexes = {
         @Index(name = "idx_parish_code", columnList = "code"),
         @Index(name = "idx_parish_name", columnList = "name")
 })
@@ -24,7 +24,7 @@ public class Parish extends BaseEntity {
     private String name;
 
     @ManyToOne(targetEntity = SubCounty.class, fetch = FetchType.LAZY)
-    @JoinColumn(nullable = false)
+    @JoinColumn(name = "sub_county_id", nullable = false)
     private SubCounty subCounty;
 
     public Parish(Long id) {

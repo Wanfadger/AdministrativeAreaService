@@ -17,9 +17,9 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(indexes = {
-        @Index(name = "idx_subcounty_code", columnList = "code"),
-        @Index(name = "idx_subcounty_name", columnList = "name")
+@Table(name = "sub_county", indexes = {
+        @Index(name = "idx_sub_county_code", columnList = "code"),
+        @Index(name = "idx_sub_county_name", columnList = "name")
 })
 @SuperBuilder
 public class SubCounty extends BaseEntity {
@@ -28,7 +28,7 @@ public class SubCounty extends BaseEntity {
     private String name;
 
     @ManyToOne(targetEntity = County.class, fetch = FetchType.LAZY)
-    @JoinColumn(nullable = false)
+    @JoinColumn(name = "county_id", nullable = false)
     private County county;
 
     @Builder.Default
