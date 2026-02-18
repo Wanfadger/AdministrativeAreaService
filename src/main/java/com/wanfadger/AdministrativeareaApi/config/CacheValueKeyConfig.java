@@ -1,6 +1,10 @@
 package com.wanfadger.AdministrativeareaApi.config;
 
 public interface CacheValueKeyConfig {
-    String ADMINISTRATIVE_AREAS = "AdministrativeAreas";
-    String ADMINISTRATIVE_AREAS_FILTER = "AdministrativeAreaFilters";
+    String REGIONS = "regions";
+    String SUB_REGIONS = "sub_regions";
+    String LOCAL_GOVERNMENTS = "local_governments";
+    String COUNTIES = "counties";
+    String SUB_COUNTIES = "sub_counties";
+    String PARISHES = "parishes";
 }

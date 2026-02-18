@@ -23,9 +23,12 @@ import lombok.extern.slf4j.Slf4j;
 import com.wanfadger.AdministrativeareaApi.repository.specification.GenericSpecification;
 import com.wanfadger.AdministrativeareaApi.enums.MatchType;
 import com.wanfadger.AdministrativeareaApi.dto.SearchCriteria;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.wanfadger.AdministrativeareaApi.config.CacheValueKeyConfig;
 
 import java.util.Comparator;
 import java.util.List;
@@ -45,6 +48,7 @@ public class SubRegionServiceImpl implements SubRegionService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.SUB_REGIONS }, allEntries = true)
     public ResponseDTO<String> create(NewAdministrativeAreaDTO dto) {
         if (dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode(region) for the sub region");
@@ -79,6 +83,7 @@ public class SubRegionServiceImpl implements SubRegionService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.SUB_REGIONS }, allEntries = true)
     public ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos) {
         // check if all have PartOfCode
         if (dtos.parallelStream().anyMatch(dto -> dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty())) {
@@ -146,6 +151,7 @@ public class SubRegionServiceImpl implements SubRegionService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.SUB_REGIONS }, allEntries = true)
     public ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto) {
         if (dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode");
@@ -180,6 +186,7 @@ public class SubRegionServiceImpl implements SubRegionService {
     }
 
     @Override
+    @Cacheable(value = CacheValueKeyConfig.SUB_REGIONS, key = "'list:' + #regionCode")
     public ResponseDTO<List<SubRegionDTO>> list(String regionCode) {
         Specification<SubRegion> spec = Specification.where(null);
         if (regionCode != null && !regionCode.isEmpty()) {
@@ -195,6 +202,7 @@ public class SubRegionServiceImpl implements SubRegionService {
     }
 
     @Override
+    @Cacheable(value = CacheValueKeyConfig.SUB_REGIONS, key = "#code")
     public ResponseDTO<SubRegionDTO> getByCode(String code) {
         SubRegion subRegion = subRegionRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("SubRegion not found"));
@@ -202,6 +210,7 @@ public class SubRegionServiceImpl implements SubRegionService {
     }
 
     @Override
+    @Cacheable(value = CacheValueKeyConfig.SUB_REGIONS, key = "'search:' + #name + '-' + #code")
     public ResponseDTO<List<SubRegionDTO>> search(String name, String code) {
         Specification<SubRegion> spec = Specification.where(null);
         if (name != null && !name.isEmpty()) {
@@ -221,6 +230,7 @@ public class SubRegionServiceImpl implements SubRegionService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.SUB_REGIONS }, allEntries = true)
     public void upload(List<AdministrativeAreaExcelDTO> dtoList) {
         // Step 1: Get all existing sub-regions from database
         List<SubRegion> dbSubRegions = subRegionRepository.findAll();
@@ -289,6 +299,7 @@ public class SubRegionServiceImpl implements SubRegionService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.SUB_REGIONS }, allEntries = true)
     public void saveAll(List<SubRegion> subRegions) {
         subRegionRepository.saveAll(subRegions);
 
@@ -296,6 +307,7 @@ public class SubRegionServiceImpl implements SubRegionService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.SUB_REGIONS }, allEntries = true)
     public ResponseDTO<String> delete(String code) {
         SubRegion subRegion = subRegionRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("Sub Region not found"));

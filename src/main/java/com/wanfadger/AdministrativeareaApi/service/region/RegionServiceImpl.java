@@ -18,9 +18,12 @@ import lombok.extern.slf4j.Slf4j;
 import com.wanfadger.AdministrativeareaApi.repository.specification.GenericSpecification;
 import com.wanfadger.AdministrativeareaApi.enums.MatchType;
 import com.wanfadger.AdministrativeareaApi.dto.SearchCriteria;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.wanfadger.AdministrativeareaApi.config.CacheValueKeyConfig;
 
 import java.util.Comparator;
 import java.util.List;
@@ -40,6 +43,7 @@ public class RegionServiceImpl implements RegionService {
 
     @Override
     @Transactional
+    @CacheEvict(value = CacheValueKeyConfig.REGIONS, allEntries = true)
     public ResponseDTO<String> create(NewAdministrativeAreaDTO dto) {
         if (regionRepository.findByNameIgnoreCase(dto.getName()).isPresent()) {
             throw new AlreadyExistsException("Administrative Area Already Exists");
@@ -66,6 +70,7 @@ public class RegionServiceImpl implements RegionService {
 
     @Override
     @Transactional
+    @CacheEvict(value = CacheValueKeyConfig.REGIONS, allEntries = true)
     public ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos) {
         List<Region> regions = dtos.parallelStream()
                 .filter(dto -> regionRepository.findByNameIgnoreCase(dto.getName()).isEmpty())
@@ -90,6 +95,7 @@ public class RegionServiceImpl implements RegionService {
 
     @Override
     @Transactional
+    @CacheEvict(value = CacheValueKeyConfig.REGIONS, allEntries = true)
     public ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto) {
         Region region = regionRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
@@ -116,6 +122,7 @@ public class RegionServiceImpl implements RegionService {
     }
 
     @Override
+    @Cacheable(value = CacheValueKeyConfig.REGIONS, key = "'list'")
     public ResponseDTO<List<RegionDTO>> list() {
         List<RegionDTO> regionDtos = regionRepository.findAll().stream()
                 .map(this::convertRegionDTO)
@@ -125,6 +132,7 @@ public class RegionServiceImpl implements RegionService {
     }
 
     @Override
+    @Cacheable(value = CacheValueKeyConfig.REGIONS, key = "#code")
     public ResponseDTO<RegionDTO> getByCode(String code) {
         Region region = regionRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("Region not found"));
@@ -132,6 +140,7 @@ public class RegionServiceImpl implements RegionService {
     }
 
     @Override
+    @Cacheable(value = CacheValueKeyConfig.REGIONS, key = "'search:' + #name + '-' + #code")
     public ResponseDTO<List<RegionDTO>> search(String name, String code) {
         Specification<Region> spec = Specification.where(null);
         if (name != null && !name.isEmpty()) {
@@ -151,6 +160,7 @@ public class RegionServiceImpl implements RegionService {
 
     @Override
     @Transactional
+    @CacheEvict(value = CacheValueKeyConfig.REGIONS, allEntries = true)
     public void upload(List<AdministrativeAreaExcelDTO> dtoList) {
         // Step 1: Get all existing regions from database
         List<Region> dbRegions = regionRepository.findAll();
@@ -204,6 +214,7 @@ public class RegionServiceImpl implements RegionService {
 
     @Override
     @Transactional
+    @CacheEvict(value = CacheValueKeyConfig.REGIONS, allEntries = true)
     public void saveAll(List<Region> regions) {
         regionRepository.saveAll(regions);
 
@@ -211,6 +222,7 @@ public class RegionServiceImpl implements RegionService {
 
     @Override
     @Transactional
+    @CacheEvict(value = CacheValueKeyConfig.REGIONS, allEntries = true)
     public ResponseDTO<String> delete(String code) {
         Region region = regionRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("Region not found"));

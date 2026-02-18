@@ -25,9 +25,12 @@ import lombok.extern.slf4j.Slf4j;
 import com.wanfadger.AdministrativeareaApi.repository.specification.GenericSpecification;
 import com.wanfadger.AdministrativeareaApi.enums.MatchType;
 import com.wanfadger.AdministrativeareaApi.dto.SearchCriteria;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.wanfadger.AdministrativeareaApi.config.CacheValueKeyConfig;
 
 import java.util.Comparator;
 import java.util.List;
@@ -46,6 +49,7 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.LOCAL_GOVERNMENTS }, allEntries = true)
     public ResponseDTO<String> create(NewAdministrativeAreaDTO dto) {
         if (dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode(sub region) for the local government");
@@ -82,6 +86,7 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.LOCAL_GOVERNMENTS }, allEntries = true)
     public ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos) {
         if (dtos.parallelStream().anyMatch(dto -> dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty())) {
             throw new MissingDataException("Found Administrative Area without PartOfCoce");
@@ -117,6 +122,7 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.LOCAL_GOVERNMENTS }, allEntries = true)
     public ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto) {
         if (dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode");
@@ -151,6 +157,7 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
     }
 
     @Override
+    @Cacheable(value = CacheValueKeyConfig.LOCAL_GOVERNMENTS, key = "'list:' + #subRegionCode")
     public ResponseDTO<List<LocalGovernmentDTO>> list(String subRegionCode) {
         Specification<LocalGovernment> spec = Specification.where(null);
         if (subRegionCode != null && !subRegionCode.isEmpty()) {
@@ -166,6 +173,7 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
     }
 
     @Override
+    @Cacheable(value = CacheValueKeyConfig.LOCAL_GOVERNMENTS, key = "#code")
     public ResponseDTO<LocalGovernmentDTO> getByCode(String code) {
         LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("LocalGovernment not found"));
@@ -173,6 +181,7 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
     }
 
     @Override
+    @Cacheable(value = CacheValueKeyConfig.LOCAL_GOVERNMENTS, key = "'search:' + #name + '-' + #code")
     public ResponseDTO<List<LocalGovernmentDTO>> search(String name, String code) {
         Specification<LocalGovernment> spec = Specification.where(null);
         if (name != null && !name.isEmpty()) {
@@ -192,6 +201,7 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.LOCAL_GOVERNMENTS }, allEntries = true)
     public void upload(List<AdministrativeAreaExcelDTO> dtoList) {
         // Step 1: Get all existing local governments from database
         List<LocalGovernment> dbLocalGovernments = localGovernmentRepository.findAll();
@@ -272,6 +282,7 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.LOCAL_GOVERNMENTS }, allEntries = true)
     public void saveAll(List<LocalGovernment> localGovernments) {
         localGovernmentRepository.saveAll(localGovernments);
 
@@ -279,6 +290,7 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.LOCAL_GOVERNMENTS }, allEntries = true)
     public ResponseDTO<String> delete(String code) {
         LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("Local Government not found"));

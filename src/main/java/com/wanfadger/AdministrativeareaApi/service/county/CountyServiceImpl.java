@@ -27,9 +27,12 @@ import lombok.extern.slf4j.Slf4j;
 import com.wanfadger.AdministrativeareaApi.repository.specification.GenericSpecification;
 import com.wanfadger.AdministrativeareaApi.enums.MatchType;
 import com.wanfadger.AdministrativeareaApi.dto.SearchCriteria;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.wanfadger.AdministrativeareaApi.config.CacheValueKeyConfig;
 
 import java.util.Comparator;
 import java.util.List;
@@ -49,6 +52,7 @@ public class CountyServiceImpl implements CountyService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.COUNTIES }, allEntries = true)
     public ResponseDTO<String> create(NewAdministrativeAreaDTO dto) {
         if (dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode(local government) for the county");
@@ -84,6 +88,7 @@ public class CountyServiceImpl implements CountyService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.COUNTIES }, allEntries = true)
     public ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos) {
         if (dtos.parallelStream().anyMatch(dto -> dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty())) {
             throw new MissingDataException("Found Administrative Area without PartOfCoce");
@@ -120,6 +125,7 @@ public class CountyServiceImpl implements CountyService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.COUNTIES }, allEntries = true)
     public ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto) {
         if (dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode");
@@ -154,6 +160,7 @@ public class CountyServiceImpl implements CountyService {
     }
 
     @Override
+    @Cacheable(value = CacheValueKeyConfig.COUNTIES, key = "'list:' + #localGovernmentCode")
     public ResponseDTO<List<CountyDTO>> list(String localGovernmentCode) {
         Specification<County> spec = Specification.where(null);
         if (localGovernmentCode != null && !localGovernmentCode.isEmpty()) {
@@ -169,6 +176,7 @@ public class CountyServiceImpl implements CountyService {
     }
 
     @Override
+    @Cacheable(value = CacheValueKeyConfig.COUNTIES, key = "#code")
     public ResponseDTO<CountyDTO> getByCode(String code) {
         County county = countyRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("County not found"));
@@ -176,6 +184,7 @@ public class CountyServiceImpl implements CountyService {
     }
 
     @Override
+    @Cacheable(value = CacheValueKeyConfig.COUNTIES, key = "'search:' + #name + '-' + #code")
     public ResponseDTO<List<CountyDTO>> search(String name, String code) {
         Specification<County> spec = Specification.where(null);
         if (name != null && !name.isEmpty()) {
@@ -195,6 +204,7 @@ public class CountyServiceImpl implements CountyService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.COUNTIES }, allEntries = true)
     public void upload(List<AdministrativeAreaExcelDTO> dtoList) {
         List<County> dbCounties = countyRepository.findAll();
 
@@ -267,6 +277,7 @@ public class CountyServiceImpl implements CountyService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.COUNTIES }, allEntries = true)
     public void saveAll(List<County> counties) {
         countyRepository.saveAll(counties);
 
@@ -274,6 +285,7 @@ public class CountyServiceImpl implements CountyService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.COUNTIES }, allEntries = true)
     public ResponseDTO<String> delete(String code) {
         County county = countyRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("County not found"));

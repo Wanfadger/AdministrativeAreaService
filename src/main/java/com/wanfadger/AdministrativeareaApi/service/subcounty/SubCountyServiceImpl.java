@@ -29,9 +29,12 @@ import lombok.extern.slf4j.Slf4j;
 import com.wanfadger.AdministrativeareaApi.repository.specification.GenericSpecification;
 import com.wanfadger.AdministrativeareaApi.enums.MatchType;
 import com.wanfadger.AdministrativeareaApi.dto.SearchCriteria;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.wanfadger.AdministrativeareaApi.config.CacheValueKeyConfig;
 
 import java.util.Comparator;
 import java.util.List;
@@ -50,6 +53,7 @@ public class SubCountyServiceImpl implements SubCountyService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.SUB_COUNTIES }, allEntries = true)
     public ResponseDTO<String> create(NewAdministrativeAreaDTO dto) {
         if (dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode(county) for the sub county");
@@ -84,6 +88,7 @@ public class SubCountyServiceImpl implements SubCountyService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.SUB_COUNTIES }, allEntries = true)
     public ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos) {
         if (dtos.parallelStream().anyMatch(dto -> dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty())) {
             throw new MissingDataException("Found Administrative Area without PartOfCoce");
@@ -158,6 +163,7 @@ public class SubCountyServiceImpl implements SubCountyService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.SUB_COUNTIES }, allEntries = true)
     public ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto) {
         if (dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode");
@@ -192,6 +198,7 @@ public class SubCountyServiceImpl implements SubCountyService {
     }
 
     @Override
+    @Cacheable(value = CacheValueKeyConfig.SUB_COUNTIES, key = "'list:' + #countyCode")
     public ResponseDTO<List<SubCountyDTO>> list(String countyCode) {
         Specification<SubCounty> spec = Specification.where(null);
         if (countyCode != null && !countyCode.isEmpty()) {
@@ -207,6 +214,7 @@ public class SubCountyServiceImpl implements SubCountyService {
     }
 
     @Override
+    @Cacheable(value = CacheValueKeyConfig.SUB_COUNTIES, key = "#code")
     public ResponseDTO<SubCountyDTO> getByCode(String code) {
         SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("SubCounty not found"));
@@ -214,6 +222,7 @@ public class SubCountyServiceImpl implements SubCountyService {
     }
 
     @Override
+    @Cacheable(value = CacheValueKeyConfig.SUB_COUNTIES, key = "'search:' + #name + '-' + #code")
     public ResponseDTO<List<SubCountyDTO>> search(String name, String code) {
         Specification<SubCounty> spec = Specification.where(null);
         if (name != null && !name.isEmpty()) {
@@ -233,6 +242,7 @@ public class SubCountyServiceImpl implements SubCountyService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.SUB_COUNTIES }, allEntries = true)
     public void upload(List<AdministrativeAreaExcelDTO> dtoList) {
         List<SubCounty> dbSubCounties = subCountyRepository.findAll();
 
@@ -310,6 +320,7 @@ public class SubCountyServiceImpl implements SubCountyService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.SUB_COUNTIES }, allEntries = true)
     public void saveAll(List<SubCounty> subCounties) {
         subCountyRepository.saveAll(subCounties);
 
@@ -317,6 +328,7 @@ public class SubCountyServiceImpl implements SubCountyService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.SUB_COUNTIES }, allEntries = true)
     public ResponseDTO<String> delete(String code) {
         SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("Sub County not found"));

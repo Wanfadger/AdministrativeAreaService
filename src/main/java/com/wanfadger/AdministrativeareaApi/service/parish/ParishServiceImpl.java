@@ -31,9 +31,12 @@ import lombok.extern.slf4j.Slf4j;
 import com.wanfadger.AdministrativeareaApi.repository.specification.GenericSpecification;
 import com.wanfadger.AdministrativeareaApi.enums.MatchType;
 import com.wanfadger.AdministrativeareaApi.dto.SearchCriteria;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.wanfadger.AdministrativeareaApi.config.CacheValueKeyConfig;
 
 import java.util.Comparator;
 import java.util.List;
@@ -53,6 +56,7 @@ public class ParishServiceImpl implements ParishService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.PARISHES }, allEntries = true)
     public ResponseDTO<String> create(NewAdministrativeAreaDTO dto) {
         if (dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode(sub county) for the parish");
@@ -87,6 +91,7 @@ public class ParishServiceImpl implements ParishService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.PARISHES }, allEntries = true)
     public ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos) {
         if (dtos.parallelStream().anyMatch(dto -> dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty())) {
             throw new MissingDataException("Found Administrative Area without PartOfCoce");
@@ -125,6 +130,7 @@ public class ParishServiceImpl implements ParishService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.PARISHES }, allEntries = true)
     public ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto) {
         if (dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode");
@@ -159,6 +165,7 @@ public class ParishServiceImpl implements ParishService {
     }
 
     @Override
+    @Cacheable(value = CacheValueKeyConfig.PARISHES, key = "'list:' + #subCountyCode")
     public ResponseDTO<List<ParishDTO>> list(String subCountyCode) {
         Specification<Parish> spec = Specification.where(null);
         if (subCountyCode != null && !subCountyCode.isEmpty()) {
@@ -174,6 +181,7 @@ public class ParishServiceImpl implements ParishService {
     }
 
     @Override
+    @Cacheable(value = CacheValueKeyConfig.PARISHES, key = "#code")
     public ResponseDTO<ParishDTO> getByCode(String code) {
         Parish parish = parishRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("Parish not found"));
@@ -181,6 +189,7 @@ public class ParishServiceImpl implements ParishService {
     }
 
     @Override
+    @Cacheable(value = CacheValueKeyConfig.PARISHES, key = "'search:' + #name + '-' + #code")
     public ResponseDTO<List<ParishDTO>> search(String name, String code) {
         Specification<Parish> spec = Specification.where(null);
         if (name != null && !name.isEmpty()) {
@@ -200,6 +209,7 @@ public class ParishServiceImpl implements ParishService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.PARISHES }, allEntries = true)
     public void upload(List<AdministrativeAreaExcelDTO> dtoList) {
         List<Parish> dbParishes = parishRepository.findAll();
 
@@ -258,6 +268,7 @@ public class ParishServiceImpl implements ParishService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.PARISHES }, allEntries = true)
     public void saveAll(List<Parish> parishes) {
         parishRepository.saveAll(parishes);
 
@@ -265,6 +276,7 @@ public class ParishServiceImpl implements ParishService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { CacheValueKeyConfig.PARISHES }, allEntries = true)
     public ResponseDTO<String> delete(String code) {
         Parish parish = parishRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("Parish not found"));
