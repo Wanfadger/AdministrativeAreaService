@@ -1,5 +1,6 @@
 package com.wanfadger.AdministrativeareaApi.entity;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -24,17 +25,7 @@ public class BaseEntity {
     @Id
     @UuidGenerator
     private String id;
-
-    /**
-     * Unique code identifier for the administrative area.
-     * 
-     * Indexes are defined at entity level using @Table(indexes = ...) on each entity class.
-     * This gives entity-level annotations priority and ensures table-specific index names
-     * (e.g., idx_region_code, idx_subregion_code) to avoid naming conflicts.
-     * 
-     * Flyway migration V1__add_performance_indexes.sql uses IF NOT EXISTS to safely
-     * handle cases where Hibernate already created the indexes, ensuring idempotency.
-     */
+    
     @Column(unique = true, nullable = false)
     private String code;
 
@@ -49,9 +40,11 @@ public class BaseEntity {
 
     @CreationTimestamp
     @Column(updatable = false)
+    @Schema(description = "Date and time when the area was created", example = "2024-03-27T14:30:00")
     private LocalDateTime createdDateTime;
 
     @UpdateTimestamp
+    @Schema(description = "Date and time when the area was last updated", example = "2024-03-27T14:30:00")
     private LocalDateTime updatedDateTime;
 
     public BaseEntity(String id) {
