@@ -9,12 +9,7 @@ import com.wanfadger.AdministrativeareaApi.dto.*;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.AdministrativeAreaResponseDto;
 import com.wanfadger.AdministrativeareaApi.dto.uniqueDtos.*;
 import com.wanfadger.AdministrativeareaApi.entity.*;
-import com.wanfadger.AdministrativeareaApi.service.county.DbCountyService;
-import com.wanfadger.AdministrativeareaApi.service.localgovernment.DbLocalGovernmentService;
-import com.wanfadger.AdministrativeareaApi.service.parish.DbParishService;
-import com.wanfadger.AdministrativeareaApi.service.region.DbRegionService;
-import com.wanfadger.AdministrativeareaApi.service.subRegion.DbSubRegionService;
-import com.wanfadger.AdministrativeareaApi.service.subcounty.DbSubCountyService;
+import com.wanfadger.AdministrativeareaApi.repository.*;
 import com.wanfadger.AdministrativeareaApi.shared.util.CacheHelperService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
@@ -35,12 +30,12 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class AdministrativeAreaServiceImpl implements AdministrativeAreaService {
-    private final DbRegionService dbRegionService;
-    private final DbSubRegionService dbSubRegionService;
-    private final DbLocalGovernmentService dbLocalGovernmentService;
-    private final DbCountyService dbCountyService;
-    private final DbSubCountyService dbSubCountyService;
-    private final DbParishService dbParishService;
+    private final RegionRepository regionRepository;
+    private final SubRegionRepository subRegionRepository;
+    private final LocalGovernmentRepository localGovernmentRepository;
+    private final CountyRepository countyRepository;
+    private final SubCountyRepository subCountyRepository;
+    private final ParishRepository parishRepository;
     private final CacheHelperService cacheHelper;
 
     private boolean notNullEmpty(String value) {
@@ -58,7 +53,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 String code;
                 do {
                     code = UUID.randomUUID().toString();
-                } while (dbRegionService.dbByCode(code).isPresent());
+                } while (regionRepository.findByCodeIgnoreCase(code).isPresent());
                 yield code;
             }
 
@@ -66,7 +61,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 String code;
                 do {
                     code = UUID.randomUUID().toString();
-                } while (dbSubRegionService.dbByCode(code).isPresent());
+                } while (subRegionRepository.findByCodeIgnoreCase(code).isPresent());
                 yield code;
             }
 
@@ -74,7 +69,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 String code;
                 do {
                     code = UUID.randomUUID().toString();
-                } while (dbLocalGovernmentService.dbByCode(code).isPresent());
+                } while (localGovernmentRepository.findByCodeIgnoreCase(code).isPresent());
                 yield code;
             }
 
@@ -82,7 +77,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 String code;
                 do {
                     code = UUID.randomUUID().toString();
-                } while (dbCountyService.dbByCode(code).isPresent());
+                } while (countyRepository.findByCodeIgnoreCase(code).isPresent());
                 yield code;
             }
 
@@ -90,7 +85,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 String code;
                 do {
                     code = UUID.randomUUID().toString();
-                } while (dbSubCountyService.dbByCode(code).isPresent());
+                } while (subCountyRepository.findByCodeIgnoreCase(code).isPresent());
                 yield code;
             }
 
@@ -98,7 +93,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 String code;
                 do {
                     code = UUID.randomUUID().toString();
-                } while (dbParishService.dbByCode(code).isPresent());
+                } while (parishRepository.findByCodeIgnoreCase(code).isPresent());
                 yield code;
             }
         };
@@ -114,13 +109,13 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         return switch (administrativeAreaType) {
             case REGION -> {
 
-                if (dbRegionService.dbByName(dto.getName()).isPresent()) {
+                if (regionRepository.findByNameIgnoreCase(dto.getName()).isPresent()) {
                     throw new AlreadyExistsException("Administrative Area Already Exists");
                 }
 
                 Region region = convertDtoRegion(dto, administrativeAreaType);
 
-                dbRegionService.dbNew(region);
+                regionRepository.save(region);
 
                 // Evict service-level cache after write operation
                 cacheHelper.evictAll(CacheValueKeyConfig.ADMINISTRATIVE_AREAS);
@@ -136,17 +131,18 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing PartOfCode(region) for the sub region");
                 }
 
-                Region region = dbRegionService.dbByCode(dto.getPartOfCode())
+                Region region = regionRepository.findByCodeIgnoreCase(dto.getPartOfCode())
                         .orElseThrow(() -> new InvalidException("Invalid PartOfCode: " + dto.getPartOfCode()));
 
-                if (dbSubRegionService.dbByName_RegionCode(dto.getName(), dto.getPartOfCode()).isPresent()) {
+                if (subRegionRepository.findByNameIgnoreCaseAndRegion_Code(dto.getName(), dto.getPartOfCode())
+                        .isPresent()) {
                     throw new AlreadyExistsException("Sub region Already Exists in the region");
                 }
 
                 SubRegion subRegion = convertDtoSubRegion(dto, administrativeAreaType);
                 subRegion.setRegion(region);
 
-                dbSubRegionService.dbNew(subRegion);
+                subRegionRepository.save(subRegion);
 
                 // Evict service-level cache after write operation
                 cacheHelper.evictAll(CacheValueKeyConfig.ADMINISTRATIVE_AREAS);
@@ -161,17 +157,18 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing PartOfCode(sub region) for localgovernment");
                 }
 
-                SubRegion subRegion = dbSubRegionService.dbByCode(dto.getPartOfCode())
+                SubRegion subRegion = subRegionRepository.findByCodeIgnoreCase(dto.getPartOfCode())
                         .orElseThrow(() -> new InvalidException("Invalid PartOfCode: " + dto.getPartOfCode()));
 
-                if (dbLocalGovernmentService.dbByName_SubRegionCode(dto.getName(), dto.getPartOfCode()).isPresent()) {
+                if (localGovernmentRepository.findByNameIgnoreCaseAndSubRegion_Code(dto.getName(), dto.getPartOfCode())
+                        .isPresent()) {
                     throw new AlreadyExistsException("Local Government Already Exists in the sub region");
                 }
 
                 LocalGovernment localGovernment = convertDtoLocalGovernment(dto, administrativeAreaType);
                 localGovernment.setSubRegion(subRegion);
 
-                dbLocalGovernmentService.dbNew(localGovernment);
+                localGovernmentRepository.save(localGovernment);
 
                 // Evict service-level cache after write operation
                 cacheHelper.evictAll(CacheValueKeyConfig.ADMINISTRATIVE_AREAS);
@@ -186,17 +183,18 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing PartOfCode(local government) for county");
                 }
 
-                LocalGovernment localGovernment = dbLocalGovernmentService.dbByCode(dto.getPartOfCode())
+                LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(dto.getPartOfCode())
                         .orElseThrow(() -> new InvalidException("Invalid PartOfCode: " + dto.getPartOfCode()));
 
-                if (dbCountyService.dbByName_LocalGovernment_Code(dto.getName(), dto.getPartOfCode()).isPresent()) {
+                if (countyRepository.findByNameIgnoreCaseAndLocalGovernment_Code(dto.getName(), dto.getPartOfCode())
+                        .isPresent()) {
                     throw new AlreadyExistsException("County Already Exists in the local government");
                 }
 
                 County county = convertDtoCounty(dto, administrativeAreaType);
                 county.setLocalGovernment(localGovernment);
 
-                dbCountyService.dbNew(county);
+                countyRepository.save(county);
 
                 // Evict service-level cache after write operation
                 cacheHelper.evictAll(CacheValueKeyConfig.ADMINISTRATIVE_AREAS);
@@ -211,17 +209,18 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing PartOfCode(county) for sub county");
                 }
 
-                County county = dbCountyService.dbByCode(dto.getPartOfCode())
+                County county = countyRepository.findByCodeIgnoreCase(dto.getPartOfCode())
                         .orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
 
-                if (dbSubCountyService.dbByName_CountyCode(dto.getName(), dto.getPartOfCode()).isPresent()) {
+                if (subCountyRepository.findByNameIgnoreCaseAndCounty_Id(dto.getName(), dto.getPartOfCode())
+                        .isPresent()) {
                     throw new AlreadyExistsException("Sub County Already Exists in the county");
                 }
 
                 SubCounty subCounty = convertDtoSubCounty(dto, administrativeAreaType);
                 subCounty.setCounty(county);
 
-                dbSubCountyService.dbNew(subCounty);
+                subCountyRepository.save(subCounty);
 
                 // Evict service-level cache after write operation
                 cacheHelper.evictAll(CacheValueKeyConfig.ADMINISTRATIVE_AREAS);
@@ -236,17 +235,18 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing PartOfCode(sub county) for parish");
                 }
 
-                SubCounty subCounty = dbSubCountyService.dbByCode(dto.getPartOfCode())
+                SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(dto.getPartOfCode())
                         .orElseThrow(() -> new InvalidException("Invalid PartOfCode: " + dto.getPartOfCode()));
 
-                if (dbParishService.dbByName_SubCountyCode(dto.getName(), dto.getPartOfCode()).isPresent()) {
+                if (parishRepository.findByNameIgnoreCaseAndSubCounty_Code(dto.getName(), dto.getPartOfCode())
+                        .isPresent()) {
                     throw new AlreadyExistsException("Parish Already Exists in the sub county");
                 }
 
                 Parish parish = convertDtoParish(dto, administrativeAreaType);
                 parish.setSubCounty(subCounty);
 
-                dbParishService.dbNew(parish);
+                parishRepository.save(parish);
 
                 // Evict service-level cache after write operation
                 cacheHelper.evictAll(CacheValueKeyConfig.ADMINISTRATIVE_AREAS);
@@ -329,10 +329,10 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             case REGION -> {
                 // exclude existing ones
                 List<Region> regions = dtos.parallelStream()
-                        .filter(dto -> dbRegionService.dbByName(dto.getName()).isEmpty())
+                        .filter(dto -> regionRepository.findByNameIgnoreCase(dto.getName()).isEmpty())
                         .map(dto -> convertDtoRegion(dto, administrativeAreaType)).toList();
 
-                dbRegionService.dbNew(regions);
+                regionRepository.saveAll(regions);
 
                 // Evict service-level cache after write operation
                 cacheHelper.evictAll(CacheValueKeyConfig.ADMINISTRATIVE_AREAS);
@@ -351,10 +351,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
                 // exclude existing ones
                 List<SubRegion> subRegions = dtos.parallelStream().filter(
-                        dto -> dbSubRegionService.dbByName_RegionCode(dto.getName(), dto.getPartOfCode()).isEmpty())
+                        dto -> subRegionRepository
+                                .findByNameIgnoreCaseAndRegion_Code(dto.getName(), dto.getPartOfCode()).isEmpty())
                         .map(dto -> convertDtoSubRegion(dto, administrativeAreaType)).toList();
 
-                dbSubRegionService.dbNew(subRegions);
+                subRegionRepository.saveAll(subRegions);
 
                 // Evict service-level cache after write operation
                 cacheHelper.evictAll(CacheValueKeyConfig.ADMINISTRATIVE_AREAS);
@@ -374,11 +375,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
                 // exclude existing ones
                 List<LocalGovernment> localGovernments = dtos.parallelStream()
-                        .filter(dto -> dbLocalGovernmentService
-                                .dbByName_SubRegionCode(dto.getName(), dto.getPartOfCode()).isEmpty())
+                        .filter(dto -> localGovernmentRepository
+                                .findByNameIgnoreCaseAndSubRegion_Code(dto.getName(), dto.getPartOfCode()).isEmpty())
                         .map(dto -> convertDtoLocalGovernment(dto, administrativeAreaType)).toList();
 
-                dbLocalGovernmentService.dbNew(localGovernments);
+                localGovernmentRepository.saveAll(localGovernments);
 
                 // Evict service-level cache after write operation
                 cacheHelper.evictAll(CacheValueKeyConfig.ADMINISTRATIVE_AREAS);
@@ -399,11 +400,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
                 // exclude existing ones
                 List<County> counties = dtos
-                        .parallelStream().filter(dto -> dbCountyService
-                                .dbByName_LocalGovernment_Code(dto.getName(), dto.getPartOfCode()).isEmpty())
+                        .parallelStream().filter(dto -> countyRepository
+                                .findByNameIgnoreCaseAndLocalGovernment_Code(dto.getName(), dto.getPartOfCode())
+                                .isEmpty())
                         .map(dto -> convertDtoCounty(dto, administrativeAreaType)).toList();
 
-                dbCountyService.dbNew(counties);
+                countyRepository.saveAll(counties);
 
                 // Evict service-level cache after write operation
                 cacheHelper.evictAll(CacheValueKeyConfig.ADMINISTRATIVE_AREAS);
@@ -422,10 +424,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
                 // exclude existing ones
                 List<SubCounty> subCounties = dtos.parallelStream().filter(
-                        dto -> dbSubCountyService.dbByName_CountyCode(dto.getName(), dto.getPartOfCode()).isEmpty())
+                        dto -> subCountyRepository.findByNameIgnoreCaseAndCounty_Id(dto.getName(), dto.getPartOfCode())
+                                .isEmpty())
                         .map(dto -> convertDtoSubCounty(dto, administrativeAreaType)).toList();
 
-                dbSubCountyService.dbNew(subCounties);
+                subCountyRepository.saveAll(subCounties);
 
                 // Evict service-level cache after write operation
                 cacheHelper.evictAll(CacheValueKeyConfig.ADMINISTRATIVE_AREAS);
@@ -446,10 +449,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
                 // exclude existing ones
                 List<Parish> parishes = dtos.parallelStream().filter(
-                        dto -> dbParishService.dbByName_SubCountyCode(dto.getName(), dto.getPartOfCode()).isEmpty())
+                        dto -> parishRepository
+                                .findByNameIgnoreCaseAndSubCounty_Code(dto.getName(), dto.getPartOfCode()).isEmpty())
                         .map(dto -> convertDtoParish(dto, administrativeAreaType)).toList();
 
-                dbParishService.dbNew(parishes);
+                parishRepository.saveAll(parishes);
 
                 // Evict service-level cache after write operation
                 cacheHelper.evictAll(CacheValueKeyConfig.ADMINISTRATIVE_AREAS);
@@ -497,7 +501,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 if (!notNullEmpty(code)) {
                     throw new MissingDataException("Missing Administrative Area Code");
                 }
-                Region region = dbRegionService.dbByCode(code)
+                Region region = regionRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("Region not found"));
                 AdministrativeAreaResponseDto<CodeNameDTO> result = new AdministrativeAreaResponseDto<>(
                         new CodeNameDTO(region.getCode(), region.getName()));
@@ -525,7 +529,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 if (!notNullEmpty(code)) {
                     throw new MissingDataException("Missing Administrative Area Code");
                 }
-                SubRegion subRegion = dbSubRegionService.dbByCode(code)
+                SubRegion subRegion = subRegionRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("SubRegion not found"));
                 AdministrativeAreaResponseDto<CodeNameDTO> result = new AdministrativeAreaResponseDto<>(
                         new CodeNameDTO(subRegion.getCode(), subRegion.getName()));
@@ -553,7 +557,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 if (!notNullEmpty(code)) {
                     throw new MissingDataException("Missing Administrative Area Code");
                 }
-                LocalGovernment localGovernment = dbLocalGovernmentService.dbByCode(code)
+                LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("LocalGovernment not found"));
                 AdministrativeAreaResponseDto<CodeNameDTO> result = new AdministrativeAreaResponseDto<>(
                         new CodeNameDTO(localGovernment.getCode(), localGovernment.getName()));
@@ -581,7 +585,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 if (!notNullEmpty(code)) {
                     throw new MissingDataException("Missing Administrative Area Code");
                 }
-                County county = dbCountyService.dbByCode(code)
+                County county = countyRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("County not found"));
                 AdministrativeAreaResponseDto<CodeNameDTO> result = new AdministrativeAreaResponseDto<>(
                         new CodeNameDTO(county.getCode(), county.getName()));
@@ -609,7 +613,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 if (!notNullEmpty(code)) {
                     throw new MissingDataException("Missing Administrative Area Code");
                 }
-                SubCounty subCounty = dbSubCountyService.dbByCode(code)
+                SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("SubCounty not found"));
                 AdministrativeAreaResponseDto<CodeNameDTO> result = new AdministrativeAreaResponseDto<>(
                         new CodeNameDTO(subCounty.getCode(), subCounty.getName()));
@@ -637,7 +641,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 if (!notNullEmpty(code)) {
                     throw new MissingDataException("Missing Administrative Area Code");
                 }
-                Parish parish = dbParishService.dbByCode(code)
+                Parish parish = parishRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("Parish not found"));
                 AdministrativeAreaResponseDto<CodeNameDTO> result = new AdministrativeAreaResponseDto<>(
                         new CodeNameDTO(parish.getCode(), parish.getName()));
@@ -688,7 +692,8 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 }
 
                 // Cache miss - fetch from database
-                List<CodeNameDTO> codeNameDtoList = dbRegionService.dbList().parallelStream()
+                // Cache miss - fetch from database
+                List<CodeNameDTO> codeNameDtoList = regionRepository.findAll().parallelStream()
                         .map(region -> new CodeNameDTO(region.getCode(), region.getName()))
                         .sorted(Comparator.comparing(CodeNameDTO::getCode))
                         .toList();
@@ -716,7 +721,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area partOf");
                 }
 
-                List<CodeNameDTO> codeNameDtoList = dbSubRegionService.dbByRegionCode(partOf).parallelStream()
+                List<CodeNameDTO> codeNameDtoList = subRegionRepository.findAllByRegion_Code(partOf).parallelStream()
                         .map(subRegion -> new CodeNameDTO(subRegion.getCode(), subRegion.getName()))
                         .sorted(Comparator.comparing(CodeNameDTO::getCode))
                         .toList();
@@ -744,7 +749,8 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area partOf");
                 }
 
-                List<CodeNameDTO> codeNameDtoList = dbLocalGovernmentService.dbBySubRegionCode(partOf).parallelStream()
+                List<CodeNameDTO> codeNameDtoList = localGovernmentRepository.findAllBySubRegion_Code(partOf)
+                        .parallelStream()
                         .map(localGovernment -> new CodeNameDTO(localGovernment.getCode(), localGovernment.getName()))
                         .sorted(Comparator.comparing(CodeNameDTO::getCode))
                         .toList();
@@ -772,7 +778,8 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area partOf");
                 }
 
-                List<CodeNameDTO> codeNameDtoList = dbCountyService.dbAllByLocalGovernmentCode(partOf).parallelStream()
+                List<CodeNameDTO> codeNameDtoList = countyRepository.findAllByLocalGovernment_Code(partOf)
+                        .parallelStream()
                         .map(county -> new CodeNameDTO(county.getCode(), county.getName()))
                         .sorted(Comparator.comparing(CodeNameDTO::getCode))
                         .toList();
@@ -800,7 +807,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area partOf");
                 }
 
-                List<CodeNameDTO> codeNameDtoList = dbSubCountyService.dbByCountyCode(partOf).parallelStream()
+                List<CodeNameDTO> codeNameDtoList = subCountyRepository.findAllByCounty_Code(partOf).parallelStream()
                         .map(subCounty -> new CodeNameDTO(subCounty.getCode(), subCounty.getName()))
                         .sorted(Comparator.comparing(CodeNameDTO::getCode))
                         .toList();
@@ -828,7 +835,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area partOf");
                 }
 
-                List<CodeNameDTO> codeNameDtoList = dbParishService.dbBySubCountyCode(partOf).parallelStream()
+                List<CodeNameDTO> codeNameDtoList = parishRepository.findAllBySubCounty_Code(partOf).parallelStream()
                         .map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
                         .sorted(Comparator.comparing(CodeNameDTO::getCode))
                         .toList();
@@ -882,15 +889,17 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
                 // Cache miss - fetch from database
                 // Get all parishes under region hierarchy
-                List<String> subRegionCodes = dbSubRegionService.dbByRegionCode(partOfCode).parallelStream()
+                List<String> subRegionCodes = subRegionRepository.findAllByRegion_Code(partOfCode).parallelStream()
                         .map(SubRegion::getCode).distinct().toList();
-                List<String> lgCodes = dbLocalGovernmentService.dbBySubRegionCodes(subRegionCodes).parallelStream()
+                List<String> lgCodes = localGovernmentRepository.findAllBySubRegionCodes(subRegionCodes)
+                        .parallelStream()
                         .map(LocalGovernment::getCode).distinct().toList();
-                List<String> countyCodes = dbCountyService.dbAllByLocalGovernmentCodes(lgCodes).parallelStream()
+                List<String> countyCodes = countyRepository.findAllByLocalGovernmentCodes(lgCodes).parallelStream()
                         .map(County::getCode).distinct().toList();
-                List<String> subCounties = dbSubCountyService.dbByCountyCodes(countyCodes).parallelStream()
+                List<String> subCounties = subCountyRepository.findAllByCountyCodes(countyCodes).parallelStream()
                         .map(SubCounty::getCode).distinct().toList();
-                List<CodeNameDTO> codeNameDtoList = dbParishService.dbBySubCountyCodes(subCounties).parallelStream()
+                List<CodeNameDTO> codeNameDtoList = parishRepository.findAllBySubCountyCodes(subCounties)
+                        .parallelStream()
                         .map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
                         .distinct()
                         .toList();
@@ -919,13 +928,14 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 }
 
                 // Get all parishes under sub-region hierarchy
-                List<String> lgCodes = dbLocalGovernmentService.dbBySubRegionCode(partOfCode).parallelStream()
+                List<String> lgCodes = localGovernmentRepository.findAllBySubRegion_Code(partOfCode).parallelStream()
                         .map(LocalGovernment::getCode).distinct().toList();
-                List<String> countyCodes = dbCountyService.dbAllByLocalGovernmentCodes(lgCodes).parallelStream()
+                List<String> countyCodes = countyRepository.findAllByLocalGovernmentCodes(lgCodes).parallelStream()
                         .map(County::getCode).distinct().toList();
-                List<String> subCounties = dbSubCountyService.dbByCountyCodes(countyCodes).parallelStream()
+                List<String> subCounties = subCountyRepository.findAllByCountyCodes(countyCodes).parallelStream()
                         .map(SubCounty::getCode).distinct().toList();
-                List<CodeNameDTO> codeNameDtoList = dbParishService.dbBySubCountyCodes(subCounties).parallelStream()
+                List<CodeNameDTO> codeNameDtoList = parishRepository.findAllBySubCountyCodes(subCounties)
+                        .parallelStream()
                         .map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
                         .sorted(Comparator.comparing(CodeNameDTO::getCode))
                         .toList();
@@ -954,11 +964,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 }
 
                 // Get all parishes under local government hierarchy
-                List<String> countyCodes = dbCountyService.dbAllByLocalGovernmentCode(partOfCode).parallelStream()
+                List<String> countyCodes = countyRepository.findAllByLocalGovernment_Code(partOfCode).parallelStream()
                         .map(County::getCode).distinct().toList();
-                List<String> subCountyCodes = dbSubCountyService.dbByCountyCodes(countyCodes).parallelStream()
+                List<String> subCountyCodes = subCountyRepository.findAllByCountyCodes(countyCodes).parallelStream()
                         .map(SubCounty::getCode).distinct().toList();
-                List<CodeNameDTO> codeNameDtoList = dbParishService.dbBySubCountyCodes(subCountyCodes).parallelStream()
+                List<CodeNameDTO> codeNameDtoList = parishRepository.findAllBySubCountyCodes(subCountyCodes)
+                        .parallelStream()
                         .map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
                         .sorted(Comparator.comparing(CodeNameDTO::getCode))
                         .toList();
@@ -987,9 +998,10 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 }
 
                 // Get all parishes under county
-                List<String> subCountyCodes = dbSubCountyService.dbByCountyCode(partOfCode).parallelStream()
+                List<String> subCountyCodes = subCountyRepository.findAllByCounty_Code(partOfCode).parallelStream()
                         .map(SubCounty::getCode).distinct().toList();
-                List<CodeNameDTO> codeNameDtoList = dbParishService.dbBySubCountyCodes(subCountyCodes).parallelStream()
+                List<CodeNameDTO> codeNameDtoList = parishRepository.findAllBySubCountyCodes(subCountyCodes)
+                        .parallelStream()
                         .map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
                         .sorted(Comparator.comparing(CodeNameDTO::getCode))
                         .toList();
@@ -1017,7 +1029,8 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing Administrative Area partOf");
                 }
 
-                List<CodeNameDTO> codeNameDtoList = dbParishService.dbBySubCountyCode(partOfCode).parallelStream()
+                List<CodeNameDTO> codeNameDtoList = parishRepository.findAllBySubCounty_Code(partOfCode)
+                        .parallelStream()
                         .map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
                         .sorted(Comparator.comparing(CodeNameDTO::getCode))
                         .toList();
@@ -1075,7 +1088,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 }
 
                 // Cache miss - fetch from database
-                List<RegionDTO> regionDtos = dbRegionService.dbList().parallelStream()
+                List<RegionDTO> regionDtos = regionRepository.findAll().parallelStream()
                         .map(AdministrativeAreaServiceImpl::convertRegionDTO)
                         .sorted(Comparator.comparing(RegionDTO::getCode))
                         .toList();
@@ -1102,12 +1115,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 // Cache miss - fetch from database
                 List<SubRegionDTO> subRegionDTOs;
                 if (notNullEmpty(partOf)) {
-                    subRegionDTOs = dbSubRegionService.dbByRegionCode(partOf).parallelStream()
+                    subRegionDTOs = subRegionRepository.findAllByRegion_Code(partOf).parallelStream()
                             .map(AdministrativeAreaServiceImpl::convertSubRegionDTO)
                             .sorted(Comparator.comparing(SubRegionDTO::getCode))
                             .toList();
                 } else {
-                    subRegionDTOs = dbSubRegionService.dbList().parallelStream()
+                    subRegionDTOs = subRegionRepository.findAll().parallelStream()
                             .map(AdministrativeAreaServiceImpl::convertSubRegionDTO)
                             .sorted(Comparator.comparing(SubRegionDTO::getCode))
                             .toList();
@@ -1136,12 +1149,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 // Cache miss - fetch from database
                 List<LocalGovernmentDTO> localGovernmentDtos;
                 if (notNullEmpty(partOf)) {
-                    localGovernmentDtos = dbLocalGovernmentService.dbBySubRegionCode(partOf).parallelStream()
+                    localGovernmentDtos = localGovernmentRepository.findAllBySubRegion_Code(partOf).parallelStream()
                             .map(this::convertLocalGovernmentDTO)
                             .sorted(Comparator.comparing(LocalGovernmentDTO::getCode))
                             .toList();
                 } else {
-                    localGovernmentDtos = dbLocalGovernmentService.dbList().parallelStream()
+                    localGovernmentDtos = localGovernmentRepository.findAll().parallelStream()
                             .map(this::convertLocalGovernmentDTO)
                             .sorted(Comparator.comparing(LocalGovernmentDTO::getCode))
                             .toList();
@@ -1170,12 +1183,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 // Cache miss - fetch from database
                 List<CountyDTO> countyDtos;
                 if (notNullEmpty(partOf)) {
-                    countyDtos = dbCountyService.dbAllByLocalGovernmentCode(partOf).parallelStream()
+                    countyDtos = countyRepository.findAllByLocalGovernment_Code(partOf).parallelStream()
                             .map(this::convertCountyDTO)
                             .sorted(Comparator.comparing(CountyDTO::getCode))
                             .toList();
                 } else {
-                    countyDtos = dbCountyService.dbList().parallelStream()
+                    countyDtos = countyRepository.findAll().parallelStream()
                             .map(this::convertCountyDTO)
                             .sorted(Comparator.comparing(CountyDTO::getCode))
                             .toList();
@@ -1203,12 +1216,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 // Cache miss - fetch from database
                 List<SubCountyDTO> subCountyDTOs;
                 if (notNullEmpty(partOf)) {
-                    subCountyDTOs = dbSubCountyService.dbByCountyCode(partOf).parallelStream()
+                    subCountyDTOs = subCountyRepository.findAllByCounty_Code(partOf).parallelStream()
                             .map(this::convertSubCountyDTO)
                             .sorted(Comparator.comparing(SubCountyDTO::getCode))
                             .toList();
                 } else {
-                    subCountyDTOs = dbSubCountyService.dbList().parallelStream()
+                    subCountyDTOs = subCountyRepository.findAll().parallelStream()
                             .map(this::convertSubCountyDTO)
                             .sorted(Comparator.comparing(SubCountyDTO::getCode))
                             .toList();
@@ -1243,12 +1256,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 long dbStartTime = System.currentTimeMillis();
                 List<ParishDTO> parishDtos;
                 if (notNullEmpty(partOf)) {
-                    parishDtos = dbParishService.dbBySubCountyCode(partOf).parallelStream()
+                    parishDtos = parishRepository.findAllBySubCounty_Code(partOf).parallelStream()
                             .map(this::convertParishDTO)
                             .sorted(Comparator.comparing(ParishDTO::getCode))
                             .toList();
                 } else {
-                    parishDtos = dbParishService.dbList().parallelStream()
+                    parishDtos = parishRepository.findAll().parallelStream()
                             .map(this::convertParishDTO)
                             .sorted(Comparator.comparing(ParishDTO::getCode))
                             .toList();
@@ -1306,7 +1319,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 }
 
                 // Cache miss - fetch from database
-                Region region = dbRegionService.dbByCode(code)
+                Region region = regionRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("Region not found"));
                 AdministrativeAreaResponseDto<RegionDTO> result = new AdministrativeAreaResponseDto<>(
                         convertRegionDTO(region));
@@ -1330,7 +1343,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 }
 
                 // Cache miss - fetch from database
-                SubRegion subRegion = dbSubRegionService.dbByCode(code)
+                SubRegion subRegion = subRegionRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("SubRegion not found"));
                 AdministrativeAreaResponseDto<SubRegionDTO> result = new AdministrativeAreaResponseDto<>(
                         convertSubRegionDTO(subRegion));
@@ -1354,7 +1367,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 }
 
                 // Cache miss - fetch from database
-                LocalGovernment localGovernment = dbLocalGovernmentService.dbByCode(code)
+                LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("LocalGovernment not found"));
                 AdministrativeAreaResponseDto<LocalGovernmentDTO> result = new AdministrativeAreaResponseDto<>(
                         convertLocalGovernmentDTO(localGovernment));
@@ -1378,7 +1391,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 }
 
                 // Cache miss - fetch from database
-                County county = dbCountyService.dbByCode(code)
+                County county = countyRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("County not found"));
                 AdministrativeAreaResponseDto<CountyDTO> result = new AdministrativeAreaResponseDto<>(
                         convertCountyDTO(county));
@@ -1402,7 +1415,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 }
 
                 // Cache miss - fetch from database
-                SubCounty subCounty = dbSubCountyService.dbByCode(code)
+                SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("SubCounty not found"));
                 AdministrativeAreaResponseDto<SubCountyDTO> result = new AdministrativeAreaResponseDto<>(
                         convertSubCountyDTO(subCounty));
@@ -1426,7 +1439,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 }
 
                 // Cache miss - fetch from database
-                Parish parish = dbParishService.dbByCode(code)
+                Parish parish = parishRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("Parish not found"));
                 AdministrativeAreaResponseDto<ParishDTO> result = new AdministrativeAreaResponseDto<>(
                         convertParishDTO(parish));
@@ -1463,7 +1476,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     private void uploadParishes(List<AdministrativeAreaExcelDTO> dtoList) {
-        List<Parish> dbParishes = dbParishService.dbList();
+        List<Parish> dbParishes = parishRepository.findAll();
 
         Set<UParish> newParishSet = dtoList.parallelStream().filter(dto -> dbParishes.stream().noneMatch(dbParish -> {
             SubCounty subCounty = dbParish.getSubCounty();
@@ -1488,13 +1501,13 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 return parish;
             })
                     .toList();
-            dbParishService.dbNew(newParishes);
+            parishRepository.saveAll(newParishes);
         }
 
     }
 
     private void uploadSubCounty(List<AdministrativeAreaExcelDTO> dtoList) {
-        List<SubCounty> dbSubCounties = dbSubCountyService.dbList();
+        List<SubCounty> dbSubCounties = subCountyRepository.findAll();
 
         Set<USubCounty> newSubCountySet = dtoList.parallelStream()
                 .filter(dto -> dbSubCounties.stream().noneMatch(dbSubCounty -> {
@@ -1519,8 +1532,8 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 return subCounty;
             }).toList();
 
-            dbSubCountyService.dbNew(newSubCounties);
-            dbSubCounties2 = dbSubCountyService.dbList();
+            subCountyRepository.saveAll(newSubCounties);
+            dbSubCounties2 = subCountyRepository.findAll();
         } else {
             dbSubCounties2 = dbSubCounties;
         }
@@ -1552,7 +1565,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     private void uploadCounty(List<AdministrativeAreaExcelDTO> dtoList) {
-        List<County> dbCounties = dbCountyService.dbList();
+        List<County> dbCounties = countyRepository.findAll();
 
         Set<UCounty> newCountSet = dtoList.parallelStream()
                 .filter(dto -> dbCounties.stream().parallel().noneMatch(dbCounty -> {
@@ -1574,8 +1587,8 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 county.setLocalGovernment(UC.localGovernment());
                 return county;
             }).toList();
-            dbCountyService.dbNew(newCounties);
-            dbCounties2 = dbCountyService.dbList();
+            countyRepository.saveAll(newCounties);
+            dbCounties2 = countyRepository.findAll();
         } else {
             dbCounties2 = dbCounties;
         }
@@ -1605,7 +1618,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     private void uploadLocalGovernment(List<AdministrativeAreaExcelDTO> dtoList) {
-        List<LocalGovernment> dbLocalGovernments = dbLocalGovernmentService.dbList();
+        List<LocalGovernment> dbLocalGovernments = localGovernmentRepository.findAll();
 
         Set<ULocalGovernment> newLocalGovernmentSet = dtoList.parallelStream()
                 .filter(dto -> dbLocalGovernments.stream().noneMatch(dbLocalGovernment -> {
@@ -1626,8 +1639,8 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 localGovernment.setSubRegion(uL.subRegion());
                 return localGovernment;
             }).toList();
-            dbLocalGovernmentService.dbNew(newLocalGovernments);
-            dbLocalGovernments2 = dbLocalGovernmentService.dbList();
+            localGovernmentRepository.saveAll(newLocalGovernments);
+            dbLocalGovernments2 = localGovernmentRepository.findAll();
         } else {
             dbLocalGovernments2 = dbLocalGovernments;
         }
@@ -1665,7 +1678,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
      */
     private void uploadSubRegions(List<AdministrativeAreaExcelDTO> dtoList) {
         // Step 1: Get all existing sub-regions from database
-        List<SubRegion> dbSubRegions = dbSubRegionService.dbList();
+        List<SubRegion> dbSubRegions = subRegionRepository.findAll();
 
         // Step 2: Extract unique new sub-regions (exclude existing ones)
         // Uses dto.getDbRegion() which was set in uploadRegions()
@@ -1688,8 +1701,8 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 subRegion.setRegion(uSubRegion.region()); // Parent region reference
                 return subRegion;
             }).toList();
-            dbSubRegionService.dbNew(newSubRegions);
-            dbSubRegions2 = dbSubRegionService.dbList(); // Fetch updated list
+            subRegionRepository.saveAll(newSubRegions);
+            dbSubRegions2 = subRegionRepository.findAll(); // Fetch updated list
         } else {
             dbSubRegions2 = dbSubRegions; // No new sub-regions, use existing list
         }
@@ -1764,7 +1777,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
      */
     private void uploadRegions(List<AdministrativeAreaExcelDTO> dtoList) {
         // Step 1: Get all existing regions from database
-        List<Region> dbRegions = dbRegionService.dbList();
+        List<Region> dbRegions = regionRepository.findAll();
 
         // Step 2: Extract unique new regions from Excel (exclude existing ones)
         List<Region> newRegions = dtoList.parallelStream()
@@ -1782,8 +1795,8 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         // Step 3: Save new regions and fetch updated complete list
         List<Region> dbRegions2;
         if (newRegions.size() > 0) {
-            dbRegionService.dbNew(newRegions);
-            dbRegions2 = dbRegionService.dbList(); // Fetch updated list (existing + new)
+            regionRepository.saveAll(newRegions);
+            dbRegions2 = regionRepository.findAll(); // Fetch updated list (existing + new)
         } else {
             dbRegions2 = dbRegions; // No new regions, use existing list
         }
@@ -1823,7 +1836,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
         AdministrativeAreaResponseDto<String> result = switch (administrativeAreaType) {
             case REGION -> {
-                Region region = dbRegionService.dbByCode(dto.getCode())
+                Region region = regionRepository.findByCodeIgnoreCase(dto.getCode())
                         .orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
                 if (notNullEmpty(dto.getName())) {
                     region.setName(dto.getName());
@@ -1841,7 +1854,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     region.setDescription(dto.getDescription());
                 }
 
-                dbRegionService.dbNew(region);
+                regionRepository.save(region);
                 yield new AdministrativeAreaResponseDto<>("SUCCESS");
             }
             case SUBREGION -> {
@@ -1849,9 +1862,9 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing PartOfCode");
                 }
 
-                Region region = dbRegionService.dbByCode(dto.getPartOfCode())
+                Region region = regionRepository.findByCodeIgnoreCase(dto.getPartOfCode())
                         .orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
-                SubRegion subRegion = dbSubRegionService.dbByCode(dto.getCode())
+                SubRegion subRegion = subRegionRepository.findByCodeIgnoreCase(dto.getCode())
                         .orElseThrow(() -> new NotFoundException("Administrative Area NotFound"));
 
                 if (notNullEmpty(dto.getName())) {
@@ -1872,7 +1885,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
                 subRegion.setRegion(region);
 
-                dbSubRegionService.dbNew(subRegion);
+                subRegionRepository.save(subRegion);
                 yield new AdministrativeAreaResponseDto<>("SUCCESS");
             }
             case LOCALGOVERNMENT -> {
@@ -1880,9 +1893,9 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing PartOfCode");
                 }
 
-                SubRegion subRegion = dbSubRegionService.dbByCode(dto.getPartOfCode())
+                SubRegion subRegion = subRegionRepository.findByCodeIgnoreCase(dto.getPartOfCode())
                         .orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
-                LocalGovernment localGovernment = dbLocalGovernmentService.dbByCode(dto.getCode())
+                LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(dto.getCode())
                         .orElseThrow(() -> new NotFoundException("Administrative Area NotFound"));
 
                 if (notNullEmpty(dto.getName())) {
@@ -1903,7 +1916,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
                 localGovernment.setSubRegion(subRegion);
 
-                dbLocalGovernmentService.dbNew(localGovernment);
+                localGovernmentRepository.save(localGovernment);
                 yield new AdministrativeAreaResponseDto<>("SUCCESS");
             }
             case COUNTY -> {
@@ -1911,9 +1924,9 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing PartOfCode");
                 }
 
-                LocalGovernment localGovernment = dbLocalGovernmentService.dbByCode(dto.getPartOfCode())
+                LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(dto.getPartOfCode())
                         .orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
-                County county = dbCountyService.dbByCode(dto.getCode())
+                County county = countyRepository.findByCodeIgnoreCase(dto.getCode())
                         .orElseThrow(() -> new NotFoundException("Administrative Area NotFound"));
 
                 if (notNullEmpty(dto.getName())) {
@@ -1934,7 +1947,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
                 county.setLocalGovernment(localGovernment);
 
-                dbCountyService.dbNew(county);
+                countyRepository.save(county);
                 yield new AdministrativeAreaResponseDto<>("SUCCESS");
             }
             case SUBCOUNTY -> {
@@ -1942,9 +1955,9 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing PartOfCode");
                 }
 
-                County county = dbCountyService.dbByCode(dto.getPartOfCode())
+                County county = countyRepository.findByCodeIgnoreCase(dto.getPartOfCode())
                         .orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
-                SubCounty subCounty = dbSubCountyService.dbByCode(dto.getCode())
+                SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(dto.getCode())
                         .orElseThrow(() -> new NotFoundException("Administrative Area NotFound"));
 
                 if (notNullEmpty(dto.getName())) {
@@ -1965,7 +1978,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
                 subCounty.setCounty(county);
 
-                dbSubCountyService.dbNew(subCounty);
+                subCountyRepository.save(subCounty);
                 yield new AdministrativeAreaResponseDto<>("SUCCESS");
             }
             case PARISH -> {
@@ -1973,9 +1986,9 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                     throw new MissingDataException("Missing PartOfCode");
                 }
 
-                SubCounty subCounty = dbSubCountyService.dbByCode(dto.getPartOfCode())
+                SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(dto.getPartOfCode())
                         .orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
-                Parish parish = dbParishService.dbByCode(dto.getCode())
+                Parish parish = parishRepository.findByCodeIgnoreCase(dto.getCode())
                         .orElseThrow(() -> new NotFoundException("Administrative Area NotFound"));
 
                 if (notNullEmpty(dto.getName())) {
@@ -1996,7 +2009,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
                 parish.setSubCounty(subCounty);
 
-                dbParishService.dbNew(parish);
+                parishRepository.save(parish);
                 yield new AdministrativeAreaResponseDto<>("SUCCESS");
             }
         };
