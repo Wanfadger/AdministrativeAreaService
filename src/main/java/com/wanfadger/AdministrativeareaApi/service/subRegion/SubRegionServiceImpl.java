@@ -1,16 +1,15 @@
 package com.wanfadger.AdministrativeareaApi.service.subRegion;
 
-import com.wanfadger.AdministrativeareaApi.administrativeareaexceptions.AlreadyExistsException;
-import com.wanfadger.AdministrativeareaApi.administrativeareaexceptions.InvalidException;
-import com.wanfadger.AdministrativeareaApi.administrativeareaexceptions.MissingDataException;
-import com.wanfadger.AdministrativeareaApi.administrativeareaexceptions.NotFoundException;
-
+import com.wanfadger.AdministrativeareaApi.areaexceptions.AlreadyExistsException;
+import com.wanfadger.AdministrativeareaApi.areaexceptions.InvalidException;
+import com.wanfadger.AdministrativeareaApi.areaexceptions.MissingDataException;
+import com.wanfadger.AdministrativeareaApi.areaexceptions.NotFoundException;
 import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
 import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.RegionDTO;
 import com.wanfadger.AdministrativeareaApi.dto.SubRegionDTO;
 import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDTO;
-import com.wanfadger.AdministrativeareaApi.dto.reponses.AdministrativeAreaResponseDto;
+import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.uniqueDtos.USubRegion;
 import com.wanfadger.AdministrativeareaApi.entity.Region;
 import com.wanfadger.AdministrativeareaApi.entity.SubRegion;
@@ -26,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -41,7 +41,7 @@ public class SubRegionServiceImpl implements SubRegionService {
 
     @Override
     @Transactional
-    public AdministrativeAreaResponseDto<String> create(NewAdministrativeAreaDTO dto) {
+    public ResponseDTO<String> create(NewAdministrativeAreaDTO dto) {
         if (dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode(region) for the sub region");
         }
@@ -70,12 +70,12 @@ public class SubRegionServiceImpl implements SubRegionService {
 
         subRegionRepository.save(subRegion);
 
-        return new AdministrativeAreaResponseDto<>(subRegion.getCode(), "successfully created a sub region");
+        return new ResponseDTO<>(subRegion.getCode(), "successfully created a sub region");
     }
 
     @Override
     @Transactional
-    public AdministrativeAreaResponseDto<String> createAll(List<NewAdministrativeAreaDTO> dtos) {
+    public ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos) {
         // check if all have PartOfCode
         if (dtos.parallelStream().anyMatch(dto -> dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty())) {
             throw new MissingDataException("Found Administrative Area without PartOfCoce");
@@ -128,9 +128,9 @@ public class SubRegionServiceImpl implements SubRegionService {
                 })
                 .toList();
 
-        subRegionRepository.saveAll(validSubRegions);
+        subRegionRepository.saveAll(Objects.requireNonNull(validSubRegions));
 
-        return new AdministrativeAreaResponseDto<>("success",
+        return new ResponseDTO<>("success",
                 "successfully added " + validSubRegions.size() + " administrative areas");
     }
 
@@ -142,7 +142,7 @@ public class SubRegionServiceImpl implements SubRegionService {
 
     @Override
     @Transactional
-    public AdministrativeAreaResponseDto<String> update(String code, UpdateAdministrativeAreaDTO dto) {
+    public ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto) {
         if (dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode");
         }
@@ -172,11 +172,11 @@ public class SubRegionServiceImpl implements SubRegionService {
 
         subRegionRepository.save(subRegion);
 
-        return new AdministrativeAreaResponseDto<>("SUCCESS");
+        return new ResponseDTO<>("SUCCESS");
     }
 
     @Override
-    public AdministrativeAreaResponseDto<List<SubRegionDTO>> list(String regionCode) {
+    public ResponseDTO<List<SubRegionDTO>> list(String regionCode) {
         List<SubRegionDTO> subRegionDTOs;
         if (regionCode != null && !regionCode.isEmpty()) {
             subRegionDTOs = subRegionRepository.findAllByRegion_Code(regionCode).stream()
@@ -189,18 +189,18 @@ public class SubRegionServiceImpl implements SubRegionService {
                     .sorted(Comparator.comparing(SubRegionDTO::getCode))
                     .toList();
         }
-        return new AdministrativeAreaResponseDto<>(subRegionDTOs);
+        return new ResponseDTO<>(subRegionDTOs);
     }
 
     @Override
-    public AdministrativeAreaResponseDto<SubRegionDTO> getByCode(String code) {
+    public ResponseDTO<SubRegionDTO> getByCode(String code) {
         SubRegion subRegion = subRegionRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("SubRegion not found"));
-        return new AdministrativeAreaResponseDto<>(convertSubRegionDTO(subRegion));
+        return new ResponseDTO<>(convertSubRegionDTO(subRegion));
     }
 
     @Override
-    public AdministrativeAreaResponseDto<List<SubRegionDTO>> search(String name, String code) {
+    public ResponseDTO<List<SubRegionDTO>> search(String name, String code) {
         SubRegion subRegion = new SubRegion();
         if (name != null && !name.isEmpty()) {
             subRegion.setName(name);
@@ -219,7 +219,7 @@ public class SubRegionServiceImpl implements SubRegionService {
                 .sorted(Comparator.comparing(SubRegionDTO::getCode))
                 .toList();
 
-        return new AdministrativeAreaResponseDto<>(subRegionDTOs);
+        return new ResponseDTO<>(subRegionDTOs);
     }
 
     @Override

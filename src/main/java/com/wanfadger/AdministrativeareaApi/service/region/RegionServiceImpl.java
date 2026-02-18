@@ -1,14 +1,13 @@
 package com.wanfadger.AdministrativeareaApi.service.region;
 
-import com.wanfadger.AdministrativeareaApi.administrativeareaexceptions.AlreadyExistsException;
-import com.wanfadger.AdministrativeareaApi.administrativeareaexceptions.InvalidException;
-import com.wanfadger.AdministrativeareaApi.administrativeareaexceptions.NotFoundException;
-
+import com.wanfadger.AdministrativeareaApi.areaexceptions.AlreadyExistsException;
+import com.wanfadger.AdministrativeareaApi.areaexceptions.InvalidException;
+import com.wanfadger.AdministrativeareaApi.areaexceptions.NotFoundException;
 import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
 import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.RegionDTO;
 import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDTO;
-import com.wanfadger.AdministrativeareaApi.dto.reponses.AdministrativeAreaResponseDto;
+import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 import com.wanfadger.AdministrativeareaApi.entity.Region;
 import com.wanfadger.AdministrativeareaApi.repository.RegionRepository;
 
@@ -21,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,7 +36,7 @@ public class RegionServiceImpl implements RegionService {
 
     @Override
     @Transactional
-    public AdministrativeAreaResponseDto<String> create(NewAdministrativeAreaDTO dto) {
+    public ResponseDTO<String> create(NewAdministrativeAreaDTO dto) {
         if (regionRepository.findByNameIgnoreCase(dto.getName()).isPresent()) {
             throw new AlreadyExistsException("Administrative Area Already Exists");
         }
@@ -57,20 +57,20 @@ public class RegionServiceImpl implements RegionService {
 
         regionRepository.save(region);
 
-        return new AdministrativeAreaResponseDto<>(region.getCode(), "successfully created a region");
+        return new ResponseDTO<>(region.getCode(), "successfully created a region");
     }
 
     @Override
     @Transactional
-    public AdministrativeAreaResponseDto<String> createAll(List<NewAdministrativeAreaDTO> dtos) {
+    public ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos) {
         List<Region> regions = dtos.parallelStream()
                 .filter(dto -> regionRepository.findByNameIgnoreCase(dto.getName()).isEmpty())
                 .map(this::convertDtoRegion)
                 .toList();
 
-        regionRepository.saveAll(regions);
+        regionRepository.saveAll(Objects.requireNonNull(regions));
 
-        return new AdministrativeAreaResponseDto<>("success",
+        return new ResponseDTO<>("success",
                 "successfully added " + regions.size() + " administrative areas");
     }
 
@@ -86,7 +86,7 @@ public class RegionServiceImpl implements RegionService {
 
     @Override
     @Transactional
-    public AdministrativeAreaResponseDto<String> update(String code, UpdateAdministrativeAreaDTO dto) {
+    public ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto) {
         Region region = regionRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
 
@@ -108,27 +108,27 @@ public class RegionServiceImpl implements RegionService {
 
         regionRepository.save(region);
 
-        return new AdministrativeAreaResponseDto<>("SUCCESS");
+        return new ResponseDTO<>("SUCCESS");
     }
 
     @Override
-    public AdministrativeAreaResponseDto<List<RegionDTO>> list() {
+    public ResponseDTO<List<RegionDTO>> list() {
         List<RegionDTO> regionDtos = regionRepository.findAll().stream()
                 .map(this::convertRegionDTO)
                 .sorted(Comparator.comparing(RegionDTO::getCode))
                 .toList();
-        return new AdministrativeAreaResponseDto<>(regionDtos);
+        return new ResponseDTO<>(regionDtos);
     }
 
     @Override
-    public AdministrativeAreaResponseDto<RegionDTO> getByCode(String code) {
+    public ResponseDTO<RegionDTO> getByCode(String code) {
         Region region = regionRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("Region not found"));
-        return new AdministrativeAreaResponseDto<>(convertRegionDTO(region));
+        return new ResponseDTO<>(convertRegionDTO(region));
     }
 
     @Override
-    public AdministrativeAreaResponseDto<List<RegionDTO>> search(String name, String code) {
+    public ResponseDTO<List<RegionDTO>> search(String name, String code) {
         Region region = new Region();
         if (name != null && !name.isEmpty()) {
             region.setName(name);
@@ -147,7 +147,7 @@ public class RegionServiceImpl implements RegionService {
                 .sorted(Comparator.comparing(RegionDTO::getCode))
                 .toList();
 
-        return new AdministrativeAreaResponseDto<>(regionDtos);
+        return new ResponseDTO<>(regionDtos);
     }
 
     @Override

@@ -1,12 +1,11 @@
 package com.wanfadger.AdministrativeareaApi.service.administrativearea;
 
-import com.wanfadger.AdministrativeareaApi.administrativeareaexceptions.AlreadyExistsException;
-import com.wanfadger.AdministrativeareaApi.administrativeareaexceptions.InvalidException;
-import com.wanfadger.AdministrativeareaApi.administrativeareaexceptions.MissingDataException;
-import com.wanfadger.AdministrativeareaApi.administrativeareaexceptions.NotFoundException;
-
+import com.wanfadger.AdministrativeareaApi.areaexceptions.AlreadyExistsException;
+import com.wanfadger.AdministrativeareaApi.areaexceptions.InvalidException;
+import com.wanfadger.AdministrativeareaApi.areaexceptions.MissingDataException;
+import com.wanfadger.AdministrativeareaApi.areaexceptions.NotFoundException;
 import com.wanfadger.AdministrativeareaApi.dto.*;
-import com.wanfadger.AdministrativeareaApi.dto.reponses.AdministrativeAreaResponseDto;
+import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.uniqueDtos.*;
 import com.wanfadger.AdministrativeareaApi.entity.*;
 import com.wanfadger.AdministrativeareaApi.repository.*;
@@ -44,7 +43,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Transactional(readOnly = true)
-    private String generateCode(AdministrativeAreaType administrativeAreaType) {
+    private String generateCode(AreaType administrativeAreaType) {
         return switch (administrativeAreaType) {
             case REGION -> {
                 String code;
@@ -97,9 +96,9 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public ResponseEntity<AdministrativeAreaResponseDto<String>> newOne(Map<String, String> queryMap,
+    public ResponseEntity<ResponseDTO<String>> newOne(Map<String, String> queryMap,
             NewAdministrativeAreaDTO dto) {
-        AdministrativeAreaType administrativeAreaType = AdministrativeAreaType
+        AreaType administrativeAreaType = AreaType
                 .fromStr(queryMap.get("type"))
                 .orElseThrow(() -> new MissingDataException("Missing Administrative Area Type"));
 
@@ -117,7 +116,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 // Evict service-level cache after write operation
 
                 yield new ResponseEntity<>(
-                        new AdministrativeAreaResponseDto<>(region.getCode(), "successfully created a region"),
+                        new ResponseDTO<>(region.getCode(), "successfully created a region"),
                         HttpStatus.CREATED);
             }
 
@@ -141,7 +140,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
                 // Evict service-level cache after write operation
 
-                yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>(subRegion.getCode(), "success"),
+                yield new ResponseEntity<>(new ResponseDTO<>(subRegion.getCode(), "success"),
                         HttpStatus.CREATED);
             }
 
@@ -165,7 +164,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
                 // Evict service-level cache after write operation
 
-                yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>(localGovernment.getCode(), "success"),
+                yield new ResponseEntity<>(new ResponseDTO<>(localGovernment.getCode(), "success"),
                         HttpStatus.CREATED);
             }
 
@@ -189,7 +188,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
                 // Evict service-level cache after write operation
 
-                yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>(county.getCode(), "success"),
+                yield new ResponseEntity<>(new ResponseDTO<>(county.getCode(), "success"),
                         HttpStatus.CREATED);
             }
 
@@ -213,7 +212,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
                 // Evict service-level cache after write operation
 
-                yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>(subCounty.getCode(), "success"),
+                yield new ResponseEntity<>(new ResponseDTO<>(subCounty.getCode(), "success"),
                         HttpStatus.CREATED);
             }
 
@@ -237,13 +236,13 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
                 // Evict service-level cache after write operation
 
-                yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>(parish.getCode(), "success"),
+                yield new ResponseEntity<>(new ResponseDTO<>(parish.getCode(), "success"),
                         HttpStatus.CREATED);
             }
         };
     }
 
-    private Parish convertDtoParish(NewAdministrativeAreaDTO dto, AdministrativeAreaType administrativeAreaType) {
+    private Parish convertDtoParish(NewAdministrativeAreaDTO dto, AreaType administrativeAreaType) {
         Parish parish = new Parish();
         parish.setName(dto.getName());
         parish.setLatitude(dto.getLatitude() != null ? Double.valueOf(dto.getLatitude()) : null);
@@ -252,7 +251,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         return parish;
     }
 
-    private SubCounty convertDtoSubCounty(NewAdministrativeAreaDTO dto, AdministrativeAreaType administrativeAreaType) {
+    private SubCounty convertDtoSubCounty(NewAdministrativeAreaDTO dto, AreaType administrativeAreaType) {
         SubCounty subCounty = new SubCounty();
         subCounty.setName(dto.getName());
         subCounty.setLatitude(dto.getLatitude() != null ? Double.valueOf(dto.getLatitude()) : null);
@@ -261,7 +260,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         return subCounty;
     }
 
-    private County convertDtoCounty(NewAdministrativeAreaDTO dto, AdministrativeAreaType administrativeAreaType) {
+    private County convertDtoCounty(NewAdministrativeAreaDTO dto, AreaType administrativeAreaType) {
         County county = new County();
         county.setName(dto.getName());
         county.setLatitude(dto.getLatitude() != null ? Double.valueOf(dto.getLatitude()) : null);
@@ -271,7 +270,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     private LocalGovernment convertDtoLocalGovernment(NewAdministrativeAreaDTO dto,
-            AdministrativeAreaType administrativeAreaType) {
+            AreaType administrativeAreaType) {
         LocalGovernment localGovernment = new LocalGovernment();
         localGovernment.setName(dto.getName());
         localGovernment.setLatitude(dto.getLatitude() != null ? Double.valueOf(dto.getLatitude()) : null);
@@ -280,7 +279,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         return localGovernment;
     }
 
-    private SubRegion convertDtoSubRegion(NewAdministrativeAreaDTO dto, AdministrativeAreaType administrativeAreaType) {
+    private SubRegion convertDtoSubRegion(NewAdministrativeAreaDTO dto, AreaType administrativeAreaType) {
         SubRegion subRegion = new SubRegion();
         subRegion.setName(dto.getName());
         subRegion.setLatitude(notNullEmpty(dto.getLatitude()) ? Double.valueOf(dto.getLatitude()) : null);
@@ -289,7 +288,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         return subRegion;
     }
 
-    private Region convertDtoRegion(NewAdministrativeAreaDTO dto, AdministrativeAreaType administrativeAreaType) {
+    private Region convertDtoRegion(NewAdministrativeAreaDTO dto, AreaType administrativeAreaType) {
         Region region = new Region();
         region.setName(dto.getName());
         region.setDescription(dto.getDescription());
@@ -300,15 +299,15 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public ResponseEntity<AdministrativeAreaResponseDto<String>> newList(Map<String, String> queryMap,
+    public ResponseEntity<ResponseDTO<String>> newList(Map<String, String> queryMap,
             List<NewAdministrativeAreaDTO> dtos) {
-        Optional<AdministrativeAreaType> optionalAdministrativeAreaType = AdministrativeAreaType
+        Optional<AreaType> optionalAdministrativeAreaType = AreaType
                 .fromStr(queryMap.get("type"));
         if (optionalAdministrativeAreaType.isEmpty()) {
             throw new MissingDataException("Missing Administrative Area Type");
         }
 
-        AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
+        AreaType administrativeAreaType = optionalAdministrativeAreaType.get();
 
         return switch (administrativeAreaType) {
             case REGION -> {
@@ -317,11 +316,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                         .filter(dto -> regionRepository.findByNameIgnoreCase(dto.getName()).isEmpty())
                         .map(dto -> convertDtoRegion(dto, administrativeAreaType)).toList();
 
-                regionRepository.saveAll(regions);
+                regionRepository.saveAll(Objects.requireNonNull(regions));
 
                 // Evict service-level cache after write operation
 
-                yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>("success",
+                yield new ResponseEntity<>(new ResponseDTO<>("success",
                         "successfully added " + regions.size() + " administrative areas"), HttpStatus.CREATED);
 
             }
@@ -338,12 +337,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                                 .findByNameIgnoreCaseAndRegion_Code(dto.getName(), dto.getPartOfCode()).isEmpty())
                         .map(dto -> convertDtoSubRegion(dto, administrativeAreaType)).toList();
 
-                subRegionRepository.saveAll(subRegions);
+                subRegionRepository.saveAll(Objects.requireNonNull(subRegions));
 
                 // Evict service-level cache after write operation
 
                 yield new ResponseEntity<>(
-                        new AdministrativeAreaResponseDto<>("success",
+                        new ResponseDTO<>("success",
                                 "successfully added " + subRegions.size() + " administrative areas"),
                         HttpStatus.CREATED);
             }
@@ -360,12 +359,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                                 .findByNameIgnoreCaseAndSubRegion_Code(dto.getName(), dto.getPartOfCode()).isEmpty())
                         .map(dto -> convertDtoLocalGovernment(dto, administrativeAreaType)).toList();
 
-                localGovernmentRepository.saveAll(localGovernments);
+                localGovernmentRepository.saveAll(Objects.requireNonNull(localGovernments));
 
                 // Evict service-level cache after write operation
 
                 yield new ResponseEntity<>(
-                        new AdministrativeAreaResponseDto<>("success",
+                        new ResponseDTO<>("success",
                                 "successfully added " + localGovernments.size() + " administrative areas"),
                         HttpStatus.CREATED);
             }
@@ -384,11 +383,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                                 .isEmpty())
                         .map(dto -> convertDtoCounty(dto, administrativeAreaType)).toList();
 
-                countyRepository.saveAll(counties);
+                countyRepository.saveAll(Objects.requireNonNull(counties));
 
                 // Evict service-level cache after write operation
 
-                yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>("success",
+                yield new ResponseEntity<>(new ResponseDTO<>("success",
                         "successfully added " + counties.size() + " administrative areas"), HttpStatus.CREATED);
             }
 
@@ -405,12 +404,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                                 .isEmpty())
                         .map(dto -> convertDtoSubCounty(dto, administrativeAreaType)).toList();
 
-                subCountyRepository.saveAll(subCounties);
+                subCountyRepository.saveAll(Objects.requireNonNull(subCounties));
 
                 // Evict service-level cache after write operation
 
                 yield new ResponseEntity<>(
-                        new AdministrativeAreaResponseDto<>("success",
+                        new ResponseDTO<>("success",
                                 "successfully added " + subCounties.size() + " administrative areas"),
                         HttpStatus.CREATED);
             }
@@ -428,11 +427,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                                 .findByNameIgnoreCaseAndSubCounty_Code(dto.getName(), dto.getPartOfCode()).isEmpty())
                         .map(dto -> convertDtoParish(dto, administrativeAreaType)).toList();
 
-                parishRepository.saveAll(parishes);
+                parishRepository.saveAll(Objects.requireNonNull(parishes));
 
                 // Evict service-level cache after write operation
 
-                yield new ResponseEntity<>(new AdministrativeAreaResponseDto<>("success",
+                yield new ResponseEntity<>(new ResponseDTO<>("success",
                         "successfully added " + parishes.size() + " administrative areas"), HttpStatus.CREATED);
 
             }
@@ -441,7 +440,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public AdministrativeAreaResponseDto<CodeNameDTO> filterOne(Map<String, String> queryMap) {
+    public ResponseDTO<CodeNameDTO> filterOne(Map<String, String> queryMap) {
         String type = queryMap.get("type");
         String code = queryMap.get("code");
 
@@ -449,12 +448,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             throw new MissingDataException("Missing Administrative Area Type");
         }
 
-        Optional<AdministrativeAreaType> optionalAdministrativeAreaType = AdministrativeAreaType.fromStr(type);
+        Optional<AreaType> optionalAdministrativeAreaType = AreaType.fromStr(type);
         if (optionalAdministrativeAreaType.isEmpty()) {
             throw new MissingDataException("Missing Administrative Area Type");
         }
 
-        AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
+        AreaType administrativeAreaType = optionalAdministrativeAreaType.get();
 
         switch (administrativeAreaType) {
             case REGION -> {
@@ -463,7 +462,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 }
                 Region region = regionRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("Region not found"));
-                return new AdministrativeAreaResponseDto<>(
+                return new ResponseDTO<>(
                         new CodeNameDTO(region.getCode(), region.getName()));
             }
             case SUBREGION -> {
@@ -472,7 +471,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 }
                 SubRegion subRegion = subRegionRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("SubRegion not found"));
-                return new AdministrativeAreaResponseDto<>(
+                return new ResponseDTO<>(
                         new CodeNameDTO(subRegion.getCode(), subRegion.getName()));
             }
             case LOCALGOVERNMENT -> {
@@ -481,7 +480,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 }
                 LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("LocalGovernment not found"));
-                return new AdministrativeAreaResponseDto<>(
+                return new ResponseDTO<>(
                         new CodeNameDTO(localGovernment.getCode(), localGovernment.getName()));
             }
             case COUNTY -> {
@@ -490,7 +489,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 }
                 County county = countyRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("County not found"));
-                return new AdministrativeAreaResponseDto<>(
+                return new ResponseDTO<>(
                         new CodeNameDTO(county.getCode(), county.getName()));
             }
             case SUBCOUNTY -> {
@@ -499,7 +498,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 }
                 SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("SubCounty not found"));
-                return new AdministrativeAreaResponseDto<>(
+                return new ResponseDTO<>(
                         new CodeNameDTO(subCounty.getCode(), subCounty.getName()));
             }
             case PARISH -> {
@@ -508,7 +507,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 }
                 Parish parish = parishRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("Parish not found"));
-                return new AdministrativeAreaResponseDto<>(
+                return new ResponseDTO<>(
                         new CodeNameDTO(parish.getCode(), parish.getName()));
             }
             default ->
@@ -517,7 +516,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public AdministrativeAreaResponseDto<List<CodeNameDTO>> filterList(Map<String, String> queryMap) {
+    public ResponseDTO<List<CodeNameDTO>> filterList(Map<String, String> queryMap) {
         String type = queryMap.get("type");
         String partOf = queryMap.get("partOf");
 
@@ -525,12 +524,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             throw new MissingDataException("Missing Administrative Area Type");
         }
 
-        Optional<AdministrativeAreaType> optionalAdministrativeAreaType = AdministrativeAreaType.fromStr(type);
+        Optional<AreaType> optionalAdministrativeAreaType = AreaType.fromStr(type);
         if (optionalAdministrativeAreaType.isEmpty()) {
             throw new MissingDataException("Missing Administrative Area Type");
         }
 
-        AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
+        AreaType administrativeAreaType = optionalAdministrativeAreaType.get();
 
         switch (administrativeAreaType) {
             case REGION -> {
@@ -538,7 +537,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                         .map(region -> new CodeNameDTO(region.getCode(), region.getName()))
                         .sorted(Comparator.comparing(CodeNameDTO::getCode))
                         .toList();
-                return new AdministrativeAreaResponseDto<>(codeNameDtoList);
+                return new ResponseDTO<>(codeNameDtoList);
             }
             case SUBREGION -> {
                 if (!notNullEmpty(partOf)) {
@@ -548,7 +547,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                         .map(subRegion -> new CodeNameDTO(subRegion.getCode(), subRegion.getName()))
                         .sorted(Comparator.comparing(CodeNameDTO::getCode))
                         .toList();
-                return new AdministrativeAreaResponseDto<>(codeNameDtoList);
+                return new ResponseDTO<>(codeNameDtoList);
             }
             case LOCALGOVERNMENT -> {
                 if (!notNullEmpty(partOf)) {
@@ -559,7 +558,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                         .map(localGovernment -> new CodeNameDTO(localGovernment.getCode(), localGovernment.getName()))
                         .sorted(Comparator.comparing(CodeNameDTO::getCode))
                         .toList();
-                return new AdministrativeAreaResponseDto<>(codeNameDtoList);
+                return new ResponseDTO<>(codeNameDtoList);
             }
             case COUNTY -> {
                 if (!notNullEmpty(partOf)) {
@@ -570,7 +569,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                         .map(county -> new CodeNameDTO(county.getCode(), county.getName()))
                         .sorted(Comparator.comparing(CodeNameDTO::getCode))
                         .toList();
-                return new AdministrativeAreaResponseDto<>(codeNameDtoList);
+                return new ResponseDTO<>(codeNameDtoList);
             }
             case SUBCOUNTY -> {
                 if (!notNullEmpty(partOf)) {
@@ -580,7 +579,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                         .map(subCounty -> new CodeNameDTO(subCounty.getCode(), subCounty.getName()))
                         .sorted(Comparator.comparing(CodeNameDTO::getCode))
                         .toList();
-                return new AdministrativeAreaResponseDto<>(codeNameDtoList);
+                return new ResponseDTO<>(codeNameDtoList);
             }
             case PARISH -> {
                 if (!notNullEmpty(partOf)) {
@@ -590,7 +589,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                         .map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
                         .sorted(Comparator.comparing(CodeNameDTO::getCode))
                         .toList();
-                return new AdministrativeAreaResponseDto<>(codeNameDtoList);
+                return new ResponseDTO<>(codeNameDtoList);
             }
             default ->
                 throw new MissingDataException("Unsupported Administrative Area Type: " + administrativeAreaType);
@@ -598,7 +597,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public AdministrativeAreaResponseDto<List<CodeNameDTO>> getParishByPartOf(Map<String, String> queryMap) {
+    public ResponseDTO<List<CodeNameDTO>> getParishByPartOf(Map<String, String> queryMap) {
         String type = queryMap.get("type");
         String partOfCode = queryMap.get("partOfCode");
 
@@ -606,12 +605,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             throw new MissingDataException("Missing Administrative Area Type");
         }
 
-        Optional<AdministrativeAreaType> optionalAdministrativeAreaType = AdministrativeAreaType.fromStr(type);
+        Optional<AreaType> optionalAdministrativeAreaType = AreaType.fromStr(type);
         if (optionalAdministrativeAreaType.isEmpty()) {
             throw new MissingDataException("Missing Administrative Area Type");
         }
 
-        AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
+        AreaType administrativeAreaType = optionalAdministrativeAreaType.get();
 
         switch (administrativeAreaType) {
             case REGION -> {
@@ -630,7 +629,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                         .map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
                         .distinct()
                         .toList();
-                return new AdministrativeAreaResponseDto<>(codeNameDtoList);
+                return new ResponseDTO<>(codeNameDtoList);
             }
             case SUBREGION -> {
                 if (!notNullEmpty(partOfCode)) {
@@ -648,7 +647,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                         .map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
                         .sorted(Comparator.comparing(CodeNameDTO::getCode))
                         .toList();
-                return new AdministrativeAreaResponseDto<>(codeNameDtoList);
+                return new ResponseDTO<>(codeNameDtoList);
             }
             case LOCALGOVERNMENT -> {
                 if (!notNullEmpty(partOfCode)) {
@@ -664,7 +663,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                         .map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
                         .sorted(Comparator.comparing(CodeNameDTO::getCode))
                         .toList();
-                return new AdministrativeAreaResponseDto<>(codeNameDtoList);
+                return new ResponseDTO<>(codeNameDtoList);
             }
             case COUNTY -> {
                 if (!notNullEmpty(partOfCode)) {
@@ -678,7 +677,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                         .map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
                         .sorted(Comparator.comparing(CodeNameDTO::getCode))
                         .toList();
-                return new AdministrativeAreaResponseDto<>(codeNameDtoList);
+                return new ResponseDTO<>(codeNameDtoList);
             }
             case SUBCOUNTY -> {
                 if (!notNullEmpty(partOfCode)) {
@@ -689,11 +688,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                         .map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
                         .sorted(Comparator.comparing(CodeNameDTO::getCode))
                         .toList();
-                return new AdministrativeAreaResponseDto<>(codeNameDtoList);
+                return new ResponseDTO<>(codeNameDtoList);
             }
             case PARISH -> {
                 // No parishes under a parish
-                return new AdministrativeAreaResponseDto<>(Collections.emptyList());
+                return new ResponseDTO<>(Collections.emptyList());
             }
             default ->
                 throw new MissingDataException("Unsupported Administrative Area Type: " + administrativeAreaType);
@@ -701,13 +700,13 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public AdministrativeAreaResponseDto<?> searchList(Map<String, String> queryMap) {
+    public ResponseDTO<?> searchList(Map<String, String> queryMap) {
         log.info("Searching for administrative areas with query map: {}", queryMap);
 
         String type = queryMap.get("type");
         String partOf = queryMap.get("partOf");
 
-        AdministrativeAreaType administrativeAreaType = AdministrativeAreaType.fromStr(type)
+        AreaType administrativeAreaType = AreaType.fromStr(type)
                 .orElseThrow(() -> new MissingDataException("Unsupported Administrative Area Type: " + type));
 
         switch (administrativeAreaType) {
@@ -716,7 +715,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                         .map(AdministrativeAreaServiceImpl::convertRegionDTO)
                         .sorted(Comparator.comparing(RegionDTO::getCode))
                         .toList();
-                return new AdministrativeAreaResponseDto<>(regionDtos);
+                return new ResponseDTO<>(regionDtos);
             }
             case SUBREGION -> {
                 List<SubRegionDTO> subRegionDTOs;
@@ -731,7 +730,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                             .sorted(Comparator.comparing(SubRegionDTO::getCode))
                             .toList();
                 }
-                return new AdministrativeAreaResponseDto<>(subRegionDTOs);
+                return new ResponseDTO<>(subRegionDTOs);
             }
             case LOCALGOVERNMENT -> {
                 List<LocalGovernmentDTO> localGovernmentDtos;
@@ -746,7 +745,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                             .sorted(Comparator.comparing(LocalGovernmentDTO::getCode))
                             .toList();
                 }
-                return new AdministrativeAreaResponseDto<>(localGovernmentDtos);
+                return new ResponseDTO<>(localGovernmentDtos);
             }
             case COUNTY -> {
                 List<CountyDTO> countyDtos;
@@ -761,7 +760,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                             .sorted(Comparator.comparing(CountyDTO::getCode))
                             .toList();
                 }
-                return new AdministrativeAreaResponseDto<>(countyDtos);
+                return new ResponseDTO<>(countyDtos);
             }
             case SUBCOUNTY -> {
                 List<SubCountyDTO> subCountyDTOs;
@@ -776,7 +775,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                             .sorted(Comparator.comparing(SubCountyDTO::getCode))
                             .toList();
                 }
-                return new AdministrativeAreaResponseDto<>(subCountyDTOs);
+                return new ResponseDTO<>(subCountyDTOs);
             }
             case PARISH -> {
                 List<ParishDTO> parishDtos;
@@ -791,7 +790,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                             .sorted(Comparator.comparing(ParishDTO::getCode))
                             .toList();
                 }
-                return new AdministrativeAreaResponseDto<>(parishDtos);
+                return new ResponseDTO<>(parishDtos);
             }
             default ->
                 throw new MissingDataException("Unsupported Administrative Area Type: " + administrativeAreaType);
@@ -799,7 +798,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public AdministrativeAreaResponseDto<?> searchOne(Map<String, String> queryMap) {
+    public ResponseDTO<?> searchOne(Map<String, String> queryMap) {
         String type = queryMap.get("type");
         String code = queryMap.get("code");
 
@@ -807,43 +806,43 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             throw new MissingDataException("Missing required data");
         }
 
-        Optional<AdministrativeAreaType> optionalAdministrativeAreaType = AdministrativeAreaType.fromStr(type);
+        Optional<AreaType> optionalAdministrativeAreaType = AreaType.fromStr(type);
         if (optionalAdministrativeAreaType.isEmpty()) {
             throw new MissingDataException("Missing Administrative Area Type");
         }
 
-        AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
+        AreaType administrativeAreaType = optionalAdministrativeAreaType.get();
 
         switch (administrativeAreaType) {
             case REGION -> {
                 Region region = regionRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("Region not found"));
-                return new AdministrativeAreaResponseDto<>(convertRegionDTO(region));
+                return new ResponseDTO<>(convertRegionDTO(region));
             }
             case SUBREGION -> {
                 SubRegion subRegion = subRegionRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("SubRegion not found"));
-                return new AdministrativeAreaResponseDto<>(convertSubRegionDTO(subRegion));
+                return new ResponseDTO<>(convertSubRegionDTO(subRegion));
             }
             case LOCALGOVERNMENT -> {
                 LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("LocalGovernment not found"));
-                return new AdministrativeAreaResponseDto<>(convertLocalGovernmentDTO(localGovernment));
+                return new ResponseDTO<>(convertLocalGovernmentDTO(localGovernment));
             }
             case COUNTY -> {
                 County county = countyRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("County not found"));
-                return new AdministrativeAreaResponseDto<>(convertCountyDTO(county));
+                return new ResponseDTO<>(convertCountyDTO(county));
             }
             case SUBCOUNTY -> {
                 SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("SubCounty not found"));
-                return new AdministrativeAreaResponseDto<>(convertSubCountyDTO(subCounty));
+                return new ResponseDTO<>(convertSubCountyDTO(subCounty));
             }
             case PARISH -> {
                 Parish parish = parishRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() -> new NotFoundException("Parish not found"));
-                return new AdministrativeAreaResponseDto<>(convertParishDTO(parish));
+                return new ResponseDTO<>(convertParishDTO(parish));
             }
             default ->
                 throw new MissingDataException("Unsupported Administrative Area Type: " + administrativeAreaType);
@@ -870,7 +869,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         if (newParishSet.size() > 0) {
             List<Parish> newParishes = newParishSet.stream().map(UP -> {
                 Parish parish = new Parish();
-                parish.setCode(generateCode(AdministrativeAreaType.PARISH));
+                parish.setCode(generateCode(AreaType.PARISH));
                 parish.setName(UP.name());
                 parish.setSubCounty(UP.subCounty());
                 return parish;
@@ -901,7 +900,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         if (newSubCountySet.size() > 0) {
             List<SubCounty> newSubCounties = newSubCountySet.stream().map(dto -> {
                 SubCounty subCounty = new SubCounty();
-                subCounty.setCode(generateCode(AdministrativeAreaType.SUBCOUNTY));
+                subCounty.setCode(generateCode(AreaType.SUBCOUNTY));
                 subCounty.setName(dto.name());
                 subCounty.setCounty(dto.county());
                 return subCounty;
@@ -957,7 +956,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         if (newCountSet.size() > 0) {
             List<County> newCounties = newCountSet.stream().map(UC -> {
                 County county = new County();
-                county.setCode(generateCode(AdministrativeAreaType.COUNTY));
+                county.setCode(generateCode(AreaType.COUNTY));
                 county.setName(UC.name());
                 county.setLocalGovernment(UC.localGovernment());
                 return county;
@@ -1009,7 +1008,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         if (newLocalGovernmentSet.size() > 0) {
             List<LocalGovernment> newLocalGovernments = newLocalGovernmentSet.stream().map(uL -> {
                 LocalGovernment localGovernment = new LocalGovernment();
-                localGovernment.setCode(generateCode(AdministrativeAreaType.LOCALGOVERNMENT));
+                localGovernment.setCode(generateCode(AreaType.LOCALGOVERNMENT));
                 localGovernment.setName(uL.name());
                 localGovernment.setSubRegion(uL.subRegion());
                 return localGovernment;
@@ -1071,7 +1070,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         if (newSubRegionSet.size() > 0) {
             List<SubRegion> newSubRegions = newSubRegionSet.stream().map(uSubRegion -> {
                 SubRegion subRegion = new SubRegion();
-                subRegion.setCode(generateCode(AdministrativeAreaType.SUBREGION));
+                subRegion.setCode(generateCode(AreaType.SUBREGION));
                 subRegion.setName(uSubRegion.name());
                 subRegion.setRegion(uSubRegion.region()); // Parent region reference
                 return subRegion;
@@ -1156,7 +1155,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 .filter(distinctByKey(AdministrativeAreaExcelDTO::getRegion))
                 .map(dto -> {
                     Region region = new Region();
-                    region.setCode(generateCode(AdministrativeAreaType.REGION));
+                    region.setCode(generateCode(AreaType.REGION));
                     region.setName(dto.getRegion());
                     return region;
                 })
@@ -1193,18 +1192,18 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public AdministrativeAreaResponseDto<String> updateOne(Map<String, String> queryMap,
+    public ResponseDTO<String> updateOne(Map<String, String> queryMap,
             UpdateAdministrativeAreaDTO dto) {
         String type = queryMap.get("type");
 
-        Optional<AdministrativeAreaType> optionalAdministrativeAreaType = AdministrativeAreaType.fromStr(type);
+        Optional<AreaType> optionalAdministrativeAreaType = AreaType.fromStr(type);
         if (optionalAdministrativeAreaType.isEmpty()) {
             throw new MissingDataException("Missing Administrative Area Type");
         }
 
-        AdministrativeAreaType administrativeAreaType = optionalAdministrativeAreaType.get();
+        AreaType administrativeAreaType = optionalAdministrativeAreaType.get();
 
-        AdministrativeAreaResponseDto<String> result = switch (administrativeAreaType) {
+        ResponseDTO<String> result = switch (administrativeAreaType) {
             case REGION -> {
                 Region region = regionRepository.findByCodeIgnoreCase(dto.getCode())
                         .orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
@@ -1225,7 +1224,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 }
 
                 regionRepository.save(region);
-                yield new AdministrativeAreaResponseDto<>("SUCCESS");
+                yield new ResponseDTO<>("SUCCESS");
             }
             case SUBREGION -> {
                 if (nullEmpty(dto.getPartOfCode())) {
@@ -1256,7 +1255,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 subRegion.setRegion(region);
 
                 subRegionRepository.save(subRegion);
-                yield new AdministrativeAreaResponseDto<>("SUCCESS");
+                yield new ResponseDTO<>("SUCCESS");
             }
             case LOCALGOVERNMENT -> {
                 if (nullEmpty(dto.getPartOfCode())) {
@@ -1287,7 +1286,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 localGovernment.setSubRegion(subRegion);
 
                 localGovernmentRepository.save(localGovernment);
-                yield new AdministrativeAreaResponseDto<>("SUCCESS");
+                yield new ResponseDTO<>("SUCCESS");
             }
             case COUNTY -> {
                 if (nullEmpty(dto.getPartOfCode())) {
@@ -1318,7 +1317,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 county.setLocalGovernment(localGovernment);
 
                 countyRepository.save(county);
-                yield new AdministrativeAreaResponseDto<>("SUCCESS");
+                yield new ResponseDTO<>("SUCCESS");
             }
             case SUBCOUNTY -> {
                 if (nullEmpty(dto.getPartOfCode())) {
@@ -1349,7 +1348,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 subCounty.setCounty(county);
 
                 subCountyRepository.save(subCounty);
-                yield new AdministrativeAreaResponseDto<>("SUCCESS");
+                yield new ResponseDTO<>("SUCCESS");
             }
             case PARISH -> {
                 if (nullEmpty(dto.getPartOfCode())) {
@@ -1380,7 +1379,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 parish.setSubCounty(subCounty);
 
                 parishRepository.save(parish);
-                yield new AdministrativeAreaResponseDto<>("SUCCESS");
+                yield new ResponseDTO<>("SUCCESS");
             }
         };
 
@@ -1389,14 +1388,14 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
     @Override
     @Transactional
-    public AdministrativeAreaResponseDto<String> upload(List<AdministrativeAreaExcelDTO> administrativeAreaExcelDtos) {
+    public ResponseDTO<String> upload(List<AdministrativeAreaExcelDTO> administrativeAreaExcelDtos) {
         for (AdministrativeAreaExcelDTO dto : administrativeAreaExcelDtos) {
             if (notNullEmpty(dto.getRegion())) {
                 Region region = regionRepository.findByNameIgnoreCase(dto.getRegion())
                         .orElseGet(() -> {
                             Region newRegion = new Region();
                             newRegion.setName(dto.getRegion());
-                            newRegion.setCode(generateCode(AdministrativeAreaType.REGION));
+                            newRegion.setCode(generateCode(AreaType.REGION));
                             return regionRepository.save(newRegion);
                         });
 
@@ -1407,7 +1406,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                                 SubRegion newSubRegion = new SubRegion();
                                 newSubRegion.setName(dto.getSubRegion());
                                 newSubRegion.setRegion(region);
-                                newSubRegion.setCode(generateCode(AdministrativeAreaType.SUBREGION));
+                                newSubRegion.setCode(generateCode(AreaType.SUBREGION));
                                 return subRegionRepository.save(newSubRegion);
                             });
 
@@ -1418,7 +1417,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                                     LocalGovernment newLg = new LocalGovernment();
                                     newLg.setName(dto.getLocalGovernment());
                                     newLg.setSubRegion(subRegion);
-                                    newLg.setCode(generateCode(AdministrativeAreaType.LOCALGOVERNMENT));
+                                    newLg.setCode(generateCode(AreaType.LOCALGOVERNMENT));
                                     return localGovernmentRepository.save(newLg);
                                 });
 
@@ -1429,7 +1428,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                                         County newCounty = new County();
                                         newCounty.setName(dto.getCounty());
                                         newCounty.setLocalGovernment(localGovernment);
-                                        newCounty.setCode(generateCode(AdministrativeAreaType.COUNTY));
+                                        newCounty.setCode(generateCode(AreaType.COUNTY));
                                         return countyRepository.save(newCounty);
                                     });
 
@@ -1440,7 +1439,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                                             SubCounty newSubCounty = new SubCounty();
                                             newSubCounty.setName(dto.getSubCounty());
                                             newSubCounty.setCounty(county);
-                                            newSubCounty.setCode(generateCode(AdministrativeAreaType.SUBCOUNTY));
+                                            newSubCounty.setCode(generateCode(AreaType.SUBCOUNTY));
                                             return subCountyRepository.save(newSubCounty);
                                         });
 
@@ -1451,7 +1450,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                                                 Parish newParish = new Parish();
                                                 newParish.setName(dto.getParish());
                                                 newParish.setSubCounty(subCounty);
-                                                newParish.setCode(generateCode(AdministrativeAreaType.PARISH));
+                                                newParish.setCode(generateCode(AreaType.PARISH));
                                                 return parishRepository.save(newParish);
                                             });
                                 }
@@ -1461,7 +1460,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 }
             }
         }
-        return new AdministrativeAreaResponseDto<>("Success");
+        return new ResponseDTO<>("Success");
     }
 
     private ParishDTO convertParishDTO(Parish parish) {

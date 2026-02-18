@@ -1,10 +1,9 @@
 package com.wanfadger.AdministrativeareaApi.service.county;
 
-import com.wanfadger.AdministrativeareaApi.administrativeareaexceptions.AlreadyExistsException;
-import com.wanfadger.AdministrativeareaApi.administrativeareaexceptions.InvalidException;
-import com.wanfadger.AdministrativeareaApi.administrativeareaexceptions.MissingDataException;
-import com.wanfadger.AdministrativeareaApi.administrativeareaexceptions.NotFoundException;
-
+import com.wanfadger.AdministrativeareaApi.areaexceptions.AlreadyExistsException;
+import com.wanfadger.AdministrativeareaApi.areaexceptions.InvalidException;
+import com.wanfadger.AdministrativeareaApi.areaexceptions.MissingDataException;
+import com.wanfadger.AdministrativeareaApi.areaexceptions.NotFoundException;
 import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
 import com.wanfadger.AdministrativeareaApi.dto.CountyDTO;
 import com.wanfadger.AdministrativeareaApi.dto.LocalGovernmentDTO;
@@ -12,7 +11,7 @@ import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.RegionDTO;
 import com.wanfadger.AdministrativeareaApi.dto.SubRegionDTO;
 import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDTO;
-import com.wanfadger.AdministrativeareaApi.dto.reponses.AdministrativeAreaResponseDto;
+import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.uniqueDtos.UCounty;
 import com.wanfadger.AdministrativeareaApi.entity.County;
 import com.wanfadger.AdministrativeareaApi.entity.LocalGovernment;
@@ -30,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -45,7 +45,7 @@ public class CountyServiceImpl implements CountyService {
 
     @Override
     @Transactional
-    public AdministrativeAreaResponseDto<String> create(NewAdministrativeAreaDTO dto) {
+    public ResponseDTO<String> create(NewAdministrativeAreaDTO dto) {
         if (dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode(local government) for the county");
         }
@@ -75,12 +75,12 @@ public class CountyServiceImpl implements CountyService {
 
         countyRepository.save(county);
 
-        return new AdministrativeAreaResponseDto<>(county.getCode(), "successfully created a county");
+        return new ResponseDTO<>(county.getCode(), "successfully created a county");
     }
 
     @Override
     @Transactional
-    public AdministrativeAreaResponseDto<String> createAll(List<NewAdministrativeAreaDTO> dtos) {
+    public ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos) {
         if (dtos.parallelStream().anyMatch(dto -> dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty())) {
             throw new MissingDataException("Found Administrative Area without PartOfCoce");
         }
@@ -108,15 +108,15 @@ public class CountyServiceImpl implements CountyService {
                 })
                 .toList();
 
-        countyRepository.saveAll(counties);
+        countyRepository.saveAll(Objects.requireNonNull(counties));
 
-        return new AdministrativeAreaResponseDto<>("success",
+        return new ResponseDTO<>("success",
                 "successfully added " + counties.size() + " administrative areas");
     }
 
     @Override
     @Transactional
-    public AdministrativeAreaResponseDto<String> update(String code, UpdateAdministrativeAreaDTO dto) {
+    public ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto) {
         if (dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode");
         }
@@ -146,11 +146,11 @@ public class CountyServiceImpl implements CountyService {
 
         countyRepository.save(county);
 
-        return new AdministrativeAreaResponseDto<>("SUCCESS");
+        return new ResponseDTO<>("SUCCESS");
     }
 
     @Override
-    public AdministrativeAreaResponseDto<List<CountyDTO>> list(String localGovernmentCode) {
+    public ResponseDTO<List<CountyDTO>> list(String localGovernmentCode) {
         List<CountyDTO> countyDtos;
         if (localGovernmentCode != null && !localGovernmentCode.isEmpty()) {
             countyDtos = countyRepository.findAllByLocalGovernment_Code(localGovernmentCode).stream()
@@ -163,18 +163,18 @@ public class CountyServiceImpl implements CountyService {
                     .sorted(Comparator.comparing(CountyDTO::getCode))
                     .toList();
         }
-        return new AdministrativeAreaResponseDto<>(countyDtos);
+        return new ResponseDTO<>(countyDtos);
     }
 
     @Override
-    public AdministrativeAreaResponseDto<CountyDTO> getByCode(String code) {
+    public ResponseDTO<CountyDTO> getByCode(String code) {
         County county = countyRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("County not found"));
-        return new AdministrativeAreaResponseDto<>(convertCountyDTO(county));
+        return new ResponseDTO<>(convertCountyDTO(county));
     }
 
     @Override
-    public AdministrativeAreaResponseDto<List<CountyDTO>> search(String name, String code) {
+    public ResponseDTO<List<CountyDTO>> search(String name, String code) {
         County county = new County();
         if (name != null && !name.isEmpty()) {
             county.setName(name);
@@ -193,7 +193,7 @@ public class CountyServiceImpl implements CountyService {
                 .sorted(Comparator.comparing(CountyDTO::getCode))
                 .toList();
 
-        return new AdministrativeAreaResponseDto<>(countyDtos);
+        return new ResponseDTO<>(countyDtos);
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.wanfadger.AdministrativeareaApi.administrativeareaexceptions;
+package com.wanfadger.AdministrativeareaApi.areaexceptions;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;

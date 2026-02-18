@@ -3,7 +3,7 @@ package com.wanfadger.AdministrativeareaApi.service.subcounty;
 import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.SubCountyDTO;
 import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDTO;
-import com.wanfadger.AdministrativeareaApi.dto.reponses.AdministrativeAreaResponseDto;
+import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
 import com.wanfadger.AdministrativeareaApi.entity.SubCounty;
 
@@ -11,13 +11,13 @@ import java.util.List;
 import java.util.Optional;
 
 public interface SubCountyService {
-    AdministrativeAreaResponseDto<String> create(NewAdministrativeAreaDTO dto);
+    ResponseDTO<String> create(NewAdministrativeAreaDTO dto);
 
-    AdministrativeAreaResponseDto<String> update(String code, UpdateAdministrativeAreaDTO dto);
+    ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto);
 
-    AdministrativeAreaResponseDto<List<SubCountyDTO>> list(String countyCode);
+    ResponseDTO<List<SubCountyDTO>> list(String countyCode);
 
-    AdministrativeAreaResponseDto<SubCountyDTO> getByCode(String code);
+    ResponseDTO<SubCountyDTO> getByCode(String code);
 
     Optional<SubCounty> findByCode(String code);
 
@@ -27,9 +27,9 @@ public interface SubCountyService {
 
     List<SubCounty> findAllByCountyCodes(List<String> countyCodes);
 
-    AdministrativeAreaResponseDto<String> createAll(List<NewAdministrativeAreaDTO> dtos);
+    ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos);
 
-    AdministrativeAreaResponseDto<List<SubCountyDTO>> search(String name, String code);
+    ResponseDTO<List<SubCountyDTO>> search(String name, String code);
 
     void upload(List<AdministrativeAreaExcelDTO> dtoList);
 

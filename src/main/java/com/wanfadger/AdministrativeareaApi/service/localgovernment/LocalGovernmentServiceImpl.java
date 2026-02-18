@@ -1,17 +1,16 @@
 package com.wanfadger.AdministrativeareaApi.service.localgovernment;
 
-import com.wanfadger.AdministrativeareaApi.administrativeareaexceptions.AlreadyExistsException;
-import com.wanfadger.AdministrativeareaApi.administrativeareaexceptions.InvalidException;
-import com.wanfadger.AdministrativeareaApi.administrativeareaexceptions.MissingDataException;
-import com.wanfadger.AdministrativeareaApi.administrativeareaexceptions.NotFoundException;
-
+import com.wanfadger.AdministrativeareaApi.areaexceptions.AlreadyExistsException;
+import com.wanfadger.AdministrativeareaApi.areaexceptions.InvalidException;
+import com.wanfadger.AdministrativeareaApi.areaexceptions.MissingDataException;
+import com.wanfadger.AdministrativeareaApi.areaexceptions.NotFoundException;
 import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
 import com.wanfadger.AdministrativeareaApi.dto.LocalGovernmentDTO;
 import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.RegionDTO;
 import com.wanfadger.AdministrativeareaApi.dto.SubRegionDTO;
 import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDTO;
-import com.wanfadger.AdministrativeareaApi.dto.reponses.AdministrativeAreaResponseDto;
+import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.uniqueDtos.ULocalGovernment;
 import com.wanfadger.AdministrativeareaApi.entity.LocalGovernment;
 import com.wanfadger.AdministrativeareaApi.entity.Region;
@@ -43,7 +42,7 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
 
     @Override
     @Transactional
-    public AdministrativeAreaResponseDto<String> create(NewAdministrativeAreaDTO dto) {
+    public ResponseDTO<String> create(NewAdministrativeAreaDTO dto) {
         if (dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode(sub region) for the local government");
         }
@@ -73,13 +72,13 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
 
         localGovernmentRepository.save(localGovernment);
 
-        return new AdministrativeAreaResponseDto<>(localGovernment.getCode(),
+        return new ResponseDTO<>(localGovernment.getCode(),
                 "successfully created a local government");
     }
 
     @Override
     @Transactional
-    public AdministrativeAreaResponseDto<String> createAll(List<NewAdministrativeAreaDTO> dtos) {
+    public ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos) {
         if (dtos.parallelStream().anyMatch(dto -> dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty())) {
             throw new MissingDataException("Found Administrative Area without PartOfCoce");
         }
@@ -108,13 +107,13 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
 
         localGovernmentRepository.saveAll(localGovernments);
 
-        return new AdministrativeAreaResponseDto<>("success",
+        return new ResponseDTO<>("success",
                 "successfully added " + localGovernments.size() + " administrative areas");
     }
 
     @Override
     @Transactional
-    public AdministrativeAreaResponseDto<String> update(String code, UpdateAdministrativeAreaDTO dto) {
+    public ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto) {
         if (dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode");
         }
@@ -144,11 +143,11 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
 
         localGovernmentRepository.save(localGovernment);
 
-        return new AdministrativeAreaResponseDto<>("SUCCESS");
+        return new ResponseDTO<>("SUCCESS");
     }
 
     @Override
-    public AdministrativeAreaResponseDto<List<LocalGovernmentDTO>> list(String subRegionCode) {
+    public ResponseDTO<List<LocalGovernmentDTO>> list(String subRegionCode) {
         List<LocalGovernmentDTO> localGovernmentDtos;
         if (subRegionCode != null && !subRegionCode.isEmpty()) {
             localGovernmentDtos = localGovernmentRepository.findAllBySubRegion_Code(subRegionCode).stream()
@@ -161,18 +160,18 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
                     .sorted(Comparator.comparing(LocalGovernmentDTO::getCode))
                     .toList();
         }
-        return new AdministrativeAreaResponseDto<>(localGovernmentDtos);
+        return new ResponseDTO<>(localGovernmentDtos);
     }
 
     @Override
-    public AdministrativeAreaResponseDto<LocalGovernmentDTO> getByCode(String code) {
+    public ResponseDTO<LocalGovernmentDTO> getByCode(String code) {
         LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("LocalGovernment not found"));
-        return new AdministrativeAreaResponseDto<>(convertLocalGovernmentDTO(localGovernment));
+        return new ResponseDTO<>(convertLocalGovernmentDTO(localGovernment));
     }
 
     @Override
-    public AdministrativeAreaResponseDto<List<LocalGovernmentDTO>> search(String name, String code) {
+    public ResponseDTO<List<LocalGovernmentDTO>> search(String name, String code) {
         LocalGovernment localGovernment = new LocalGovernment();
         if (name != null && !name.isEmpty()) {
             localGovernment.setName(name);
@@ -191,7 +190,7 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
                 .sorted(Comparator.comparing(LocalGovernmentDTO::getCode))
                 .toList();
 
-        return new AdministrativeAreaResponseDto<>(localGovernmentDtos);
+        return new ResponseDTO<>(localGovernmentDtos);
     }
 
     @Override

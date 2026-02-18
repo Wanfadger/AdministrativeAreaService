@@ -1,4 +1,4 @@
-package com.wanfadger.AdministrativeareaApi.administrativeareaexceptions;
+package com.wanfadger.AdministrativeareaApi.areaexceptions;
 
 public class InvalidException extends RuntimeException{
     public InvalidException(String message) {
