@@ -1,6 +1,16 @@
 package com.wanfadger.AdministrativeareaApi.dto.uniqueDtos;
 
-import com.wanfadger.AdministrativeareaApi.entity.Region;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
-public record USubRegion(String name , Region region) {
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class USubRegion {
+    @NonNull
+    private String name;
+    @NonNull
+    private Long id;
 }

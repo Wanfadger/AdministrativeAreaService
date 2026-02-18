@@ -12,11 +12,13 @@ import com.wanfadger.AdministrativeareaApi.dto.SubRegionDTO;
 import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.uniqueDtos.ULocalGovernment;
+import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
 import com.wanfadger.AdministrativeareaApi.entity.LocalGovernment;
 import com.wanfadger.AdministrativeareaApi.entity.Region;
 import com.wanfadger.AdministrativeareaApi.entity.SubRegion;
 import com.wanfadger.AdministrativeareaApi.repository.LocalGovernmentRepository;
 import com.wanfadger.AdministrativeareaApi.repository.SubRegionRepository;
+import com.wanfadger.AdministrativeareaApi.shared.SharedService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +31,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,6 +40,7 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
 
     private final LocalGovernmentRepository localGovernmentRepository;
     private final SubRegionRepository subRegionRepository;
+    private final SharedService sharedService;
 
     @Override
     @Transactional
@@ -215,7 +217,7 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
                             && subRegion.getName().equalsIgnoreCase(dto.getSubRegion())
                             && region.getName().equalsIgnoreCase(dto.getRegion()));
                 }))
-                .map(dto -> new ULocalGovernment(dto.getLocalGovernment(), dto.getDbSubRegion()))
+                .map(dto -> new ULocalGovernment(dto.getLocalGovernment(), dto.getDbSubRegion().getId()))
                 .collect(Collectors.toSet());
 
         // Step 3: Save new and fetch updated list
@@ -224,8 +226,9 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
             List<LocalGovernment> newLocalGovernments = newLocalGovernmentSet.stream().map(uL -> {
                 LocalGovernment localGovernment = new LocalGovernment();
                 localGovernment.setCode(generateCode());
-                localGovernment.setName(uL.name());
-                localGovernment.setSubRegion(uL.subRegion());
+                localGovernment.setName(uL.getName());
+                localGovernment.setSubRegion(subRegionRepository.findById(uL.getId())
+                        .orElseThrow(() -> new NotFoundException("SubRegion not found")));
                 return localGovernment;
             }).toList();
             localGovernmentRepository.saveAll(newLocalGovernments);
@@ -278,15 +281,12 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
     }
 
     private String generateCode() {
-        String code;
-        do {
-            code = UUID.randomUUID().toString();
-        } while (localGovernmentRepository.findByCodeIgnoreCase(code).isPresent());
-        return code;
+        return sharedService.generateCode(AdministrativeAreaType.LOCALGOVERNMENT);
     }
 
     private LocalGovernmentDTO convertLocalGovernmentDTO(LocalGovernment localGovernment) {
         LocalGovernmentDTO dto = new LocalGovernmentDTO();
+        dto.setId(localGovernment.getId());
         dto.setCode(localGovernment.getCode());
         dto.setName(localGovernment.getName());
         dto.setLatitude(localGovernment.getLatitude() != null ? String.valueOf(localGovernment.getLatitude()) : "");

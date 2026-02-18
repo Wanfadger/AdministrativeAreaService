@@ -15,6 +15,8 @@ import com.wanfadger.AdministrativeareaApi.entity.Region;
 import com.wanfadger.AdministrativeareaApi.entity.SubRegion;
 import com.wanfadger.AdministrativeareaApi.repository.RegionRepository;
 import com.wanfadger.AdministrativeareaApi.repository.SubRegionRepository;
+import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
+import com.wanfadger.AdministrativeareaApi.shared.SharedService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +30,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,6 +39,7 @@ public class SubRegionServiceImpl implements SubRegionService {
 
     private final SubRegionRepository subRegionRepository;
     private final RegionRepository regionRepository;
+    private final SharedService sharedService;
 
     @Override
     @Transactional
@@ -240,7 +242,7 @@ public class SubRegionServiceImpl implements SubRegionService {
                     return (dbSubRegion.getName().equalsIgnoreCase(dto.getSubRegion())
                             && region.getName().equalsIgnoreCase(dto.getRegion()));
                 }))
-                .map(dto -> new USubRegion(dto.getSubRegion(), dto.getDbRegion()))
+                .map(dto -> new USubRegion(dto.getSubRegion(), dto.getDbRegion().getId()))
                 .collect(Collectors.toSet());
 
         // Step 3: Save new sub-regions and fetch updated complete list
@@ -249,8 +251,9 @@ public class SubRegionServiceImpl implements SubRegionService {
             List<SubRegion> newSubRegions = newSubRegionSet.stream().map(uSubRegion -> {
                 SubRegion subRegion = new SubRegion();
                 subRegion.setCode(generateCode());
-                subRegion.setName(uSubRegion.name());
-                subRegion.setRegion(uSubRegion.region()); // Parent region reference
+                subRegion.setName(uSubRegion.getName());
+                subRegion.setRegion(regionRepository.findById(uSubRegion.getId())
+                        .orElseThrow(() -> new NotFoundException("Region not found")));
                 return subRegion;
             }).toList();
             subRegionRepository.saveAll(newSubRegions);
@@ -296,15 +299,12 @@ public class SubRegionServiceImpl implements SubRegionService {
     }
 
     private String generateCode() {
-        String code;
-        do {
-            code = UUID.randomUUID().toString();
-        } while (subRegionRepository.findByCodeIgnoreCase(code).isPresent());
-        return code;
+        return sharedService.generateCode(AdministrativeAreaType.SUBREGION);
     }
 
     private SubRegionDTO convertSubRegionDTO(SubRegion subRegion) {
         SubRegionDTO dto = new SubRegionDTO();
+        dto.setId(subRegion.getId());
         dto.setCode(subRegion.getCode());
         dto.setName(subRegion.getName());
         dto.setLatitude(subRegion.getLatitude() != null ? String.valueOf(subRegion.getLatitude()) : "");

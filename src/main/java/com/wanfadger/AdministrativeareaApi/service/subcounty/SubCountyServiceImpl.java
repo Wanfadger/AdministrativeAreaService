@@ -14,6 +14,7 @@ import com.wanfadger.AdministrativeareaApi.dto.SubRegionDTO;
 import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.uniqueDtos.USubCounty;
+import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
 import com.wanfadger.AdministrativeareaApi.entity.County;
 import com.wanfadger.AdministrativeareaApi.entity.LocalGovernment;
 import com.wanfadger.AdministrativeareaApi.entity.Region;
@@ -21,6 +22,7 @@ import com.wanfadger.AdministrativeareaApi.entity.SubCounty;
 import com.wanfadger.AdministrativeareaApi.entity.SubRegion;
 import com.wanfadger.AdministrativeareaApi.repository.CountyRepository;
 import com.wanfadger.AdministrativeareaApi.repository.SubCountyRepository;
+import com.wanfadger.AdministrativeareaApi.shared.SharedService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,9 +33,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -43,6 +45,7 @@ public class SubCountyServiceImpl implements SubCountyService {
 
     private final SubCountyRepository subCountyRepository;
     private final CountyRepository countyRepository;
+    private final SharedService sharedService;
 
     @Override
     @Transactional
@@ -251,7 +254,7 @@ public class SubCountyServiceImpl implements SubCountyService {
                             && subRegion.getName().equalsIgnoreCase(dto.getSubRegion())
                             && region.getName().equalsIgnoreCase(dto.getRegion()));
                 }))
-                .map(dto -> new USubCounty(dto.getSubCounty(), dto.getDbCounty()))
+                .map(dto -> new USubCounty(dto.getSubCounty(), dto.getDbCounty().getId()))
                 .collect(Collectors.toSet());
 
         List<SubCounty> dbSubCounties2;
@@ -259,8 +262,9 @@ public class SubCountyServiceImpl implements SubCountyService {
             List<SubCounty> newSubCounties = newSubCountySet.stream().map(uSC -> {
                 SubCounty subCounty = new SubCounty();
                 subCounty.setCode(generateCode());
-                subCounty.setName(uSC.name());
-                subCounty.setCounty(uSC.county());
+                subCounty.setName(uSC.getName());
+                subCounty.setCounty(countyRepository.findById(uSC.getId())
+                        .orElseThrow(() -> new NotFoundException("County not found")));
                 return subCounty;
             }).toList();
             subCountyRepository.saveAll(newSubCounties);
@@ -316,15 +320,12 @@ public class SubCountyServiceImpl implements SubCountyService {
     }
 
     private String generateCode() {
-        String code;
-        do {
-            code = UUID.randomUUID().toString();
-        } while (subCountyRepository.findByCodeIgnoreCase(code).isPresent());
-        return code;
+        return sharedService.generateCode(AdministrativeAreaType.SUBCOUNTY);
     }
 
     private SubCountyDTO convertSubCountyDTO(SubCounty subCounty) {
         SubCountyDTO dto = new SubCountyDTO();
+        dto.setId(subCounty.getId());
         dto.setCode(subCounty.getCode());
         dto.setName(subCounty.getName());
         dto.setLatitude(subCounty.getLatitude() != null ? String.valueOf(subCounty.getLatitude()) : "");

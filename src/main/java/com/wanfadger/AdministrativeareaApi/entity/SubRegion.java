@@ -2,6 +2,7 @@ package com.wanfadger.AdministrativeareaApi.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -9,28 +10,32 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.experimental.SuperBuilder;
+
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
 @Table(indexes = {
-    @Index(name = "idx_subregion_code", columnList = "code"),
-    @Index(name = "idx_subregion_name", columnList = "name")
+        @Index(name = "idx_subregion_code", columnList = "code"),
+        @Index(name = "idx_subregion_name", columnList = "name")
 })
+@SuperBuilder
 public class SubRegion extends BaseEntity {
 
-    @Column(unique = true , nullable = false)
+    @Column(unique = true, nullable = false)
     private String name;
 
-    @ManyToOne(targetEntity = Region.class ,cascade = CascadeType.PERSIST)
+    @ManyToOne(targetEntity = Region.class, cascade = CascadeType.PERSIST)
     @JoinColumn(nullable = false)
     private Region region;
 
-    @OneToMany(mappedBy = "subRegion" , targetEntity = LocalGovernment.class ,cascade = CascadeType.PERSIST)
+    @Builder.Default
+    @OneToMany(mappedBy = "subRegion", targetEntity = LocalGovernment.class, cascade = CascadeType.PERSIST)
     private List<LocalGovernment> localGovernments = new ArrayList<>();
 
-    public SubRegion(String id) {
+    public SubRegion(Long id) {
         super(id);
     }
 }

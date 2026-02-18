@@ -1,6 +1,16 @@
 package com.wanfadger.AdministrativeareaApi.dto.uniqueDtos;
 
-import com.wanfadger.AdministrativeareaApi.entity.County;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
-public record USubCounty(String name , County county) {
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class USubCounty {
+    @NonNull
+    private String name;
+    @NonNull
+    private Long id;
 }

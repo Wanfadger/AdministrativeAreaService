@@ -19,6 +19,8 @@ import com.wanfadger.AdministrativeareaApi.entity.Region;
 import com.wanfadger.AdministrativeareaApi.entity.SubRegion;
 import com.wanfadger.AdministrativeareaApi.repository.CountyRepository;
 import com.wanfadger.AdministrativeareaApi.repository.LocalGovernmentRepository;
+import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
+import com.wanfadger.AdministrativeareaApi.shared.SharedService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +34,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -42,6 +43,7 @@ public class CountyServiceImpl implements CountyService {
 
     private final CountyRepository countyRepository;
     private final LocalGovernmentRepository localGovernmentRepository;
+    private final SharedService sharedService;
 
     @Override
     @Transactional
@@ -210,15 +212,17 @@ public class CountyServiceImpl implements CountyService {
                             && localGovernment.getName().equalsIgnoreCase(dto.getLocalGovernment())
                             && subRegion.getName().equalsIgnoreCase(dto.getSubRegion())
                             && region.getName().equalsIgnoreCase(dto.getRegion()));
-                })).map(dto -> new UCounty(dto.getCounty(), dto.getDbLocalGovernment())).collect(Collectors.toSet());
+                })).map(dto -> new UCounty(dto.getCounty(), dto.getDbLocalGovernment().getId()))
+                .collect(Collectors.toSet());
 
         List<County> dbCounties2;
         if (newCountSet.size() > 0) {
             List<County> newCounties = newCountSet.stream().map(UC -> {
                 County county = new County();
                 county.setCode(generateCode());
-                county.setName(UC.name());
-                county.setLocalGovernment(UC.localGovernment());
+                county.setName(UC.getName());
+                county.setLocalGovernment(localGovernmentRepository.findById(UC.getId())
+                        .orElseThrow(() -> new NotFoundException("LocalGovernment not found")));
                 return county;
             }).toList();
             countyRepository.saveAll(newCounties);
@@ -272,15 +276,12 @@ public class CountyServiceImpl implements CountyService {
     }
 
     private String generateCode() {
-        String code;
-        do {
-            code = UUID.randomUUID().toString();
-        } while (countyRepository.findByCodeIgnoreCase(code).isPresent());
-        return code;
+        return sharedService.generateCode(AdministrativeAreaType.COUNTY);
     }
 
     private CountyDTO convertCountyDTO(County county) {
         CountyDTO dto = new CountyDTO();
+        dto.setId(county.getId());
         dto.setCode(county.getCode());
         dto.setName(county.getName());
         dto.setLatitude(county.getLatitude() != null ? String.valueOf(county.getLatitude()) : "");

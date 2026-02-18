@@ -4,6 +4,7 @@ import com.wanfadger.AdministrativeareaApi.areaexceptions.AlreadyExistsException
 import com.wanfadger.AdministrativeareaApi.areaexceptions.InvalidException;
 import com.wanfadger.AdministrativeareaApi.areaexceptions.MissingDataException;
 import com.wanfadger.AdministrativeareaApi.areaexceptions.NotFoundException;
+import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
 import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
 import com.wanfadger.AdministrativeareaApi.dto.CountyDTO;
 import com.wanfadger.AdministrativeareaApi.dto.LocalGovernmentDTO;
@@ -23,6 +24,7 @@ import com.wanfadger.AdministrativeareaApi.entity.SubCounty;
 import com.wanfadger.AdministrativeareaApi.entity.SubRegion;
 import com.wanfadger.AdministrativeareaApi.repository.ParishRepository;
 import com.wanfadger.AdministrativeareaApi.repository.SubCountyRepository;
+import com.wanfadger.AdministrativeareaApi.shared.SharedService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +38,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -46,6 +47,7 @@ public class ParishServiceImpl implements ParishService {
 
     private final ParishRepository parishRepository;
     private final SubCountyRepository subCountyRepository;
+    private final SharedService sharedService;
 
     @Override
     @Transactional
@@ -220,15 +222,16 @@ public class ParishServiceImpl implements ParishService {
                             && subRegion.getName().equalsIgnoreCase(dto.getSubRegion())
                             && region.getName().equalsIgnoreCase(dto.getRegion()));
                 }))
-                .map(dto -> new UParish(dto.getParish(), dto.getDbSubCounty()))
+                .map(dto -> new UParish(dto.getParish(), dto.getDbSubCounty().getId()))
                 .collect(Collectors.toSet());
 
         if (newParishSet.size() > 0) {
             List<Parish> newParishes = newParishSet.stream().map(uP -> {
                 Parish parish = new Parish();
                 parish.setCode(generateCode());
-                parish.setName(uP.name());
-                parish.setSubCounty(uP.subCounty());
+                parish.setName(uP.getName());
+                parish.setSubCounty(subCountyRepository.findById(uP.getId())
+                        .orElseThrow(() -> new NotFoundException("SubCounty not found")));
                 return parish;
             }).toList();
             parishRepository.saveAll(newParishes);
@@ -264,15 +267,12 @@ public class ParishServiceImpl implements ParishService {
     }
 
     private String generateCode() {
-        String code;
-        do {
-            code = UUID.randomUUID().toString();
-        } while (parishRepository.findByCodeIgnoreCase(code).isPresent());
-        return code;
+        return sharedService.generateCode(AdministrativeAreaType.PARISH);
     }
 
     private ParishDTO convertParishDTO(Parish parish) {
         ParishDTO dto = new ParishDTO();
+        dto.setId(parish.getId());
         dto.setCode(parish.getCode());
         dto.setName(parish.getName());
         dto.setLatitude(parish.getLatitude() != null ? String.valueOf(parish.getLatitude()) : "");

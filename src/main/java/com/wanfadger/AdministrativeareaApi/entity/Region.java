@@ -7,6 +7,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -14,24 +15,28 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.experimental.SuperBuilder;
+
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
 @Table(indexes = {
-    @Index(name = "idx_region_code", columnList = "code"),
-    @Index(name = "idx_region_name", columnList = "name")
+        @Index(name = "idx_region_code", columnList = "code"),
+        @Index(name = "idx_region_name", columnList = "name")
 })
+@SuperBuilder
 public class Region extends BaseEntity {
 
-    @Column(unique = true , nullable = false)
+    @Column(unique = true, nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "region" , targetEntity = SubRegion.class ,cascade = CascadeType.PERSIST)
+    @Builder.Default
+    @OneToMany(mappedBy = "region", targetEntity = SubRegion.class, cascade = CascadeType.PERSIST)
     private List<SubRegion> subRegions = new ArrayList<>();
 
-    public Region(String id) {
+    public Region(Long id) {
         super(id);
     }
 }

@@ -10,6 +10,8 @@ import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 import com.wanfadger.AdministrativeareaApi.entity.Region;
 import com.wanfadger.AdministrativeareaApi.repository.RegionRepository;
+import com.wanfadger.AdministrativeareaApi.shared.SharedService;
+import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +24,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -33,6 +34,7 @@ import java.util.function.Predicate;
 public class RegionServiceImpl implements RegionService {
 
     private final RegionRepository regionRepository;
+    private final SharedService sharedService;
 
     @Override
     @Transactional
@@ -211,11 +213,7 @@ public class RegionServiceImpl implements RegionService {
     }
 
     private String generateCode() {
-        String code;
-        do {
-            code = UUID.randomUUID().toString();
-        } while (regionRepository.findByCodeIgnoreCase(code).isPresent());
-        return code;
+        return sharedService.generateCode(AdministrativeAreaType.REGION);
     }
 
     private RegionDTO convertRegionDTO(Region region) {
