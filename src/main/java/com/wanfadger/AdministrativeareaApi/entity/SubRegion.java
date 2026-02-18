@@ -27,7 +27,7 @@ public class SubRegion extends BaseEntity {
     @Column(unique = true, nullable = false)
     private String name;
 
-    @ManyToOne(targetEntity = Region.class, cascade = CascadeType.PERSIST)
+    @ManyToOne(targetEntity = Region.class)
     @JoinColumn(name = "region_id", nullable = false)
     private Region region;
 

@@ -32,9 +32,6 @@ public class DataSeedingService implements CommandLineRunner {
     @Value("${app.seed.test-data:false}")
     private boolean seedTestData;
 
-    @Value("${app.seed.clear-existing:false}")
-    private boolean clearExisting;
-
     private static final int TARGET_COUNT = 10000;
     private static final int BATCH_SIZE = 500;
 
@@ -47,18 +44,8 @@ public class DataSeedingService implements CommandLineRunner {
 
     @Transactional
     public void seed() {
-        if (clearExisting) {
-            log.info("Clearing existing data...");
-            parishRepository.deleteAllInBatch();
-            subCountyRepository.deleteAllInBatch();
-            countyRepository.deleteAllInBatch();
-            localGovernmentRepository.deleteAllInBatch();
-            subRegionRepository.deleteAllInBatch();
-            regionRepository.deleteAllInBatch();
-        }
-
-        if (regionRepository.count() >= TARGET_COUNT) {
-            log.info("Data already seeded. Skipping...");
+        if (regionRepository.count() > 0) {
+            log.info("Data already exists. Skipping seeding...");
             return;
         }
 
@@ -81,6 +68,7 @@ public class DataSeedingService implements CommandLineRunner {
             Region region = Region.builder()
                     .name(faker.address().state() + " " + i + " " + faker.random().hex(4))
                     .code("REG-" + i)
+                    .areaType(AdministrativeAreaType.REGION)
                     .build();
             regions.add(region);
             if (regions.size() >= BATCH_SIZE) {
@@ -101,6 +89,7 @@ public class DataSeedingService implements CommandLineRunner {
             SubRegion subRegion = SubRegion.builder()
                     .name(faker.address().cityName() + " " + i + " " + faker.random().hex(4))
                     .code("SRG-" + i)
+                    .areaType(AdministrativeAreaType.SUBREGION)
                     .region(regions.get(random.nextInt(regions.size())))
                     .build();
             subRegions.add(subRegion);
@@ -122,6 +111,7 @@ public class DataSeedingService implements CommandLineRunner {
             LocalGovernment lg = LocalGovernment.builder()
                     .name(faker.address().city() + " LG " + i + " " + faker.random().hex(4))
                     .code("LGO-" + i)
+                    .areaType(AdministrativeAreaType.LOCALGOVERNMENT)
                     .subRegion(subRegions.get(random.nextInt(subRegions.size())))
                     .build();
             lgs.add(lg);
@@ -143,6 +133,7 @@ public class DataSeedingService implements CommandLineRunner {
             County county = County.builder()
                     .name(faker.address().cityName() + " " + i + " " + faker.random().hex(4))
                     .code("CNY-" + i)
+                    .areaType(AdministrativeAreaType.COUNTY)
                     .localGovernment(lgs.get(random.nextInt(lgs.size())))
                     .build();
             counties.add(county);
@@ -164,6 +155,7 @@ public class DataSeedingService implements CommandLineRunner {
             SubCounty sc = SubCounty.builder()
                     .name(faker.address().cityPrefix() + " SC " + i + " " + faker.random().hex(4))
                     .code("SCN-" + i)
+                    .areaType(AdministrativeAreaType.SUBCOUNTY)
                     .county(counties.get(random.nextInt(counties.size())))
                     .build();
             subCounties.add(sc);
@@ -185,6 +177,7 @@ public class DataSeedingService implements CommandLineRunner {
             Parish parish = Parish.builder()
                     .name(faker.address().streetName() + " Parish " + i + " " + faker.random().hex(4))
                     .code("PAR-" + i)
+                    .areaType(AdministrativeAreaType.PARISH)
                     .subCounty(subCounties.get(random.nextInt(subCounties.size())))
                     .build();
             parishes.add(parish);
