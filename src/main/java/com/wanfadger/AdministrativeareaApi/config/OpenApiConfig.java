@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.servers.Server;
+import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -18,6 +19,22 @@ import java.util.List;
  */
 @Configuration
 public class OpenApiConfig {
+
+        @Bean
+        public GroupedOpenApi businessApi() {
+                return GroupedOpenApi.builder()
+                                .group("Administrative-Area-API")
+                                .pathsToMatch("/api/v1/**", "/AdministrativeAreas/**")
+                                .build();
+        }
+
+        @Bean
+        public GroupedOpenApi monitoringApi() {
+                return GroupedOpenApi.builder()
+                                .group("0-Monitoring")
+                                .pathsToMatch("/actuator/**")
+                                .build();
+        }
 
         @Bean
         public OpenAPI administrativeAreaOpenAPI() {
