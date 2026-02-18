@@ -3,11 +3,13 @@ package com.wanfadger.AdministrativeareaApi.service.county;
 import com.wanfadger.AdministrativeareaApi.dto.CountyDTO;
 import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDTO;
+import com.wanfadger.AdministrativeareaApi.dto.reponses.PaginatedResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
 import com.wanfadger.AdministrativeareaApi.entity.County;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface CountyService {
@@ -36,4 +38,6 @@ public interface CountyService {
     void upload(List<AdministrativeAreaExcelDTO> dtoList);
 
     void saveAll(List<County> counties);
+
+    PaginatedResponseDTO<CountyDTO> search(Map<String, String> queryMap);
 }

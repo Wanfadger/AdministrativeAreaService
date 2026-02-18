@@ -3,6 +3,7 @@ package com.wanfadger.AdministrativeareaApi.service.administrativearea;
 import com.wanfadger.AdministrativeareaApi.areaexceptions.MissingDataException;
 import com.wanfadger.AdministrativeareaApi.areaexceptions.NotFoundException;
 import com.wanfadger.AdministrativeareaApi.dto.*;
+import com.wanfadger.AdministrativeareaApi.dto.reponses.PaginatedResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 import com.wanfadger.AdministrativeareaApi.entity.*;
 import com.wanfadger.AdministrativeareaApi.repository.*;
@@ -14,11 +15,6 @@ import com.wanfadger.AdministrativeareaApi.service.subRegion.SubRegionService;
 import com.wanfadger.AdministrativeareaApi.service.subcounty.SubCountyService;
 import com.wanfadger.AdministrativeareaApi.repository.specification.GenericSpecification;
 import com.wanfadger.AdministrativeareaApi.enums.MatchType;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -40,9 +36,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     private final SubCountyService subCountyService;
     private final ParishService parishService;
 
-    // Repositories needed for cross-cutting logic (getParishByPartOf and
-    // advancedSearch)
-    private final RegionRepository regionRepository;
+    // Repositories needed for cross-cutting logic (getParishByPartOf)
     private final SubRegionRepository subRegionRepository;
     private final LocalGovernmentRepository localGovernmentRepository;
     private final CountyRepository countyRepository;
@@ -297,8 +291,6 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     @Override
     public ResponseDTO<?> searchList(Map<String, String> queryMap) {
         String typeStr = queryMap.get("type");
-        String partOf = queryMap.get("partOf");
-
         if (!notNullEmpty(typeStr))
             throw new MissingDataException("Missing Administrative Area Type");
 
@@ -306,12 +298,12 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 .orElseThrow(() -> new MissingDataException("Missing Administrative Area Type"));
 
         return switch (type) {
-            case REGION -> regionService.list(); // Region search logic/list
-            case SUBREGION -> subRegionService.list(partOf);
-            case LOCALGOVERNMENT -> localGovernmentService.list(partOf);
-            case COUNTY -> countyService.list(partOf);
-            case SUBCOUNTY -> subCountyService.list(partOf);
-            case PARISH -> parishService.list(partOf);
+            case REGION -> regionService.search(queryMap);
+            case SUBREGION -> subRegionService.search(queryMap);
+            case LOCALGOVERNMENT -> localGovernmentService.search(queryMap);
+            case COUNTY -> countyService.search(queryMap);
+            case SUBCOUNTY -> subCountyService.search(queryMap);
+            case PARISH -> parishService.search(queryMap);
         };
     }
 
@@ -322,25 +314,30 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
         if (!notNullEmpty(typeStr))
             throw new MissingDataException("Missing Administrative Area Type");
+        if (!notNullEmpty(code))
+            throw new MissingDataException("Missing Administrative Area Code");
 
         AdministrativeAreaType type = AdministrativeAreaType.fromStr(typeStr)
                 .orElseThrow(() -> new MissingDataException("Missing Administrative Area Type"));
 
-        // Search one typically is finding by code but returning full DTO
-        ResponseDTO<?> response = switch (type) {
-            case REGION -> regionService.search(null, code);
-            case SUBREGION -> subRegionService.search(null, code);
-            case LOCALGOVERNMENT -> localGovernmentService.search(null, code);
-            case COUNTY -> countyService.search(null, code);
-            case SUBCOUNTY -> subCountyService.search(null, code);
-            case PARISH -> parishService.search(null, code);
+        // Use the paginated search with a code filter
+        Map<String, String> searchMap = new HashMap<>(queryMap);
+        searchMap.put("code", code);
+
+        PaginatedResponseDTO<?> response = (PaginatedResponseDTO<?>) switch (type) {
+            case REGION -> regionService.search(searchMap);
+            case SUBREGION -> subRegionService.search(searchMap);
+            case LOCALGOVERNMENT -> localGovernmentService.search(searchMap);
+            case COUNTY -> countyService.search(searchMap);
+            case SUBCOUNTY -> subCountyService.search(searchMap);
+            case PARISH -> parishService.search(searchMap);
         };
 
-        List<?> data = (List<?>) response.getData();
-        if (data == null || data.isEmpty()) {
-            throw new NotFoundException(type.name() + " not found");
+        if (response.getData() == null || response.getData().isEmpty()) {
+            throw new NotFoundException(type.name() + " not found with code: " + code);
         }
-        return new ResponseDTO<>(data.get(0));
+
+        return new ResponseDTO<>(response.getData().get(0));
     }
 
     @Override
@@ -409,69 +406,13 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         AdministrativeAreaType type = AdministrativeAreaType.fromStr(typeStr)
                 .orElseThrow(() -> new MissingDataException("Invalid Administrative Area Type"));
 
-        // 1. Convert to a mutable map to remove reserved keys
-        Map<String, String> filters = new HashMap<>(queryMap);
-
-        // 2. Extract Pagination & Sorting
-        int page = Optional.ofNullable(filters.remove("page")).map(Integer::parseInt).orElse(1);
-        int size = Optional.ofNullable(filters.remove("size")).map(Integer::parseInt).orElse(10);
-        String sortBy = Optional.ofNullable(filters.remove("sortBy")).orElse("id");
-        String sortDirection = Optional.ofNullable(filters.remove("sortDirection")).orElse("ASC");
-        filters.remove("type"); // Remove type as it's used for routing
-
-        page = page <= 0 ? 0 : page - 1;
-
-        Pageable pageable = PageRequest.of(page, size,
-                Sort.by(sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy));
-
-        // 3. Build Specification
-        Specification<?> spec = buildSpecification(filters);
-
-        // 4. Execute Search based on type
-        return executeSearch(type, spec, pageable);
-    }
-
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    private Specification<?> buildSpecification(Map<String, String> filters) {
-        Specification spec = Specification.where(null);
-
-        for (Map.Entry<String, String> entry : filters.entrySet()) {
-            String fullKey = entry.getKey();
-            String value = entry.getValue();
-
-            // Determine Operator (Default: EQUALS)
-            String key = fullKey;
-            MatchType matchType = MatchType.EQUALS;
-
-            if (fullKey.contains(":")) {
-                String[] parts = fullKey.split(":", 2);
-                key = parts[0];
-                try {
-                    matchType = MatchType.valueOf(parts[1].toUpperCase());
-                } catch (IllegalArgumentException e) {
-                    log.warn("Invalid MatchType: {}, defaulting to EQUALS", parts[1]);
-                }
-            }
-
-            spec = spec.and(new GenericSpecification<>(new SearchCriteria(key, value, matchType)));
-        }
-        return spec;
-    }
-
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    private ResponseDTO<?> executeSearch(AdministrativeAreaType type, Specification spec, Pageable pageable) {
-        Page<?> resultPage = switch (type) {
-            case REGION -> regionRepository.findAll(spec, pageable);
-            case SUBREGION -> subRegionRepository.findAll(spec, pageable);
-            case LOCALGOVERNMENT -> localGovernmentRepository.findAll(spec, pageable);
-            case COUNTY -> countyRepository.findAll(spec, pageable);
-            case SUBCOUNTY -> subCountyRepository.findAll(spec, pageable);
-            case PARISH -> parishRepository.findAll(spec, pageable);
+        return switch (type) {
+            case REGION -> regionService.search(queryMap);
+            case SUBREGION -> subRegionService.search(queryMap);
+            case LOCALGOVERNMENT -> localGovernmentService.search(queryMap);
+            case COUNTY -> countyService.search(queryMap);
+            case SUBCOUNTY -> subCountyService.search(queryMap);
+            case PARISH -> parishService.search(queryMap);
         };
-
-        // For simplicity, returning the content list as per previous search pattern,
-        // but ideally should return a paginated DTO.
-        // Given existing response types, I'll return the list of data.
-        return new ResponseDTO<>(resultPage.getContent());
     }
 }

@@ -12,6 +12,7 @@ import com.wanfadger.AdministrativeareaApi.dto.RegionDTO;
 import com.wanfadger.AdministrativeareaApi.dto.SubCountyDTO;
 import com.wanfadger.AdministrativeareaApi.dto.SubRegionDTO;
 import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDTO;
+import com.wanfadger.AdministrativeareaApi.dto.reponses.PaginatedResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.uniqueDtos.USubCounty;
 import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
@@ -31,6 +32,10 @@ import com.wanfadger.AdministrativeareaApi.enums.MatchType;
 import com.wanfadger.AdministrativeareaApi.dto.SearchCriteria;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +43,7 @@ import com.wanfadger.AdministrativeareaApi.config.CacheValueKeyConfig;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -238,6 +244,65 @@ public class SubCountyServiceImpl implements SubCountyService {
                 .toList();
 
         return new ResponseDTO<>(subCountyDtos);
+    }
+
+    @Override
+    @Cacheable(value = CacheValueKeyConfig.SUB_COUNTIES, key = "#queryMap.toString()", unless = "#result.totalElements == 0")
+    public PaginatedResponseDTO<SubCountyDTO> search(Map<String, String> queryMap) {
+        // 1. Extract Pagination & Sorting
+        int page = Optional.ofNullable(queryMap.get("page")).map(Integer::parseInt).orElse(1);
+        int size = Optional.ofNullable(queryMap.get("size")).map(Integer::parseInt).orElse(10);
+        String sortBy = Optional.ofNullable(queryMap.get("sortBy")).orElse("id");
+        String sortDirection = Optional.ofNullable(queryMap.get("sortDirection")).orElse("ASC");
+
+        page = page <= 0 ? 0 : page - 1;
+
+        Pageable pageable = PageRequest.of(page, size,
+                Sort.by(sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy));
+
+        // 2. Build Specification
+        Specification<SubCounty> spec = Specification.where(null);
+        for (Map.Entry<String, String> entry : queryMap.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+
+            if (List.of("page", "size", "sortBy", "sortDirection", "type").contains(key))
+                continue;
+
+            MatchType matchType = MatchType.EQUALS;
+            if (key.contains(":")) {
+                String[] parts = key.split(":", 2);
+                key = parts[0];
+                try {
+                    matchType = MatchType.valueOf(parts[1].toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    log.warn("Invalid MatchType: {}, defaulting to EQUALS", parts[1]);
+                }
+            }
+            spec = spec.and(new GenericSpecification<>(new SearchCriteria(key, value, matchType)));
+        }
+
+        // 3. Execute Search
+        Page<SubCounty> resultPage = subCountyRepository.findAll(spec, pageable);
+
+        // 4. Map to DTOs
+        List<SubCountyDTO> data = resultPage.getContent().stream()
+                .map(this::convertSubCountyDTO)
+                .toList();
+
+        // 5. Build Paginated Response
+        PaginatedResponseDTO<SubCountyDTO> response = new PaginatedResponseDTO<>();
+        response.setData(data);
+        response.setPage(resultPage.getNumber() + 1);
+        response.setSize(resultPage.getSize());
+        response.setTotalElements(resultPage.getTotalElements());
+        response.setTotalPages(resultPage.getTotalPages());
+        response.setHasNext(resultPage.hasNext());
+        response.setHasPrevious(resultPage.hasPrevious());
+        response.setMessage("success");
+        response.setStatus(true);
+
+        return response;
     }
 
     @Override
