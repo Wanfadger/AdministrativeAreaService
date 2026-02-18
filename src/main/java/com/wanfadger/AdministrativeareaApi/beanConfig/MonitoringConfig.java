@@ -1,4 +1,4 @@
-package com.wanfadger.AdministrativeareaApi.shared.beanConfig;
+package com.wanfadger.AdministrativeareaApi.beanConfig;
 
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;

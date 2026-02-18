@@ -1,4 +1,4 @@
-package com.wanfadger.AdministrativeareaApi.shared.administrativeareaexceptions;
+package com.wanfadger.AdministrativeareaApi.administrativeareaexceptions;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.http.HttpStatus;

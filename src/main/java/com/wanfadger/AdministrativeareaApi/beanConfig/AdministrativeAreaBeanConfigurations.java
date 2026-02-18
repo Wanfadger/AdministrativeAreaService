@@ -1,4 +1,4 @@
-package com.wanfadger.AdministrativeareaApi.shared.beanConfig;
+package com.wanfadger.AdministrativeareaApi.beanConfig;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;

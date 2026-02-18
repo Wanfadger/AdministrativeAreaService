@@ -1,4 +1,4 @@
-package com.wanfadger.AdministrativeareaApi.shared.beanConfig;
+package com.wanfadger.AdministrativeareaApi.beanConfig;
 
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
 import org.springframework.context.annotation.Bean;

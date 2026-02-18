@@ -1,4 +1,4 @@
-package com.wanfadger.AdministrativeareaApi.shared.beanConfig;
+package com.wanfadger.AdministrativeareaApi.beanConfig;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

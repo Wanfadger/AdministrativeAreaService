@@ -1,4 +1,4 @@
-package com.wanfadger.AdministrativeareaApi.shared.administrativeareaexceptions;
+package com.wanfadger.AdministrativeareaApi.administrativeareaexceptions;
 
 public class AlreadyExistsException extends RuntimeException{
     public AlreadyExistsException(String message) {

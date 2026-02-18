@@ -1,4 +1,4 @@
-package com.wanfadger.AdministrativeareaApi.shared.beanConfig;
+package com.wanfadger.AdministrativeareaApi.beanConfig;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
