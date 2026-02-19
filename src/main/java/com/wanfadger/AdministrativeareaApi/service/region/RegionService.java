@@ -17,7 +17,7 @@ public interface RegionService {
 
     PaginatedResponseDTO<RegionDTO> search(Map<String, String> queryMap);
 
-    ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto);
+    ResponseDTO<String> update(UpdateAdministrativeAreaDTO dto);
 
     ResponseDTO<RegionDTO> findByCode(String code);
 

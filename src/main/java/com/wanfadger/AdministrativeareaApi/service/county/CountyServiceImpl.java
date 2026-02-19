@@ -112,38 +112,46 @@ public class CountyServiceImpl implements CountyService {
 
     @Override
     @Transactional
-    @CacheEvict(value = { CacheValueKeyConfig.COUNTIES }, allEntries = true)
-    public ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto) {
+    @CacheEvict(value = { CacheValueKeyConfig.COUNTIES, CacheValueKeyConfig.COUNTIES_FILTERED }, allEntries = true)
+    public ResponseDTO<String> update(UpdateAdministrativeAreaDTO dto) {
         if (dto.getParentCode() == null || dto.getParentCode().isEmpty()) {
-            throw new MissingDataException("Missing PartOfCode");
+            throw new MissingDataException("Missing parent code");
         }
 
         LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(dto.getParentCode())
-                .orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
-        County county = countyRepository.findByCodeIgnoreCase(code)
-                .orElseThrow(() -> new NotFoundException("Administrative Area NotFound"));
+                .orElseThrow(() -> new NotFoundException(
+                        "Local Government with code " + dto.getParentCode() + " not found"));
+        County county = countyRepository.findByCodeIgnoreCaseAndLocalGovernment_Code(dto.getCode(), dto.getParentCode())
+                .orElseThrow(() -> new NotFoundException("County with code " + dto.getCode()
+                        + " not found in local government " + localGovernment.getName()));
 
-        if (dto.getName() != null && !dto.getName().isEmpty()) {
+        if (dto.getName() != null && !dto.getName().isEmpty() && !county.getName().equalsIgnoreCase(dto.getName())) {
+            if (countyRepository.existsByNameIgnoreCaseAndLocalGovernment_Code(dto.getName(), dto.getParentCode())) {
+                throw new AlreadyExistsException(
+                        "County " + dto.getName() + " Already Exists in the " + localGovernment.getName()
+                                + " local government");
+            }
             county.setName(dto.getName());
         }
 
-        if (dto.getLatitude() != null && !dto.getLatitude().isEmpty()) {
+        if (dto.getLatitude() != null && !dto.getLatitude().isEmpty()
+                && !county.getLatitude().toString().equalsIgnoreCase(dto.getLatitude())) {
             county.setLatitude(Double.valueOf(dto.getLatitude()));
         }
 
-        if (dto.getLongitude() != null && !dto.getLongitude().isEmpty()) {
+        if (dto.getLongitude() != null && !dto.getLongitude().isEmpty()
+                && !county.getLongitude().toString().equalsIgnoreCase(dto.getLongitude())) {
             county.setLongitude(Double.valueOf(dto.getLongitude()));
         }
 
-        if (dto.getDescription() != null && !dto.getDescription().isEmpty()) {
+        if (dto.getDescription() != null && !dto.getDescription().isEmpty()
+                && !county.getDescription().equalsIgnoreCase(dto.getDescription())) {
             county.setDescription(dto.getDescription());
         }
 
-        county.setLocalGovernment(localGovernment);
-
         countyRepository.save(county);
 
-        return new ResponseDTO<>("SUCCESS");
+        return new ResponseDTO<>(county.getCode(), "successfully updated county");
     }
 
     // @Override

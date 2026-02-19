@@ -15,7 +15,7 @@ import java.util.Optional;
 public interface SubCountyService {
     ResponseDTO<String> create(NewAdministrativeAreaDTO dto);
 
-    ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto);
+    ResponseDTO<String> update(UpdateAdministrativeAreaDTO dto);
 
     ResponseDTO<String> delete(String code);
 

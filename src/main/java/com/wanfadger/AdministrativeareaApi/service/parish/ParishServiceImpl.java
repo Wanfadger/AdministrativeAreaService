@@ -112,38 +112,44 @@ public class ParishServiceImpl implements ParishService {
 
     @Override
     @Transactional
-    @CacheEvict(value = { CacheValueKeyConfig.PARISHES }, allEntries = true)
-    public ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto) {
+    @CacheEvict(value = { CacheValueKeyConfig.PARISHES, CacheValueKeyConfig.PARISHES_FILTERED }, allEntries = true)
+    public ResponseDTO<String> update(UpdateAdministrativeAreaDTO dto) {
         if (dto.getParentCode() == null || dto.getParentCode().isEmpty()) {
-            throw new MissingDataException("Missing PartOfCode");
+            throw new MissingDataException("Missing parent code");
         }
 
         SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(dto.getParentCode())
-                .orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
-        Parish parish = parishRepository.findByCodeIgnoreCase(code)
-                .orElseThrow(() -> new NotFoundException("Administrative Area NotFound"));
+                .orElseThrow(() -> new NotFoundException("Sub county with code " + dto.getParentCode() + " not found"));
+        Parish parish = parishRepository.findByCodeIgnoreCaseAndSubCounty_Code(dto.getCode(), dto.getParentCode())
+                .orElseThrow(() -> new NotFoundException(
+                        "Parish with code " + dto.getCode() + " not found in sub county " + subCounty.getName()));
 
-        if (dto.getName() != null && !dto.getName().isEmpty()) {
+        if (dto.getName() != null && !dto.getName().isEmpty() && !parish.getName().equalsIgnoreCase(dto.getName())) {
+            if (parishRepository.existsByNameIgnoreCaseAndSubCounty_Code(dto.getName(), dto.getParentCode())) {
+                throw new AlreadyExistsException(
+                        "Parish " + dto.getName() + " Already Exists in the " + subCounty.getName() + " sub county");
+            }
             parish.setName(dto.getName());
         }
 
-        if (dto.getLatitude() != null && !dto.getLatitude().isEmpty()) {
+        if (dto.getLatitude() != null && !dto.getLatitude().isEmpty()
+                && !parish.getLatitude().toString().equalsIgnoreCase(dto.getLatitude())) {
             parish.setLatitude(Double.valueOf(dto.getLatitude()));
         }
 
-        if (dto.getLongitude() != null && !dto.getLongitude().isEmpty()) {
+        if (dto.getLongitude() != null && !dto.getLongitude().isEmpty()
+                && !parish.getLongitude().toString().equalsIgnoreCase(dto.getLongitude())) {
             parish.setLongitude(Double.valueOf(dto.getLongitude()));
         }
 
-        if (dto.getDescription() != null && !dto.getDescription().isEmpty()) {
+        if (dto.getDescription() != null && !dto.getDescription().isEmpty()
+                && !parish.getDescription().equalsIgnoreCase(dto.getDescription())) {
             parish.setDescription(dto.getDescription());
         }
 
-        parish.setSubCounty(subCounty);
-
         parishRepository.save(parish);
 
-        return new ResponseDTO<>("SUCCESS");
+        return new ResponseDTO<>(parish.getCode(), "successfully updated parish");
     }
 
     @Override

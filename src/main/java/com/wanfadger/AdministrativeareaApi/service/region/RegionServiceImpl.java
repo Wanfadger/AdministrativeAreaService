@@ -77,30 +77,41 @@ public class RegionServiceImpl implements RegionService {
 
     @Override
     @Transactional
-    @CacheEvict(value = CacheValueKeyConfig.REGIONS, allEntries = true)
-    public ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto) {
-        Region region = regionRepository.findByCodeIgnoreCase(code)
-                .orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
+    @CacheEvict(value = { CacheValueKeyConfig.REGIONS, CacheValueKeyConfig.REGIONS_FILTERED }, allEntries = true)
+    public ResponseDTO<String> update(UpdateAdministrativeAreaDTO dto) {
+        if (dto.getCode() == null || dto.getCode().isEmpty()) {
+            throw new MissingDataException("Missing Code");
+        }
 
-        if (dto.getName() != null && !dto.getName().isEmpty()) {
+        Region region = regionRepository.findByCodeIgnoreCase(dto.getCode())
+                .orElseThrow(() -> new NotFoundException("Region with code " + dto.getCode() + " not found"));
+
+        if (dto.getName() != null && !dto.getName().isEmpty() && !region.getName().equalsIgnoreCase(dto.getName())) {
+            if (regionRepository.existsByNameIgnoreCase(dto.getName())) {
+                throw new AlreadyExistsException(AdministrativeAreaType.REGION.getAreaType() + " with name "
+                        + dto.getName() + " Already Exists");
+            }
             region.setName(dto.getName());
         }
 
-        if (dto.getLatitude() != null && !dto.getLatitude().isEmpty()) {
+        if (dto.getLatitude() != null && !dto.getLatitude().isEmpty()
+                && !region.getLatitude().toString().equalsIgnoreCase(dto.getLatitude())) {
             region.setLatitude(Double.valueOf(dto.getLatitude()));
         }
 
-        if (dto.getLongitude() != null && !dto.getLongitude().isEmpty()) {
+        if (dto.getLongitude() != null && !dto.getLongitude().isEmpty()
+                && !region.getLongitude().toString().equalsIgnoreCase(dto.getLongitude())) {
             region.setLongitude(Double.valueOf(dto.getLongitude()));
         }
 
-        if (dto.getDescription() != null && !dto.getDescription().isEmpty()) {
+        if (dto.getDescription() != null && !dto.getDescription().isEmpty()
+                && !region.getDescription().equalsIgnoreCase(dto.getDescription())) {
             region.setDescription(dto.getDescription());
         }
 
         regionRepository.save(region);
 
-        return new ResponseDTO<>("SUCCESS");
+        return new ResponseDTO<>(region.getCode(), "successfully updated region");
     }
 
     @Override

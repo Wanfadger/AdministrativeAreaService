@@ -37,6 +37,8 @@ public interface SubCountyRepository extends JpaRepository<SubCounty, Long>, Jpa
 
         Optional<SubCounty> findByCodeIgnoreCase(String code);
 
+        Optional<SubCounty> findByCodeIgnoreCaseAndCounty_Code(String code, String countyCode);
+
         boolean existsByNameIgnoreCaseAndCounty_Code(String name, String code);
 
         List<SubCounty> findByCodeIgnoreCaseIn(List<String> codes);

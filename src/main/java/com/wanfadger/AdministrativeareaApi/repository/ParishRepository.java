@@ -37,6 +37,8 @@ public interface ParishRepository extends JpaRepository<Parish, Long>, JpaSpecif
 
         Optional<Parish> findByCodeIgnoreCase(String code);
 
+        Optional<Parish> findByCodeIgnoreCaseAndSubCounty_Code(String code, String subCountyCode);
+
         boolean existsByNameIgnoreCaseAndSubCounty_Code(String name, String code);
 
 }

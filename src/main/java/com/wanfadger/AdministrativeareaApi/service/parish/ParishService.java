@@ -25,7 +25,7 @@ public interface ParishService {
 
     PaginatedResponseDTO<ParishDTO> filter(Map<String, String> queryMap);
 
-    ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto);
+    ResponseDTO<String> update(UpdateAdministrativeAreaDTO dto);
 
     ResponseDTO<String> delete(String code);
 

@@ -112,38 +112,45 @@ public class SubRegionServiceImpl implements SubRegionService {
 
     @Override
     @Transactional
-    @CacheEvict(value = { CacheValueKeyConfig.SUB_REGIONS }, allEntries = true)
-    public ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto) {
+    @CacheEvict(value = { CacheValueKeyConfig.SUB_REGIONS,
+            CacheValueKeyConfig.SUB_REGIONS_FILTERED }, allEntries = true)
+    public ResponseDTO<String> update(UpdateAdministrativeAreaDTO dto) {
         if (dto.getParentCode() == null || dto.getParentCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode");
         }
 
         Region region = regionRepository.findByCodeIgnoreCase(dto.getParentCode())
-                .orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
-        SubRegion subRegion = subRegionRepository.findByCodeIgnoreCase(code)
-                .orElseThrow(() -> new NotFoundException("Sub Region NotFound"));
+                .orElseThrow(() -> new NotFoundException("Region with code " + dto.getParentCode() + " not found"));
+        SubRegion subRegion = subRegionRepository.findByCodeIgnoreCaseAndRegion_Code(dto.getCode(), dto.getParentCode())
+                .orElseThrow(() -> new NotFoundException(
+                        "Sub Region with code " + dto.getCode() + " not found in region " + region.getName()));
 
-        if (dto.getName() != null && !dto.getName().isEmpty()) {
+        if (dto.getName() != null && !dto.getName().isEmpty() && !subRegion.getName().equalsIgnoreCase(dto.getName())) {
+            if (subRegionRepository.existsByNameIgnoreCaseAndRegion_Code(dto.getName(), dto.getParentCode())) {
+                throw new AlreadyExistsException(
+                        dto.getName() + " Sub region Already Exists in the " + region.getName() + " region");
+            }
             subRegion.setName(dto.getName());
         }
 
-        if (dto.getLatitude() != null && !dto.getLatitude().isEmpty()) {
+        if (dto.getLatitude() != null && !dto.getLatitude().isEmpty()
+                && !subRegion.getLatitude().toString().equalsIgnoreCase(dto.getLatitude())) {
             subRegion.setLatitude(Double.valueOf(dto.getLatitude()));
         }
 
-        if (dto.getLongitude() != null && !dto.getLongitude().isEmpty()) {
+        if (dto.getLongitude() != null && !dto.getLongitude().isEmpty()
+                && !subRegion.getLongitude().toString().equalsIgnoreCase(dto.getLongitude())) {
             subRegion.setLongitude(Double.valueOf(dto.getLongitude()));
         }
 
-        if (dto.getDescription() != null && !dto.getDescription().isEmpty()) {
+        if (dto.getDescription() != null && !dto.getDescription().isEmpty()
+                && !subRegion.getDescription().equalsIgnoreCase(dto.getDescription())) {
             subRegion.setDescription(dto.getDescription());
         }
 
-        subRegion.setRegion(region);
-
         subRegionRepository.save(subRegion);
 
-        return new ResponseDTO<>("SUCCESS");
+        return new ResponseDTO<>(subRegion.getCode(), "successfully updated sub region");
     }
 
     @Override

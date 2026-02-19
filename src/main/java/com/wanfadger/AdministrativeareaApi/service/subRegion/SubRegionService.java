@@ -17,13 +17,14 @@ public interface SubRegionService {
     ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos);
 
     PaginatedResponseDTO<SubRegionDTO> search(Map<String, String> queryMap);
+
     PaginatedResponseDTO<SubRegionDTO> filter(Map<String, String> queryMap);
 
     ResponseDTO<SubRegionDTO> findByCode(String code);
 
     ResponseDTO<SubRegionDTO> findDetailsByCode(String code);
 
-    ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto);
+    ResponseDTO<String> update(UpdateAdministrativeAreaDTO dto);
 
     void upload(List<AdministrativeAreaExcelDTO> dtoList);
 
