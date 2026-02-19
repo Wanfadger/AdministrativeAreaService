@@ -15,7 +15,7 @@ import java.util.Optional;
 public interface LocalGovernmentService {
     ResponseDTO<String> create(NewAdministrativeAreaDTO dto);
 
-    ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto);
+    ResponseDTO<String> update(UpdateAdministrativeAreaDTO dto);
 
     ResponseDTO<String> delete(String code);
 
@@ -31,15 +31,7 @@ public interface LocalGovernmentService {
 
     Optional<LocalGovernment> findByCode(String code);
 
-    // List<LocalGovernment> findAll();
-
-    // List<LocalGovernment> findAllBySubRegionCode(String subRegionCode);
-
-    // List<LocalGovernment> findAllBySubRegionCodes(List<String> subRegionCodes);
-
     ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos);
-
-    // ResponseDTO<List<LocalGovernmentDTO>> search(String name, String code);
 
     void upload(List<AdministrativeAreaExcelDTO> dtoList);
 

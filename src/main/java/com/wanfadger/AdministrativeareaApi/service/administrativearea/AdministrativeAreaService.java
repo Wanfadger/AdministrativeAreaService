@@ -12,7 +12,7 @@ import java.util.Map;
 
 public interface AdministrativeAreaService {
 
-        ResponseDTO<String> createOne(@NotBlank String type, NewAdministrativeAreaDTO dto);
+        ResponseDTO<String> create(@NotBlank String type, NewAdministrativeAreaDTO dto);
 
         ResponseDTO<String> createList(@NotBlank String type, List<NewAdministrativeAreaDTO> dtos);
 
@@ -26,7 +26,7 @@ public interface AdministrativeAreaService {
 
         ResponseDTO<String> upload(List<AdministrativeAreaExcelDTO> administrativeAreaExcelDtos);
 
-        ResponseDTO<String> updateOne(Map<String, String> queryMap, UpdateAdministrativeAreaDTO dto);
+        ResponseDTO<String> update(@NotBlank String type, UpdateAdministrativeAreaDTO dto);
 
         ResponseDTO<String> deleteOne(Map<String, String> queryMap);
 

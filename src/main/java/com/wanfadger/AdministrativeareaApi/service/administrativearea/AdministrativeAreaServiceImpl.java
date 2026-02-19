@@ -20,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,7 +38,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public ResponseDTO<String> createOne(@NotBlank String type, NewAdministrativeAreaDTO dto) {
+    public ResponseDTO<String> create(@NotBlank String type, NewAdministrativeAreaDTO dto) {
         AdministrativeAreaType areaType = AdministrativeAreaType.fromStr(type)
                 .orElseThrow(() -> new MissingDataException("Missing Administrative Area Type"));
 
@@ -86,7 +85,8 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         if (notNullEmpty(selected)) {
             return switch (type) {
                 case REGION -> subRegionService.filter(queryMap);// fetches selected region sub regions
-                case SUBREGION -> localGovernmentService.filter(queryMap); // fetches selected subregion local governments
+                case SUBREGION -> localGovernmentService.filter(queryMap); // fetches selected subregion local
+                                                                           // governments
                 case LOCALGOVERNMENT -> countyService.filter(queryMap); // fetches selected local government counties
                 case COUNTY -> subCountyService.filter(queryMap); // fetches selected county sub counties
                 case SUBCOUNTY -> parishService.filter(queryMap); // fetches selected sub county parishes
@@ -175,20 +175,18 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public ResponseDTO<String> updateOne(Map<String, String> queryMap, UpdateAdministrativeAreaDTO dto) {
-        String typeStr = queryMap.get("type");
-        String code = dto.getCode();
-
+    public ResponseDTO<String> update(String typeStr, UpdateAdministrativeAreaDTO dto) {
         if (!notNullEmpty(typeStr))
             throw new MissingDataException("Missing Administrative Area Type");
 
-        AdministrativeAreaType type = AdministrativeAreaType.fromStr(typeStr)
-                .orElseThrow(() -> new MissingDataException("Missing Administrative Area Type"));
+        AdministrativeAreaType areaType = AdministrativeAreaType.fromStr(typeStr)
+                .orElseThrow(() -> new MissingDataException("Missing or Unknown Administrative Area Type: " + typeStr));
 
-        return switch (type) {
+
+        return switch (areaType) {
             case REGION -> regionService.update(code, dto);
             case SUBREGION -> subRegionService.update(code, dto);
-            case LOCALGOVERNMENT -> localGovernmentService.update(code, dto);
+            case LOCALGOVERNMENT -> localGovernmentService.update(dto);
             case COUNTY -> countyService.update(code, dto);
             case SUBCOUNTY -> subCountyService.update(code, dto);
             case PARISH -> parishService.update(code, dto);

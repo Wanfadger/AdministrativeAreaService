@@ -37,11 +37,11 @@ public class AdministrativeAreaController {
                         @ApiResponse(responseCode = "400", description = "Invalid input data"),
                         @ApiResponse(responseCode = "500", description = "Internal server error")
         })
-        @PostMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseDTO<String> createOne(
+        @PostMapping()
+        public ResponseDTO<String> create(
                         @RequestParam String type,
                         @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Administrative area data", required = true) @RequestBody NewAdministrativeAreaDTO dto) {
-                return administrativeAreaService.createOne(type, dto);
+                return administrativeAreaService.create(type, dto);
         }
 
         @Operation(summary = "Create multiple administrative areas", description = "Creates multiple administrative areas in a single request. Requires 'type' query parameter. Cache is automatically evicted after creation.", parameters = {
@@ -52,7 +52,7 @@ public class AdministrativeAreaController {
                         @ApiResponse(responseCode = "400", description = "Invalid input data"),
                         @ApiResponse(responseCode = "500", description = "Internal server error")
         })
-        @PostMapping(value = "/list", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+        @PostMapping(value = "/list")
         public ResponseDTO<String> createList(
                         @RequestParam String type,
                         @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "List of administrative areas to create", required = true) @RequestBody List<NewAdministrativeAreaDTO> dtos) {
@@ -65,7 +65,7 @@ public class AdministrativeAreaController {
                         @ApiResponse(responseCode = "400", description = "Invalid Excel data format"),
                         @ApiResponse(responseCode = "500", description = "Internal server error")
         })
-        @PostMapping(value = "/upload", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+        @PostMapping(value = "/upload") 
         public ResponseDTO<String> upload(
                         @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "List of administrative areas in Excel format", required = true) @RequestBody List<AdministrativeAreaExcelDTO> administrativeAreaExcelDtos) {
                 return administrativeAreaService.upload(administrativeAreaExcelDtos);
@@ -80,15 +80,15 @@ public class AdministrativeAreaController {
                         @ApiResponse(responseCode = "400", description = "Invalid input data"),
                         @ApiResponse(responseCode = "500", description = "Internal server error")
         })
-        @PutMapping(value = "/one", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseDTO<String> updateOne(
-                        @Parameter(hidden = true) @RequestParam Map<String, String> queryMap,
+        @PutMapping()
+        public ResponseDTO<String> update(
+                        @RequestParam String type,
                         @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Updated administrative area data (must include 'code')", required = true) @RequestBody UpdateAdministrativeAreaDTO dto) {
-                return administrativeAreaService.updateOne(queryMap, dto);
+                return administrativeAreaService.update(type, dto);
         }
 
         @Operation(summary = "Filter a list of administrative areas", description = """
-                        Retrieves a list of administrative areas belonging to selected type and selected(parent). 
+                        Retrieves a list of administrative areas belonging to selected type and selected(parent).
                         Query parameters: 'type' (required), optionally 'selected' value to fetch administrative areas that belong to selected administrative area.
                          if both 'type' and 'selected' are  provided, fetches administrative areas that belong to selected administrative area.
                         if 'selected' is not provided, regions are returned since they are the top-level administrative areas.
@@ -124,8 +124,8 @@ public class AdministrativeAreaController {
         }
 
         @Operation(summary = "Get a single administrative area", description = "Retrieves a single administrative area with full details (code, name, latitude, longitude). Results are cached for 1 hour.", parameters = {
-                        @Parameter(name = "type", description = "Administrative area type", required = true, schema = @Schema(type = "string"), example = "REGION"),
-                        @Parameter(name = "code", description = "Administrative area code", required = true, schema = @Schema(type = "string"), example = "001")
+                        @Parameter(name = "type", description = "Administrative area type (REGION, SUBREGION, LOCALGOVERNMENT, COUNTY, SUBCOUNTY, PARISH)", required = true, schema = @Schema(type = "string"), example = "REGION"),
+                        @Parameter(name = "code", description = "Administrative area code", required = true, schema = @Schema(type = "string"))
         })
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "Administrative area found with full details", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ResponseDTO.class))),
@@ -193,8 +193,8 @@ public class AdministrativeAreaController {
         }
 
         @Operation(summary = "Soft delete an administrative area", description = "Marks an administrative area as 'archived'. Requires 'type' and 'code' query parameters. Cache is automatically evicted after deletion.", parameters = {
-                        @Parameter(name = "type", description = "Administrative area type", required = true, schema = @Schema(type = "string"), example = "REGION"),
-                        @Parameter(name = "code", description = "Administrative area code", required = true, schema = @Schema(type = "string"), example = "001")
+                        @Parameter(name = "type", description = "Administrative area type (REGION, SUBREGION, LOCALGOVERNMENT, COUNTY, SUBCOUNTY, PARISH)", required = true, schema = @Schema(type = "string"), example = "REGION"),
+                        @Parameter(name = "code", description = "Administrative area code", required = true, schema = @Schema(type = "string"))
         })
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "Administrative area deleted successfully"),

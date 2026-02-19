@@ -1,5 +1,6 @@
 package com.wanfadger.AdministrativeareaApi.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,5 +13,6 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UpdateAdministrativeAreaDTO extends NewAdministrativeAreaDTO {
+    @NotBlank(message = "Code is required")
     private String code;
 }

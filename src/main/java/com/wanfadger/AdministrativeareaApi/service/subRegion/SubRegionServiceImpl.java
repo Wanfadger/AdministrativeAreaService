@@ -59,14 +59,14 @@ public class SubRegionServiceImpl implements SubRegionService {
     @Transactional
     @CacheEvict(value = { CacheValueKeyConfig.SUB_REGIONS }, allEntries = true)
     public ResponseDTO<String> create(NewAdministrativeAreaDTO dto) {
-        if (dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty()) {
+        if (dto.getParentCode() == null || dto.getParentCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode(region) for the sub region");
         }
 
-        Region region = regionRepository.findByCodeIgnoreCase(dto.getPartOfCode())
-                .orElseThrow(() -> new NotFoundException("Region with code: " + dto.getPartOfCode() + " not found"));
+        Region region = regionRepository.findByCodeIgnoreCase(dto.getParentCode())
+                .orElseThrow(() -> new NotFoundException("Region with code: " + dto.getParentCode() + " not found"));
 
-        if (subRegionRepository.existsByNameIgnoreCaseAndRegion_Code(dto.getName(), dto.getPartOfCode())) {
+        if (subRegionRepository.existsByNameIgnoreCaseAndRegion_Code(dto.getName(), dto.getParentCode())) {
             throw new AlreadyExistsException(
                     dto.getName() + " Sub region Already Exists in the " + region.getName() + " region");
         }
@@ -83,12 +83,12 @@ public class SubRegionServiceImpl implements SubRegionService {
     @CacheEvict(value = { CacheValueKeyConfig.SUB_REGIONS }, allEntries = true)
     public ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos) {
         // check if all have PartOfCode
-        if (dtos.parallelStream().anyMatch(dto -> dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty())) {
+        if (dtos.parallelStream().anyMatch(dto -> dto.getParentCode() == null || dto.getParentCode().isEmpty())) {
             throw new MissingDataException("Found Administrative Area without PartOfCoce");
         }
 
         List<String> regionCodes = dtos.stream()
-                .map(NewAdministrativeAreaDTO::getPartOfCode)
+                .map(NewAdministrativeAreaDTO::getParentCode)
                 .collect(Collectors.toList());
 
         Map<String, Region> regionMap = regionRepository.findByCodeIgnoreCaseIn(regionCodes).stream()
@@ -96,10 +96,10 @@ public class SubRegionServiceImpl implements SubRegionService {
 
         List<SubRegion> subRegions = dtos.parallelStream()
                 .filter(dto -> subRegionRepository
-                        .existsByNameIgnoreCaseAndRegion_Code(dto.getName(), dto.getPartOfCode()))
-                .filter(dto -> regionMap.containsKey(dto.getPartOfCode()))
+                        .existsByNameIgnoreCaseAndRegion_Code(dto.getName(), dto.getParentCode()))
+                .filter(dto -> regionMap.containsKey(dto.getParentCode()))
                 .map(dto -> {
-                    Region region = regionMap.get(dto.getPartOfCode());
+                    Region region = regionMap.get(dto.getParentCode());
                     return subRegionMapperService.toSubRegion(dto, region);
                 })
                 .toList();
@@ -114,11 +114,11 @@ public class SubRegionServiceImpl implements SubRegionService {
     @Transactional
     @CacheEvict(value = { CacheValueKeyConfig.SUB_REGIONS }, allEntries = true)
     public ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto) {
-        if (dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty()) {
+        if (dto.getParentCode() == null || dto.getParentCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode");
         }
 
-        Region region = regionRepository.findByCodeIgnoreCase(dto.getPartOfCode())
+        Region region = regionRepository.findByCodeIgnoreCase(dto.getParentCode())
                 .orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
         SubRegion subRegion = subRegionRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("Sub Region NotFound"));

@@ -26,7 +26,7 @@ public class NewAdministrativeAreaDTO {
     private String description;
 
     @Schema(description = "Code of the parent administrative area (required for all types except REGION)", example = "001")
-    private String partOfCode;
+    private String parentCode;
 
     @Schema(description = "Latitude coordinate", example = "0.3476")
     private String latitude;

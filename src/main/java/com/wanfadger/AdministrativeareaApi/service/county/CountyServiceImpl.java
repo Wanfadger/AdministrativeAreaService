@@ -60,14 +60,14 @@ public class CountyServiceImpl implements CountyService {
     @Transactional
     @CacheEvict(value = { CacheValueKeyConfig.COUNTIES }, allEntries = true)
     public ResponseDTO<String> create(NewAdministrativeAreaDTO dto) {
-        if (dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty()) {
+        if (dto.getParentCode() == null || dto.getParentCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode(local government) for the county");
         }
 
-        LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(dto.getPartOfCode())
-                .orElseThrow(() -> new InvalidException("Invalid PartOfCode: " + dto.getPartOfCode()));
+        LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(dto.getParentCode())
+                .orElseThrow(() -> new InvalidException("Invalid PartOfCode: " + dto.getParentCode()));
 
-        if (countyRepository.existsByNameIgnoreCaseAndLocalGovernment_Code(dto.getName(), dto.getPartOfCode())) {
+        if (countyRepository.existsByNameIgnoreCaseAndLocalGovernment_Code(dto.getName(), dto.getParentCode())) {
             throw new AlreadyExistsException("County " + dto.getName() + " Already Exists in the local government");
         }
 
@@ -82,12 +82,12 @@ public class CountyServiceImpl implements CountyService {
     @Transactional
     @CacheEvict(value = { CacheValueKeyConfig.COUNTIES }, allEntries = true)
     public ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos) {
-        if (dtos.parallelStream().anyMatch(dto -> dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty())) {
+        if (dtos.parallelStream().anyMatch(dto -> dto.getParentCode() == null || dto.getParentCode().isEmpty())) {
             throw new MissingDataException("Found Administrative Area without PartOfCoce");
         }
 
         List<String> localGovernmentCodes = dtos.stream()
-                .map(NewAdministrativeAreaDTO::getPartOfCode)
+                .map(NewAdministrativeAreaDTO::getParentCode)
                 .collect(Collectors.toList());
 
         Map<String, LocalGovernment> localGovernmentMap = localGovernmentRepository
@@ -96,10 +96,10 @@ public class CountyServiceImpl implements CountyService {
 
         List<County> counties = dtos.parallelStream()
                 .filter(dto -> !countyRepository
-                        .existsByNameIgnoreCaseAndLocalGovernment_Code(dto.getName(), dto.getPartOfCode()))
-                .filter(dto -> localGovernmentMap.containsKey(dto.getPartOfCode()))
+                        .existsByNameIgnoreCaseAndLocalGovernment_Code(dto.getName(), dto.getParentCode()))
+                .filter(dto -> localGovernmentMap.containsKey(dto.getParentCode()))
                 .map(dto -> {
-                    LocalGovernment localGovernment = localGovernmentMap.get(dto.getPartOfCode());
+                    LocalGovernment localGovernment = localGovernmentMap.get(dto.getParentCode());
                     return countyMapperService.toCounty(dto, localGovernment);
                 })
                 .toList();
@@ -114,11 +114,11 @@ public class CountyServiceImpl implements CountyService {
     @Transactional
     @CacheEvict(value = { CacheValueKeyConfig.COUNTIES }, allEntries = true)
     public ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto) {
-        if (dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty()) {
+        if (dto.getParentCode() == null || dto.getParentCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode");
         }
 
-        LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(dto.getPartOfCode())
+        LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(dto.getParentCode())
                 .orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
         County county = countyRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("Administrative Area NotFound"));

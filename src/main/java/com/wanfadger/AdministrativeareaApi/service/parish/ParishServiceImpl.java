@@ -61,14 +61,14 @@ public class ParishServiceImpl implements ParishService {
     @Transactional
     @CacheEvict(value = { CacheValueKeyConfig.PARISHES }, allEntries = true)
     public ResponseDTO<String> create(NewAdministrativeAreaDTO dto) {
-        if (dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty()) {
+        if (dto.getParentCode() == null || dto.getParentCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode(sub county) for the parish");
         }
 
-        SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(dto.getPartOfCode())
-                .orElseThrow(() -> new InvalidException("Invalid PartOfCode: " + dto.getPartOfCode()));
+        SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(dto.getParentCode())
+                .orElseThrow(() -> new InvalidException("Invalid PartOfCode: " + dto.getParentCode()));
 
-        if (parishRepository.existsByNameIgnoreCaseAndSubCounty_Code(dto.getName(), dto.getPartOfCode())) {
+        if (parishRepository.existsByNameIgnoreCaseAndSubCounty_Code(dto.getName(), dto.getParentCode())) {
             throw new AlreadyExistsException("Parish " + dto.getName() + " Already Exists in the sub county");
         }
 
@@ -83,12 +83,12 @@ public class ParishServiceImpl implements ParishService {
     @Transactional
     @CacheEvict(value = { CacheValueKeyConfig.PARISHES }, allEntries = true)
     public ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos) {
-        if (dtos.parallelStream().anyMatch(dto -> dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty())) {
+        if (dtos.parallelStream().anyMatch(dto -> dto.getParentCode() == null || dto.getParentCode().isEmpty())) {
             throw new MissingDataException("Found Administrative Area without PartOfCoce");
         }
 
         List<String> subCountyCodes = dtos.stream()
-                .map(NewAdministrativeAreaDTO::getPartOfCode)
+                .map(NewAdministrativeAreaDTO::getParentCode)
                 .collect(Collectors.toList());
 
         Map<String, SubCounty> subCountyMap = subCountyRepository.findByCodeIgnoreCaseIn(subCountyCodes).stream()
@@ -96,10 +96,10 @@ public class ParishServiceImpl implements ParishService {
 
         List<Parish> parishes = dtos.parallelStream()
                 .filter(dto -> !parishRepository
-                        .existsByNameIgnoreCaseAndSubCounty_Code(dto.getName(), dto.getPartOfCode()))
-                .filter(dto -> subCountyMap.containsKey(dto.getPartOfCode()))
+                        .existsByNameIgnoreCaseAndSubCounty_Code(dto.getName(), dto.getParentCode()))
+                .filter(dto -> subCountyMap.containsKey(dto.getParentCode()))
                 .map(dto -> {
-                    SubCounty subCounty = subCountyMap.get(dto.getPartOfCode());
+                    SubCounty subCounty = subCountyMap.get(dto.getParentCode());
                     return parishMapperService.toParish(dto, subCounty);
                 })
                 .toList();
@@ -114,11 +114,11 @@ public class ParishServiceImpl implements ParishService {
     @Transactional
     @CacheEvict(value = { CacheValueKeyConfig.PARISHES }, allEntries = true)
     public ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto) {
-        if (dto.getPartOfCode() == null || dto.getPartOfCode().isEmpty()) {
+        if (dto.getParentCode() == null || dto.getParentCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode");
         }
 
-        SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(dto.getPartOfCode())
+        SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(dto.getParentCode())
                 .orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
         Parish parish = parishRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("Administrative Area NotFound"));
