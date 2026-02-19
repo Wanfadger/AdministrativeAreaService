@@ -155,7 +155,7 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
     }
 
     @Override
-    @Cacheable(value = CacheValueKeyConfig.LOCAL_GOVERNMENTS, key = "#code")
+    @Cacheable(value = CacheValueKeyConfig.LOCAL_GOVERNMENTS, key = "#code+'_details'")
     public ResponseDTO<LocalGovernmentDTO> findDetailsByCode(String code) {
         LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("LocalGovernment not found"));

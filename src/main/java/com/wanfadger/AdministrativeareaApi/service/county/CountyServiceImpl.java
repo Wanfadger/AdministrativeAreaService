@@ -173,7 +173,7 @@ public class CountyServiceImpl implements CountyService {
     }
 
     @Override
-    @Cacheable(value = CacheValueKeyConfig.COUNTIES, key = "#code")
+    @Cacheable(value = CacheValueKeyConfig.COUNTIES, key = "#code+'_details'")
     public ResponseDTO<CountyDTO> findDetailsByCode(String code) {
         County county = countyRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("County not found"));

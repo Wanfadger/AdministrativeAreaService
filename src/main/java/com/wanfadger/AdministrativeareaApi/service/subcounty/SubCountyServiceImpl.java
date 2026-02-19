@@ -172,7 +172,7 @@ public class SubCountyServiceImpl implements SubCountyService {
     }
 
     @Override
-    @Cacheable(value = CacheValueKeyConfig.SUB_COUNTIES, key = "#code")
+    @Cacheable(value = CacheValueKeyConfig.SUB_COUNTIES, key = "#code+'_details'")
     public ResponseDTO<SubCountyDTO> findDetailsByCode(String code) {
         SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("SubCounty not found"));
