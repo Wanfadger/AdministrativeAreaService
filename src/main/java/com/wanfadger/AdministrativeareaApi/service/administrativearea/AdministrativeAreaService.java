@@ -18,8 +18,6 @@ public interface AdministrativeAreaService {
 
         ResponseDTO<List<AdministrativeAreaDTO>> filter(Map<String, String> queryMap);
 
-        ResponseDTO<?> searchList(Map<String, String> queryMap);
-
         ResponseDTO<?> getByCode(@NotBlank String type, @NotBlank String code);
 
         ResponseDTO<?> getDetailsByCode(@NotBlank String type, @NotBlank String code);
