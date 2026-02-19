@@ -23,6 +23,8 @@ public interface SubCountyService {
 
     ResponseDTO<SubCountyDTO> getByCode(String code);
 
+    ResponseDTO<SubCountyDTO> findDetailsByCode(String code);
+
     Optional<SubCounty> findByCode(String code);
 
     // List<SubCounty> findAll();

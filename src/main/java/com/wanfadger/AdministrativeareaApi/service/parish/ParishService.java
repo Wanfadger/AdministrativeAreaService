@@ -15,29 +15,21 @@ import java.util.Optional;
 public interface ParishService {
     ResponseDTO<String> create(NewAdministrativeAreaDTO dto);
 
-    ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto);
-
-    ResponseDTO<String> delete(String code);
-
-    // ResponseDTO<List<ParishDTO>> list(String subCountyCode);
+    ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos);
 
     ResponseDTO<ParishDTO> getByCode(String code);
 
-    Optional<Parish> findByCode(String code);
+    ResponseDTO<ParishDTO> getDetailsByCode(String code);
 
-    // List<Parish> findAll();
 
-    // List<Parish> findAllBySubCountyCode(String subCountyCode);
+    PaginatedResponseDTO<ParishDTO> search(Map<String, String> queryMap);
 
-    // List<Parish> findAllBySubCountyCodes(List<String> subCountyCodes);
+    ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto);
 
-    ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos);
-
-    // ResponseDTO<List<ParishDTO>> search(String name, String code);
+    ResponseDTO<String> delete(String code);
 
     void upload(List<AdministrativeAreaExcelDTO> dtoList);
 
     void saveAll(List<Parish> parishes);
 
-    PaginatedResponseDTO<ParishDTO> search(Map<String, String> queryMap);
 }

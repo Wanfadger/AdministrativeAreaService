@@ -43,7 +43,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.wanfadger.AdministrativeareaApi.config.CacheValueKeyConfig;
 
-import java.util.Comparator;
 import jakarta.persistence.criteria.Fetch;
 import jakarta.persistence.criteria.JoinType;
 import java.util.List;
@@ -60,6 +59,7 @@ public class ParishServiceImpl implements ParishService {
     private final ParishRepository parishRepository;
     private final SubCountyRepository subCountyRepository;
     private final SharedService sharedService;
+    private final ParishMapperService parishMapperService;
 
     @Override
     @Transactional
@@ -76,7 +76,7 @@ public class ParishServiceImpl implements ParishService {
             throw new AlreadyExistsException("Parish " + dto.getName() + " Already Exists in the sub county");
         }
 
-        Parish parish = toParish(dto, subCounty);
+        Parish parish = parishMapperService.toParish(dto, subCounty);
 
         parishRepository.save(parish);
 
@@ -104,7 +104,7 @@ public class ParishServiceImpl implements ParishService {
                 .filter(dto -> subCountyMap.containsKey(dto.getPartOfCode()))
                 .map(dto -> {
                     SubCounty subCounty = subCountyMap.get(dto.getPartOfCode());
-                    return toParish(dto, subCounty);
+                    return parishMapperService.toParish(dto, subCounty);
                 })
                 .toList();
 
@@ -112,23 +112,6 @@ public class ParishServiceImpl implements ParishService {
 
         return new ResponseDTO<>("success",
                 "successfully added " + parishes.size() + " administrative areas");
-    }
-
-    private Parish toParish(NewAdministrativeAreaDTO dto, SubCounty subCounty) {
-        return Parish.builder()
-                .code(generateCode())
-                .name(dto.getName().trim())
-                .subCounty(subCounty)
-                .latitude(dto.getLatitude() != null && !dto.getLatitude().isEmpty()
-                        ? Double.valueOf(dto.getLatitude())
-                        : null)
-                .longitude(dto.getLongitude() != null && !dto.getLongitude().isEmpty()
-                        ? Double.valueOf(dto.getLongitude())
-                        : null)
-                .description(dto.getDescription() != null && !dto.getDescription().isEmpty()
-                        ? dto.getDescription().trim()
-                        : null)
-                .build();
     }
 
     @Override
@@ -167,56 +150,26 @@ public class ParishServiceImpl implements ParishService {
         return new ResponseDTO<>("SUCCESS");
     }
 
-    // @Override
-    // @Cacheable(value = CacheValueKeyConfig.PARISHES, key = "'list:' +
-    // #subCountyCode")
-    // public ResponseDTO<List<ParishDTO>> list(String subCountyCode) {
-    // Specification<Parish> spec = Specification.where(null);
-    // if (subCountyCode != null && !subCountyCode.isEmpty()) {
-    // spec = spec.and(
-    // new GenericSpecification<>(new SearchCriteria("subCounty.code",
-    // subCountyCode, MatchType.EQUALS)));
-    // }
-
-    // List<ParishDTO> parishDTOs = parishRepository.findAll(spec).stream()
-    // .map(this::toDTO)
-    // .sorted(Comparator.comparing(ParishDTO::getCode))
-    // .toList();
-    // return new ResponseDTO<>(parishDTOs);
-    // }
-
     @Override
     @Cacheable(value = CacheValueKeyConfig.PARISHES, key = "#code")
     public ResponseDTO<ParishDTO> getByCode(String code) {
         Parish parish = parishRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("Parish not found"));
-        return new ResponseDTO<>(toDTO(parish));
+        return new ResponseDTO<>(parishMapperService.toDTO(parish));
     }
 
-    // @Override
-    // @Cacheable(value = CacheValueKeyConfig.PARISHES, key = "'search:' + #name +
-    // '-' + #code")
-    // public ResponseDTO<List<ParishDTO>> search(String name, String code) {
-    // Specification<Parish> spec = Specification.where(null);
-    // if (name != null && !name.isEmpty()) {
-    // spec = spec.and(new GenericSpecification<>(new SearchCriteria("name", name,
-    // MatchType.CONTAINS)));
-    // }
-    // if (code != null && !code.isEmpty()) {
-    // spec = spec.and(new GenericSpecification<>(new SearchCriteria("code", code,
-    // MatchType.EQUALS)));
-    // }
-
-    // List<ParishDTO> parishDtos = parishRepository.findAll(spec).stream()
-    // .map(this::toDTO)
-    // .sorted(Comparator.comparing(ParishDTO::getCode))
-    // .toList();
-
-    // return new ResponseDTO<>(parishDtos);
-    // }
+    @Override
+    @Transactional(readOnly = true)
+    @Cacheable(value = CacheValueKeyConfig.PARISHES, key = "#code+'_details'")
+    public ResponseDTO<ParishDTO> getDetailsByCode(String code) {
+        Parish parish = parishRepository.findByCodeIgnoreCase(code)
+                .orElseThrow(() -> new NotFoundException("Parish not found"));
+        return new ResponseDTO<>(parishMapperService.toDetailDTO(parish));
+    }
 
     @Override
-    @Cacheable(value = CacheValueKeyConfig.PARISHES, key = "#queryMap.toString()", unless = "#result.totalElements == 0")
+    @Transactional(readOnly = true)
+    @Cacheable(value = CacheValueKeyConfig.PARISHES, keyGenerator = "sortedMapKeyGenerator", unless = "#result.totalElements == 0")
     public PaginatedResponseDTO<ParishDTO> search(Map<String, String> queryMap) {
         // 1. Extract Pagination & Sorting
         int page = Optional.ofNullable(queryMap.get("page")).map(Integer::parseInt).orElse(1);
@@ -268,7 +221,7 @@ public class ParishServiceImpl implements ParishService {
 
         // 4. Map to DTOs
         List<ParishDTO> data = resultPage.getContent().stream()
-                .map(this::toDTO)
+                .map(parishMapperService::toDTO)
                 .toList();
 
         // 5. Build Paginated Response
@@ -324,30 +277,6 @@ public class ParishServiceImpl implements ParishService {
     }
 
     @Override
-    public Optional<Parish> findByCode(String code) {
-        return parishRepository.findByCodeIgnoreCase(code);
-    }
-
-    // @Override
-    // public List<Parish> findAll() {
-    // return parishRepository.findAll();
-    // }
-
-    // @Override
-    // public List<Parish> findAllBySubCountyCode(String subCountyCode) {
-    // return parishRepository.findAll(
-    // new GenericSpecification<>(new SearchCriteria("subCounty.code",
-    // subCountyCode, MatchType.EQUALS)));
-    // }
-
-    // @Override
-    // public List<Parish> findAllBySubCountyCodes(List<String> subCountyCodes) {
-    // return parishRepository.findAll(
-    // new GenericSpecification<>(new SearchCriteria("subCounty.code",
-    // subCountyCodes, MatchType.IN)));
-    // }
-
-    @Override
     @Transactional
     @CacheEvict(value = { CacheValueKeyConfig.PARISHES }, allEntries = true)
     public void saveAll(List<Parish> parishes) {
@@ -367,65 +296,5 @@ public class ParishServiceImpl implements ParishService {
 
     private String generateCode() {
         return sharedService.generateCode(AdministrativeAreaType.PARISH);
-    }
-
-    private ParishDTO toDTO(Parish parish) {
-        ParishDTO dto = new ParishDTO();
-        dto.setId(parish.getId());
-        dto.setCode(parish.getCode());
-        dto.setName(parish.getName());
-        dto.setLatitude(parish.getLatitude() != null ? String.valueOf(parish.getLatitude()) : "");
-        dto.setLongitude(parish.getLongitude() != null ? String.valueOf(parish.getLongitude()) : "");
-        dto.setSubCounty(convertSubCountyDTO(parish.getSubCounty()));
-        return dto;
-    }
-
-    private SubCountyDTO convertSubCountyDTO(SubCounty subCounty) {
-        SubCountyDTO dto = new SubCountyDTO();
-        dto.setCode(subCounty.getCode());
-        dto.setName(subCounty.getName());
-        dto.setLatitude(subCounty.getLatitude() != null ? String.valueOf(subCounty.getLatitude()) : "");
-        dto.setLongitude(subCounty.getLongitude() != null ? String.valueOf(subCounty.getLongitude()) : "");
-        dto.setCounty(convertCountyDTO(subCounty.getCounty()));
-        return dto;
-    }
-
-    private CountyDTO convertCountyDTO(County county) {
-        CountyDTO dto = new CountyDTO();
-        dto.setCode(county.getCode());
-        dto.setName(county.getName());
-        dto.setLatitude(county.getLatitude() != null ? String.valueOf(county.getLatitude()) : "");
-        dto.setLongitude(county.getLongitude() != null ? String.valueOf(county.getLongitude()) : "");
-        dto.setLocalGovernment(convertLocalGovernmentDTO(county.getLocalGovernment()));
-        return dto;
-    }
-
-    private LocalGovernmentDTO convertLocalGovernmentDTO(LocalGovernment localGovernment) {
-        LocalGovernmentDTO dto = new LocalGovernmentDTO();
-        dto.setCode(localGovernment.getCode());
-        dto.setName(localGovernment.getName());
-        dto.setLatitude(localGovernment.getLatitude() != null ? String.valueOf(localGovernment.getLatitude()) : "");
-        dto.setLongitude(localGovernment.getLongitude() != null ? String.valueOf(localGovernment.getLongitude()) : "");
-        dto.setSubRegion(convertSubRegionDTO(localGovernment.getSubRegion()));
-        return dto;
-    }
-
-    private SubRegionDTO convertSubRegionDTO(SubRegion subRegion) {
-        SubRegionDTO dto = new SubRegionDTO();
-        dto.setCode(subRegion.getCode());
-        dto.setName(subRegion.getName());
-        dto.setLatitude(subRegion.getLatitude() != null ? String.valueOf(subRegion.getLatitude()) : "");
-        dto.setLongitude(subRegion.getLongitude() != null ? String.valueOf(subRegion.getLongitude()) : "");
-        dto.setRegion(convertRegionDTO(subRegion.getRegion()));
-        return dto;
-    }
-
-    private RegionDTO convertRegionDTO(Region region) {
-        RegionDTO dto = new RegionDTO();
-        dto.setCode(region.getCode());
-        dto.setName(region.getName());
-        dto.setLongitude(region.getLongitude() != null ? String.valueOf(region.getLongitude()) : "");
-        dto.setLatitude(region.getLatitude() != null ? String.valueOf(region.getLatitude()) : "");
-        return dto;
     }
 }

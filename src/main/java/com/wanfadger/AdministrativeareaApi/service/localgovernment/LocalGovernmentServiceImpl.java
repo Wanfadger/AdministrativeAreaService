@@ -54,6 +54,7 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
     private final LocalGovernmentRepository localGovernmentRepository;
     private final SubRegionRepository subRegionRepository;
     private final SharedService sharedService;
+    private final LocalGovernmentMapperService localGovernmentMapperService;
 
     @Override
     @Transactional
@@ -70,7 +71,7 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
             throw new AlreadyExistsException("Local Government " + dto.getName() + " Already Exists in the sub region");
         }
 
-        LocalGovernment localGovernment = toLocalGovernment(dto, subRegion);
+        LocalGovernment localGovernment = localGovernmentMapperService.toLocalGovernment(dto, subRegion);
 
         localGovernmentRepository.save(localGovernment);
 
@@ -100,7 +101,7 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
                 .filter(dto -> subRegionMap.containsKey(dto.getPartOfCode()))
                 .map(dto -> {
                     SubRegion subRegion = subRegionMap.get(dto.getPartOfCode());
-                    return toLocalGovernment(dto, subRegion);
+                    return localGovernmentMapperService.toLocalGovernment(dto, subRegion);
                 })
                 .toList();
 
@@ -108,23 +109,6 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
 
         return new ResponseDTO<>("success",
                 "successfully added " + localGovernments.size() + " administrative areas");
-    }
-
-    private LocalGovernment toLocalGovernment(NewAdministrativeAreaDTO dto, SubRegion subRegion) {
-        return LocalGovernment.builder()
-                .code(generateCode())
-                .name(dto.getName().trim())
-                .subRegion(subRegion)
-                .latitude(dto.getLatitude() != null && !dto.getLatitude().isEmpty()
-                        ? Double.valueOf(dto.getLatitude())
-                        : null)
-                .longitude(dto.getLongitude() != null && !dto.getLongitude().isEmpty()
-                        ? Double.valueOf(dto.getLongitude())
-                        : null)
-                .description(dto.getDescription() != null && !dto.getDescription().isEmpty()
-                        ? dto.getDescription().trim()
-                        : null)
-                .build();
     }
 
     @Override
@@ -163,31 +147,20 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
         return new ResponseDTO<>("SUCCESS");
     }
 
-    // @Override
-    // @Cacheable(value = CacheValueKeyConfig.LOCAL_GOVERNMENTS, key = "'list:' +
-    // #subRegionCode")
-    // public ResponseDTO<List<LocalGovernmentDTO>> list(String subRegionCode) {
-    // Specification<LocalGovernment> spec = Specification.where(null);
-    // if (subRegionCode != null && !subRegionCode.isEmpty()) {
-    // spec = spec.and(
-    // new GenericSpecification<>(new SearchCriteria("subRegion.code",
-    // subRegionCode, MatchType.EQUALS)));
-    // }
-
-    // List<LocalGovernmentDTO> localGovernmentDtos =
-    // localGovernmentRepository.findAll(spec).stream()
-    // .map(this::toDTO)
-    // .sorted(Comparator.comparing(LocalGovernmentDTO::getCode))
-    // .toList();
-    // return new ResponseDTO<>(localGovernmentDtos);
-    // }
-
     @Override
     @Cacheable(value = CacheValueKeyConfig.LOCAL_GOVERNMENTS, key = "#code")
     public ResponseDTO<LocalGovernmentDTO> getByCode(String code) {
         LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("LocalGovernment not found"));
-        return new ResponseDTO<>(toDTO(localGovernment));
+        return new ResponseDTO<>(localGovernmentMapperService.toDTO(localGovernment));
+    }
+
+    @Override
+    @Cacheable(value = CacheValueKeyConfig.LOCAL_GOVERNMENTS, key = "#code")
+    public ResponseDTO<LocalGovernmentDTO> findDetailsByCode(String code) {
+        LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(code)
+                .orElseThrow(() -> new NotFoundException("LocalGovernment not found"));
+        return new ResponseDTO<>(localGovernmentMapperService.toDTO(localGovernment));
     }
 
     @Override
@@ -238,7 +211,7 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
 
         // 4. Map to DTOs
         List<LocalGovernmentDTO> data = resultPage.getContent().stream()
-                .map(this::toDTO)
+                .map(localGovernmentMapperService::toDTO)
                 .toList();
 
         // 5. Build Paginated Response
@@ -320,26 +293,6 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
         return localGovernmentRepository.findByCodeIgnoreCase(code);
     }
 
-    // @Override
-    // public List<LocalGovernment> findAll() {
-    // return localGovernmentRepository.findAll();
-    // }
-
-    // @Override
-    // public List<LocalGovernment> findAllBySubRegionCode(String subRegionCode) {
-    // return localGovernmentRepository.findAll(
-    // new GenericSpecification<>(new SearchCriteria("subRegion.code",
-    // subRegionCode, MatchType.EQUALS)));
-    // }
-
-    // @Override
-    // public List<LocalGovernment> findAllBySubRegionCodes(List<String>
-    // subRegionCodes) {
-    // return localGovernmentRepository.findAll(
-    // new GenericSpecification<>(new SearchCriteria("subRegion.code",
-    // subRegionCodes, MatchType.IN)));
-    // }
-
     @Override
     @Transactional
     @CacheEvict(value = { CacheValueKeyConfig.LOCAL_GOVERNMENTS }, allEntries = true)
@@ -360,37 +313,5 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
 
     private String generateCode() {
         return sharedService.generateCode(AdministrativeAreaType.LOCALGOVERNMENT);
-    }
-
-    private LocalGovernmentDTO toDTO(LocalGovernment localGovernment) {
-        LocalGovernmentDTO dto = new LocalGovernmentDTO();
-        dto.setId(localGovernment.getId());
-        dto.setCode(localGovernment.getCode());
-        dto.setName(localGovernment.getName());
-        dto.setLatitude(localGovernment.getLatitude() != null ? String.valueOf(localGovernment.getLatitude()) : "");
-        dto.setLongitude(localGovernment.getLongitude() != null ? String.valueOf(localGovernment.getLongitude()) : "");
-        if (localGovernment.getSubRegion() != null) {
-            dto.setSubRegion(toSubRegionDTO(localGovernment.getSubRegion()));
-        }
-        return dto;
-    }
-
-    private SubRegionDTO toSubRegionDTO(SubRegion subRegion) {
-        SubRegionDTO dto = new SubRegionDTO();
-        dto.setCode(subRegion.getCode());
-        dto.setName(subRegion.getName());
-        dto.setLatitude(subRegion.getLatitude() != null ? String.valueOf(subRegion.getLatitude()) : "");
-        dto.setLongitude(subRegion.getLongitude() != null ? String.valueOf(subRegion.getLongitude()) : "");
-        dto.setRegion(toRegionDTO(subRegion.getRegion()));
-        return dto;
-    }
-
-    private RegionDTO toRegionDTO(Region region) {
-        RegionDTO dto = new RegionDTO();
-        dto.setCode(region.getCode());
-        dto.setName(region.getName());
-        dto.setLongitude(region.getLongitude() != null ? String.valueOf(region.getLongitude()) : "");
-        dto.setLatitude(region.getLatitude() != null ? String.valueOf(region.getLatitude()) : "");
-        return dto;
     }
 }

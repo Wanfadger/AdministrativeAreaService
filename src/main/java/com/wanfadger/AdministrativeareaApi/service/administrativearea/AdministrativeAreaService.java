@@ -27,7 +27,9 @@ public interface AdministrativeAreaService {
 
         ResponseDTO<?> searchList(Map<String, String> queryMap);
 
-        ResponseDTO<?> searchOne(Map<String, String> queryMap);
+        ResponseDTO<?> getByCode(@NotBlank String type, @NotBlank String code);
+
+        ResponseDTO<?> getDetailsByCode(@NotBlank String type, @NotBlank String code);
 
         PaginatedResponseDTO<? extends AdministrativeAreaDTO> search(Map<String, String> queryMap);
 

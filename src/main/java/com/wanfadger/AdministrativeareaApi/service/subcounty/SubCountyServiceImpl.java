@@ -57,6 +57,7 @@ public class SubCountyServiceImpl implements SubCountyService {
     private final SubCountyRepository subCountyRepository;
     private final CountyRepository countyRepository;
     private final SharedService sharedService;
+    private final SubCountyMapperService subCountyMapperService;
 
     @Override
     @Transactional
@@ -73,7 +74,7 @@ public class SubCountyServiceImpl implements SubCountyService {
             throw new AlreadyExistsException("Sub county " + dto.getName() + " Already Exists in the county");
         }
 
-        SubCounty subCounty = toSubCounty(dto, county);
+        SubCounty subCounty = subCountyMapperService.toSubCounty(dto, county);
 
         subCountyRepository.save(subCounty);
 
@@ -101,7 +102,7 @@ public class SubCountyServiceImpl implements SubCountyService {
                 .filter(dto -> countyMap.containsKey(dto.getPartOfCode()))
                 .map(dto -> {
                     County county = countyMap.get(dto.getPartOfCode());
-                    return toSubCounty(dto, county);
+                    return subCountyMapperService.toSubCounty(dto, county);
                 })
                 .toList();
 
@@ -109,23 +110,6 @@ public class SubCountyServiceImpl implements SubCountyService {
 
         return new ResponseDTO<>("success",
                 "successfully added " + subCounties.size() + " administrative areas");
-    }
-
-    private SubCounty toSubCounty(NewAdministrativeAreaDTO dto, County county) {
-        return SubCounty.builder()
-                .code(generateCode())
-                .name(dto.getName().trim())
-                .county(county)
-                .latitude(dto.getLatitude() != null && !dto.getLatitude().isEmpty()
-                        ? Double.valueOf(dto.getLatitude())
-                        : null)
-                .longitude(dto.getLongitude() != null && !dto.getLongitude().isEmpty()
-                        ? Double.valueOf(dto.getLongitude())
-                        : null)
-                .description(dto.getDescription() != null && !dto.getDescription().isEmpty()
-                        ? dto.getDescription().trim()
-                        : null)
-                .build();
     }
 
     @Override
@@ -187,7 +171,15 @@ public class SubCountyServiceImpl implements SubCountyService {
     public ResponseDTO<SubCountyDTO> getByCode(String code) {
         SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("SubCounty not found"));
-        return new ResponseDTO<>(toDTO(subCounty));
+        return new ResponseDTO<>(subCountyMapperService.toDTO(subCounty));
+    }
+
+    @Override
+    @Cacheable(value = CacheValueKeyConfig.SUB_COUNTIES, key = "#code")
+    public ResponseDTO<SubCountyDTO> findDetailsByCode(String code) {
+        SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(code)
+                .orElseThrow(() -> new NotFoundException("SubCounty not found"));
+        return new ResponseDTO<>(subCountyMapperService.toDTO(subCounty));
     }
 
     @Override
@@ -242,7 +234,7 @@ public class SubCountyServiceImpl implements SubCountyService {
 
         // 4. Map to DTOs
         List<SubCountyDTO> data = resultPage.getContent().stream()
-                .map(this::toDTO)
+                .map(subCountyMapperService::toDTO)
                 .toList();
 
         // 5. Build Paginated Response
@@ -360,57 +352,5 @@ public class SubCountyServiceImpl implements SubCountyService {
 
     private String generateCode() {
         return sharedService.generateCode(AdministrativeAreaType.SUBCOUNTY);
-    }
-
-    private SubCountyDTO toDTO(SubCounty subCounty) {
-        SubCountyDTO dto = new SubCountyDTO();
-        dto.setId(subCounty.getId());
-        dto.setCode(subCounty.getCode());
-        dto.setName(subCounty.getName());
-        dto.setLatitude(subCounty.getLatitude() != null ? String.valueOf(subCounty.getLatitude()) : "");
-        dto.setLongitude(subCounty.getLongitude() != null ? String.valueOf(subCounty.getLongitude()) : "");
-        if (subCounty.getCounty() != null) {
-            dto.setCounty(toCountyDTO(subCounty.getCounty()));
-        }
-        return dto;
-    }
-
-    private CountyDTO toCountyDTO(County county) {
-        CountyDTO dto = new CountyDTO();
-        dto.setCode(county.getCode());
-        dto.setName(county.getName());
-        dto.setLatitude(county.getLatitude() != null ? String.valueOf(county.getLatitude()) : "");
-        dto.setLongitude(county.getLongitude() != null ? String.valueOf(county.getLongitude()) : "");
-        dto.setLocalGovernment(toLocalGovernmentDTO(county.getLocalGovernment()));
-        return dto;
-    }
-
-    private LocalGovernmentDTO toLocalGovernmentDTO(LocalGovernment localGovernment) {
-        LocalGovernmentDTO dto = new LocalGovernmentDTO();
-        dto.setCode(localGovernment.getCode());
-        dto.setName(localGovernment.getName());
-        dto.setLatitude(localGovernment.getLatitude() != null ? String.valueOf(localGovernment.getLatitude()) : "");
-        dto.setLongitude(localGovernment.getLongitude() != null ? String.valueOf(localGovernment.getLongitude()) : "");
-        dto.setSubRegion(toSubRegionDTO(localGovernment.getSubRegion()));
-        return dto;
-    }
-
-    private SubRegionDTO toSubRegionDTO(SubRegion subRegion) {
-        SubRegionDTO dto = new SubRegionDTO();
-        dto.setCode(subRegion.getCode());
-        dto.setName(subRegion.getName());
-        dto.setLatitude(subRegion.getLatitude() != null ? String.valueOf(subRegion.getLatitude()) : "");
-        dto.setLongitude(subRegion.getLongitude() != null ? String.valueOf(subRegion.getLongitude()) : "");
-        dto.setRegion(toRegionDTO(subRegion.getRegion()));
-        return dto;
-    }
-
-    private RegionDTO toRegionDTO(Region region) {
-        RegionDTO dto = new RegionDTO();
-        dto.setCode(region.getCode());
-        dto.setName(region.getName());
-        dto.setLongitude(region.getLongitude() != null ? String.valueOf(region.getLongitude()) : "");
-        dto.setLatitude(region.getLatitude() != null ? String.valueOf(region.getLatitude()) : "");
-        return dto;
     }
 }

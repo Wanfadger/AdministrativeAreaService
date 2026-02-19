@@ -19,11 +19,11 @@ public interface SubRegionService {
 
     PaginatedResponseDTO<SubRegionDTO> search(Map<String, String> queryMap);
 
+    ResponseDTO<SubRegionDTO> findByCode(String code);
+
+    ResponseDTO<SubRegionDTO> findDetailsByCode(String code);
+
     ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto);
-
-    ResponseDTO<SubRegionDTO> getByCode(String code);
-
-    Optional<SubRegion> findByCode(String code);
 
     void upload(List<AdministrativeAreaExcelDTO> dtoList);
 

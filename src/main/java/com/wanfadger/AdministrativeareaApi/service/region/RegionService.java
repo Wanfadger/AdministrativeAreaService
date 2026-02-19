@@ -20,9 +20,8 @@ public interface RegionService {
     ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto);
 
     ResponseDTO<RegionDTO> findByCode(String code);
+
     ResponseDTO<RegionDTO> findDetailsByCode(String code);
-
-
 
     void upload(List<AdministrativeAreaExcelDTO> dtoList);
 

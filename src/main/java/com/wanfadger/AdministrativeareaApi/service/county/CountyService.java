@@ -23,6 +23,8 @@ public interface CountyService {
 
     ResponseDTO<CountyDTO> getByCode(String code);
 
+    ResponseDTO<CountyDTO> findDetailsByCode(String code);
+
     Optional<County> findByCode(String code);
 
     // List<County> findAll();

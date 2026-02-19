@@ -23,6 +23,8 @@ public interface LocalGovernmentService {
 
     ResponseDTO<LocalGovernmentDTO> getByCode(String code);
 
+    ResponseDTO<LocalGovernmentDTO> findDetailsByCode(String code);
+
     Optional<LocalGovernment> findByCode(String code);
 
     // List<LocalGovernment> findAll();

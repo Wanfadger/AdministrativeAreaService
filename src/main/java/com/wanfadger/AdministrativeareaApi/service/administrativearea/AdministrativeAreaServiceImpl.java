@@ -102,7 +102,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 yield new ResponseDTO<>(new CodeNameDTO(dto.getCode(), dto.getName()));
             }
             case SUBREGION -> {
-                SubRegionDTO dto = subRegionService.getByCode(code).getData();
+                SubRegionDTO dto = subRegionService.findByCode(code).getData();
                 yield new ResponseDTO<>(new CodeNameDTO(dto.getCode(), dto.getName()));
             }
             case LOCALGOVERNMENT -> {
@@ -391,36 +391,47 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public ResponseDTO<?> searchOne(Map<String, String> queryMap) {
-        String typeStr = queryMap.get("type");
-        String code = queryMap.get("code");
-
+    public ResponseDTO<?> getByCode(@NotBlank String typeStr, @NotBlank String code) {
         if (!notNullEmpty(typeStr))
             throw new MissingDataException("Missing Administrative Area Type");
         if (!notNullEmpty(code))
             throw new MissingDataException("Missing Administrative Area Code");
 
         AdministrativeAreaType type = AdministrativeAreaType.fromStr(typeStr)
-                .orElseThrow(() -> new MissingDataException("Missing Administrative Area Type"));
+                .orElseThrow(() -> new MissingDataException("Missing or Unknown Administrative Area Type"));
 
-        // Use the paginated search with a code filter
-        Map<String, String> searchMap = new HashMap<>(queryMap);
-        searchMap.put("code", code);
-
-        PaginatedResponseDTO<?> response = (PaginatedResponseDTO<?>) switch (type) {
-            case REGION -> regionService.search(searchMap);
-            case SUBREGION -> subRegionService.search(searchMap);
-            case LOCALGOVERNMENT -> localGovernmentService.search(searchMap);
-            case COUNTY -> countyService.search(searchMap);
-            case SUBCOUNTY -> subCountyService.search(searchMap);
-            case PARISH -> parishService.search(searchMap);
+        ResponseDTO<?> response = (ResponseDTO<?>) switch (type) {
+            case REGION -> regionService.findByCode(code);
+            case SUBREGION -> subRegionService.findByCode(code);
+            case LOCALGOVERNMENT -> localGovernmentService.getByCode(code);
+            case COUNTY -> countyService.getByCode(code);
+            case SUBCOUNTY -> subCountyService.getByCode(code);
+            case PARISH -> parishService.getByCode(code);
         };
 
-        if (response.getData() == null || response.getData().isEmpty()) {
-            throw new NotFoundException(type.name() + " not found with code: " + code);
-        }
+        return response;
+    }
 
-        return new ResponseDTO<>(response.getData().get(0));
+    @Override
+    public ResponseDTO<?> getDetailsByCode(@NotBlank String typeStr, @NotBlank String code) {
+        if (!notNullEmpty(typeStr))
+            throw new MissingDataException("Missing Administrative Area Type");
+        if (!notNullEmpty(code))
+            throw new MissingDataException("Missing Administrative Area Code");
+
+        AdministrativeAreaType type = AdministrativeAreaType.fromStr(typeStr)
+                .orElseThrow(() -> new MissingDataException("Missing or Unknown Administrative Area Type"));
+
+        ResponseDTO<?> response = (ResponseDTO<?>) switch (type) {
+            case REGION -> regionService.findDetailsByCode(code);
+            case SUBREGION -> subRegionService.findDetailsByCode(code);
+            case LOCALGOVERNMENT -> localGovernmentService.findDetailsByCode(code);
+            case COUNTY -> countyService.findDetailsByCode(code);
+            case SUBCOUNTY -> subCountyService.findDetailsByCode(code);
+            case PARISH -> parishService.getDetailsByCode(code);
+        };
+
+        return response;
     }
 
     @Override

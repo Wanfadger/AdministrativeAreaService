@@ -104,22 +104,6 @@ public class SubRegionServiceImpl implements SubRegionService {
                 "successfully added " + subRegions.size() + " sub regions");
     }
 
-    // private SubRegion toSubRegion(NewAdministrativeAreaDTO dto, Region region) {
-    //     return SubRegion.builder()
-    //             .code(generateCode())
-    //             .name(dto.getName().trim())
-    //             .region(region)
-    //             .latitude(dto.getLatitude() != null && !dto.getLatitude().isEmpty() ? Double.valueOf(dto.getLatitude())
-    //                     : null)
-    //             .longitude(
-    //                     dto.getLongitude() != null && !dto.getLongitude().isEmpty() ? Double.valueOf(dto.getLongitude())
-    //                             : null)
-    //             .description(
-    //                     dto.getDescription() != null && !dto.getDescription().isEmpty() ? dto.getDescription().trim()
-    //                             : null)
-    //             .build();
-    // }
-
     @Override
     @Transactional
     @CacheEvict(value = { CacheValueKeyConfig.SUB_REGIONS }, allEntries = true)
@@ -131,7 +115,7 @@ public class SubRegionServiceImpl implements SubRegionService {
         Region region = regionRepository.findByCodeIgnoreCase(dto.getPartOfCode())
                 .orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
         SubRegion subRegion = subRegionRepository.findByCodeIgnoreCase(code)
-                .orElseThrow(() -> new NotFoundException("Administrative Area NotFound"));
+                .orElseThrow(() -> new NotFoundException("Sub Region NotFound"));
 
         if (dto.getName() != null && !dto.getName().isEmpty()) {
             subRegion.setName(dto.getName());
@@ -156,18 +140,27 @@ public class SubRegionServiceImpl implements SubRegionService {
         return new ResponseDTO<>("SUCCESS");
     }
 
-
-
     @Override
     @Cacheable(value = CacheValueKeyConfig.SUB_REGIONS, key = "#code")
-    public ResponseDTO<SubRegionDTO> getByCode(String code) {
+    @Transactional(readOnly = true)
+    public ResponseDTO<SubRegionDTO> findByCode(String code) {
         SubRegion subRegion = subRegionRepository.findByCodeIgnoreCase(code)
-                .orElseThrow(() -> new NotFoundException("SubRegion not found"));
-        return new ResponseDTO<>(subRegionMapperService.toDetailDTO(subRegion));
+                .orElseThrow(() -> new NotFoundException("Sub Region with code " + code + " not found"));
+        return new ResponseDTO<>(subRegionMapperService.toDTO(subRegion));
+    }
+
+    @Override
+    @Cacheable(value = CacheValueKeyConfig.SUB_REGIONS, key = "#code+'_details'")
+    @Transactional(readOnly = true)
+    public ResponseDTO<SubRegionDTO> findDetailsByCode(String code) {
+        SubRegion subRegion = subRegionRepository.findByCodeIgnoreCase(code)
+                .orElseThrow(() -> new NotFoundException("Sub Region with code " + code + " not found"));
+        return new ResponseDTO<>(subRegionMapperService.toDTO(subRegion));
     }
 
     @Override
     @Cacheable(value = CacheValueKeyConfig.SUB_REGIONS, keyGenerator = "sortedMapKeyGenerator", unless = "#result.totalElements == 0")
+    @Transactional(readOnly = true)
     public PaginatedResponseDTO<SubRegionDTO> search(Map<String, String> queryMap) {
         // 1. Extract Pagination & Sorting
         int page = Optional.ofNullable(queryMap.get("page")).map(Integer::parseInt).orElse(1);
@@ -282,11 +275,6 @@ public class SubRegionServiceImpl implements SubRegionService {
                     .ifPresent(oldDto::setDbSubRegion);
         });
 
-    }
-
-    @Override
-    public Optional<SubRegion> findByCode(String code) {
-        return subRegionRepository.findByCodeIgnoreCase(code);
     }
 
     @Override

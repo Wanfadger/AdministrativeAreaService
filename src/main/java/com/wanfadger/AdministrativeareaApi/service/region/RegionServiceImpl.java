@@ -51,7 +51,8 @@ public class RegionServiceImpl implements RegionService {
     @CacheEvict(value = CacheValueKeyConfig.REGIONS, allEntries = true)
     public ResponseDTO<String> create(NewAdministrativeAreaDTO dto) {
         if (regionRepository.existsByNameIgnoreCase(dto.getName())) {
-            throw new AlreadyExistsException(AdministrativeAreaType.REGION.getAreaType() + " with name " + dto.getName() + " Already Exists");
+            throw new AlreadyExistsException(
+                    AdministrativeAreaType.REGION.getAreaType() + " with name " + dto.getName() + " Already Exists");
         }
 
         Region region = regionMapperService.toRegion(dto);
@@ -73,7 +74,6 @@ public class RegionServiceImpl implements RegionService {
         return new ResponseDTO<>("success",
                 "successfully added " + regions.size() + " administrative areas");
     }
-
 
     @Override
     @Transactional
@@ -118,7 +118,6 @@ public class RegionServiceImpl implements RegionService {
                 .orElseThrow(() -> new NotFoundException("Region with code " + code + " not found"));
         return new ResponseDTO<>(regionMapperService.toDTO(region));
     }
-
 
     @Override
     @Cacheable(value = CacheValueKeyConfig.REGIONS, keyGenerator = "sortedMapKeyGenerator", unless = "#result.totalElements == 0")
@@ -225,7 +224,6 @@ public class RegionServiceImpl implements RegionService {
         return t -> map.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
     }
 
-
     @Override
     @Transactional
     @CacheEvict(value = CacheValueKeyConfig.REGIONS, allEntries = true)
@@ -235,6 +233,5 @@ public class RegionServiceImpl implements RegionService {
         regionRepository.delete(region);
         return new ResponseDTO<>("SUCCESS", "Region deleted successfully");
     }
-
 
 }
