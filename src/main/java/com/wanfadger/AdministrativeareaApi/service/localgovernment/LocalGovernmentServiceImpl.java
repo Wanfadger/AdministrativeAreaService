@@ -18,6 +18,7 @@ import com.wanfadger.AdministrativeareaApi.entity.Region;
 import com.wanfadger.AdministrativeareaApi.entity.SubRegion;
 import com.wanfadger.AdministrativeareaApi.repository.LocalGovernmentRepository;
 import com.wanfadger.AdministrativeareaApi.repository.SubRegionRepository;
+import com.wanfadger.AdministrativeareaApi.repository.CountyRepository;
 import com.wanfadger.AdministrativeareaApi.shared.SharedService;
 
 import lombok.RequiredArgsConstructor;
@@ -57,7 +58,8 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
 
     @Override
     @Transactional
-    @CacheEvict(value = { CacheValueKeyConfig.LOCAL_GOVERNMENTS, CacheValueKeyConfig.LOCAL_GOVERNMENTS_FILTERED }, allEntries = true)
+    @CacheEvict(value = { CacheValueKeyConfig.LOCAL_GOVERNMENTS,
+            CacheValueKeyConfig.LOCAL_GOVERNMENTS_FILTERED }, allEntries = true)
     public ResponseDTO<String> create(NewAdministrativeAreaDTO dto) {
         if (dto.getParentCode() == null || dto.getParentCode().isEmpty()) {
             throw new MissingDataException("Missing PartOfCode(sub region) for the local government");
@@ -80,7 +82,8 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
 
     @Override
     @Transactional
-    @CacheEvict(value = { CacheValueKeyConfig.LOCAL_GOVERNMENTS, CacheValueKeyConfig.LOCAL_GOVERNMENTS_FILTERED }, allEntries = true)
+    @CacheEvict(value = { CacheValueKeyConfig.LOCAL_GOVERNMENTS,
+            CacheValueKeyConfig.LOCAL_GOVERNMENTS_FILTERED }, allEntries = true)
     public ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos) {
         if (dtos.parallelStream().anyMatch(dto -> dto.getParentCode() == null || dto.getParentCode().isEmpty())) {
             throw new MissingDataException("Found Administrative Area without PartOfCoce");
@@ -112,7 +115,8 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
 
     @Override
     @Transactional
-    @CacheEvict(value = { CacheValueKeyConfig.LOCAL_GOVERNMENTS, CacheValueKeyConfig.LOCAL_GOVERNMENTS_FILTERED }, allEntries = true)
+    @CacheEvict(value = { CacheValueKeyConfig.LOCAL_GOVERNMENTS,
+            CacheValueKeyConfig.LOCAL_GOVERNMENTS_FILTERED }, allEntries = true)
     public ResponseDTO<String> update(UpdateAdministrativeAreaDTO dto) {
         if (dto.getParentCode() == null || dto.getParentCode().isEmpty()) {
             throw new MissingDataException("Missing parent code");
@@ -121,25 +125,32 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
         SubRegion subRegion = subRegionRepository.findByCodeIgnoreCase(dto.getParentCode())
                 .orElseThrow(() -> new NotFoundException("Sub region with code " + dto.getParentCode() + " not found"));
 
-        LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCaseAndSubRegion_Code(dto.getCode(), dto.getParentCode())
-                .orElseThrow(() -> new NotFoundException("Local government with code " + dto.getCode() + " not found in sub region " + subRegion.getName()));
+        LocalGovernment localGovernment = localGovernmentRepository
+                .findByCodeIgnoreCaseAndSubRegion_Code(dto.getCode(), dto.getParentCode())
+                .orElseThrow(() -> new NotFoundException("Local government with code " + dto.getCode()
+                        + " not found in sub region " + subRegion.getName()));
 
-        if (dto.getName() != null && !dto.getName().isEmpty() && !localGovernment.getName().equalsIgnoreCase(dto.getName())) {
+        if (dto.getName() != null && !dto.getName().isEmpty()
+                && !localGovernment.getName().equalsIgnoreCase(dto.getName())) {
             if (localGovernmentRepository.existsByNameIgnoreCaseAndSubRegion_Code(dto.getName(), dto.getParentCode())) {
-                throw new AlreadyExistsException("Local Government " + dto.getName() + " Already Exists in the " + subRegion.getName() + " sub region");
+                throw new AlreadyExistsException("Local Government " + dto.getName() + " Already Exists in the "
+                        + subRegion.getName() + " sub region");
             }
             localGovernment.setName(dto.getName());
         }
 
-        if (dto.getLatitude() != null && !dto.getLatitude().isEmpty() && !localGovernment.getLatitude().toString().equalsIgnoreCase(dto.getLatitude())) {
+        if (dto.getLatitude() != null && !dto.getLatitude().isEmpty()
+                && !localGovernment.getLatitude().toString().equalsIgnoreCase(dto.getLatitude())) {
             localGovernment.setLatitude(Double.valueOf(dto.getLatitude()));
         }
 
-        if (dto.getLongitude() != null && !dto.getLongitude().isEmpty() && !localGovernment.getLongitude().toString().equalsIgnoreCase(dto.getLongitude())) {
+        if (dto.getLongitude() != null && !dto.getLongitude().isEmpty()
+                && !localGovernment.getLongitude().toString().equalsIgnoreCase(dto.getLongitude())) {
             localGovernment.setLongitude(Double.valueOf(dto.getLongitude()));
         }
 
-        if (dto.getDescription() != null && !dto.getDescription().isEmpty() && !localGovernment.getDescription().equalsIgnoreCase(dto.getDescription())) {
+        if (dto.getDescription() != null && !dto.getDescription().isEmpty()
+                && !localGovernment.getDescription().equalsIgnoreCase(dto.getDescription())) {
             localGovernment.setDescription(dto.getDescription());
         }
 
@@ -328,7 +339,7 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
         if (newLocalGovernmentSet.size() > 0) {
             List<LocalGovernment> newLocalGovernments = newLocalGovernmentSet.stream().map(uL -> {
                 LocalGovernment localGovernment = new LocalGovernment();
-                localGovernment.setCode(generateCode());
+                localGovernment.setCode(sharedService.generateCode(AdministrativeAreaType.LOCALGOVERNMENT));
                 localGovernment.setName(uL.getName());
                 localGovernment.setSubRegion(subRegionRepository.findById(uL.getId())
                         .orElseThrow(() -> new NotFoundException("SubRegion not found")));
@@ -369,17 +380,19 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
 
     }
 
+    private final CountyRepository countyRepository;
+
     @Override
     @Transactional
-    @CacheEvict(value = { CacheValueKeyConfig.LOCAL_GOVERNMENTS }, allEntries = true)
+    @CacheEvict(value = { CacheValueKeyConfig.LOCAL_GOVERNMENTS, CacheValueKeyConfig.LOCAL_GOVERNMENTS_FILTERED }, allEntries = true)
     public ResponseDTO<String> delete(String code) {
+        if (countyRepository.existsByLocalGovernment_Code(code)) {
+            throw new InvalidException("Local Government with code " + code + " cannot be deleted because it has counties");
+        }
         LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(code)
-                .orElseThrow(() -> new NotFoundException("Local Government not found"));
+                .orElseThrow(() -> new NotFoundException("Local Government with code " + code + " not found"));
         localGovernmentRepository.delete(localGovernment);
         return new ResponseDTO<>("SUCCESS", "Local Government deleted successfully");
     }
 
-    private String generateCode() {
-        return sharedService.generateCode(AdministrativeAreaType.LOCALGOVERNMENT);
-    }
 }

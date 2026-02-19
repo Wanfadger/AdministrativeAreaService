@@ -18,6 +18,7 @@ import com.wanfadger.AdministrativeareaApi.entity.Region;
 import com.wanfadger.AdministrativeareaApi.entity.SubRegion;
 import com.wanfadger.AdministrativeareaApi.repository.CountyRepository;
 import com.wanfadger.AdministrativeareaApi.repository.LocalGovernmentRepository;
+import com.wanfadger.AdministrativeareaApi.repository.SubCountyRepository;
 import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
 import com.wanfadger.AdministrativeareaApi.shared.SharedService;
 
@@ -408,12 +409,17 @@ public class CountyServiceImpl implements CountyService {
 
     }
 
+    private final SubCountyRepository subCountyRepository;
+
     @Override
     @Transactional
-    @CacheEvict(value = { CacheValueKeyConfig.COUNTIES }, allEntries = true)
+    @CacheEvict(value = { CacheValueKeyConfig.COUNTIES, CacheValueKeyConfig.COUNTIES_FILTERED }, allEntries = true)
     public ResponseDTO<String> delete(String code) {
+        if (subCountyRepository.existsByCounty_Code(code)) {
+            throw new InvalidException("County with code " + code + " cannot be deleted because it has sub counties");
+        }
         County county = countyRepository.findByCodeIgnoreCase(code)
-                .orElseThrow(() -> new NotFoundException("County not found"));
+                .orElseThrow(() -> new NotFoundException("County with code " + code + " not found"));
         countyRepository.delete(county);
         return new ResponseDTO<>("SUCCESS", "County deleted successfully");
     }

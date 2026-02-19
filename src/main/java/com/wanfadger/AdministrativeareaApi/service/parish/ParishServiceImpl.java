@@ -355,10 +355,10 @@ public class ParishServiceImpl implements ParishService {
 
     @Override
     @Transactional
-    @CacheEvict(value = { CacheValueKeyConfig.PARISHES }, allEntries = true)
+    @CacheEvict(value = { CacheValueKeyConfig.PARISHES, CacheValueKeyConfig.PARISHES_FILTERED }, allEntries = true)
     public ResponseDTO<String> delete(String code) {
         Parish parish = parishRepository.findByCodeIgnoreCase(code)
-                .orElseThrow(() -> new NotFoundException("Parish not found"));
+                .orElseThrow(() -> new NotFoundException("Parish with code " + code + " not found"));
         parishRepository.delete(parish);
         return new ResponseDTO<>("SUCCESS", "Parish deleted successfully");
     }

@@ -16,6 +16,7 @@ import com.wanfadger.AdministrativeareaApi.entity.Region;
 import com.wanfadger.AdministrativeareaApi.entity.SubRegion;
 import com.wanfadger.AdministrativeareaApi.repository.RegionRepository;
 import com.wanfadger.AdministrativeareaApi.repository.SubRegionRepository;
+import com.wanfadger.AdministrativeareaApi.repository.LocalGovernmentRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -365,12 +366,19 @@ public class SubRegionServiceImpl implements SubRegionService {
 
     }
 
+    private final LocalGovernmentRepository localGovernmentRepository;
+
     @Override
     @Transactional
-    @CacheEvict(value = { CacheValueKeyConfig.SUB_REGIONS }, allEntries = true)
+    @CacheEvict(value = { CacheValueKeyConfig.SUB_REGIONS,
+            CacheValueKeyConfig.SUB_REGIONS_FILTERED }, allEntries = true)
     public ResponseDTO<String> delete(String code) {
+        if (localGovernmentRepository.existsBySubRegion_Code(code)) {
+            throw new InvalidException(
+                    "Sub Region with code " + code + " cannot be deleted because it has local governments");
+        }
         SubRegion subRegion = subRegionRepository.findByCodeIgnoreCase(code)
-                .orElseThrow(() -> new NotFoundException("Sub Region not found"));
+                .orElseThrow(() -> new NotFoundException("Sub Region with code " + code + " not found"));
         subRegionRepository.delete(subRegion);
         return new ResponseDTO<>("SUCCESS", "Sub Region deleted successfully");
     }

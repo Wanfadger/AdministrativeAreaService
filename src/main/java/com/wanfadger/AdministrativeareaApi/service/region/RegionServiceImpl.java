@@ -13,6 +13,7 @@ import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 import com.wanfadger.AdministrativeareaApi.entity.Region;
 import com.wanfadger.AdministrativeareaApi.repository.RegionRepository;
 
+import com.wanfadger.AdministrativeareaApi.repository.SubRegionRepository;
 import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
 
 import lombok.RequiredArgsConstructor;
@@ -235,12 +236,18 @@ public class RegionServiceImpl implements RegionService {
         return t -> map.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
     }
 
+    private final SubRegionRepository subRegionRepository;
+
     @Override
     @Transactional
-    @CacheEvict(value = CacheValueKeyConfig.REGIONS, allEntries = true)
+    @CacheEvict(value = { CacheValueKeyConfig.REGIONS, CacheValueKeyConfig.REGIONS_FILTERED }, allEntries = true)
     public ResponseDTO<String> delete(String code) {
+        if (subRegionRepository.existsByRegion_Code(code)) {
+            throw new InvalidException("Region with code " + code + " cannot be deleted because it has sub regions");
+        }
+
         Region region = regionRepository.findByCodeIgnoreCase(code)
-                .orElseThrow(() -> new NotFoundException("Region not found"));
+                .orElseThrow(() -> new NotFoundException("Region with code " + code + " not found"));
         regionRepository.delete(region);
         return new ResponseDTO<>("SUCCESS", "Region deleted successfully");
     }

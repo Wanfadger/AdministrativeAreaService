@@ -20,6 +20,7 @@ import com.wanfadger.AdministrativeareaApi.entity.SubCounty;
 import com.wanfadger.AdministrativeareaApi.entity.SubRegion;
 import com.wanfadger.AdministrativeareaApi.repository.CountyRepository;
 import com.wanfadger.AdministrativeareaApi.repository.SubCountyRepository;
+import com.wanfadger.AdministrativeareaApi.repository.ParishRepository;
 import com.wanfadger.AdministrativeareaApi.shared.SharedService;
 
 import lombok.RequiredArgsConstructor;
@@ -411,12 +412,18 @@ public class SubCountyServiceImpl implements SubCountyService {
 
     }
 
+    private final ParishRepository parishRepository;
+
     @Override
     @Transactional
-    @CacheEvict(value = { CacheValueKeyConfig.SUB_COUNTIES }, allEntries = true)
+    @CacheEvict(value = { CacheValueKeyConfig.SUB_COUNTIES,
+            CacheValueKeyConfig.SUB_COUNTIES_FILTERED }, allEntries = true)
     public ResponseDTO<String> delete(String code) {
+        if (parishRepository.existsBySubCounty_Code(code)) {
+            throw new InvalidException("Sub County with code " + code + " cannot be deleted because it has parishes");
+        }
         SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(code)
-                .orElseThrow(() -> new NotFoundException("Sub County not found"));
+                .orElseThrow(() -> new NotFoundException("Sub County with code " + code + " not found"));
         subCountyRepository.delete(subCounty);
         return new ResponseDTO<>("SUCCESS", "Sub County deleted successfully");
     }
