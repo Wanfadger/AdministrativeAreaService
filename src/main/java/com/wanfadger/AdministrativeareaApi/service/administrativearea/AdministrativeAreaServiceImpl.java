@@ -13,6 +13,9 @@ import com.wanfadger.AdministrativeareaApi.service.parish.ParishService;
 import com.wanfadger.AdministrativeareaApi.service.region.RegionService;
 import com.wanfadger.AdministrativeareaApi.service.subRegion.SubRegionService;
 import com.wanfadger.AdministrativeareaApi.service.subcounty.SubCountyService;
+
+import jakarta.validation.constraints.NotBlank;
+
 import com.wanfadger.AdministrativeareaApi.repository.specification.GenericSpecification;
 import com.wanfadger.AdministrativeareaApi.enums.MatchType;
 import lombok.RequiredArgsConstructor;
@@ -48,11 +51,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public ResponseEntity<ResponseDTO<String>> newOne(Map<String, String> queryMap, NewAdministrativeAreaDTO dto) {
-        AdministrativeAreaType type = AdministrativeAreaType.fromStr(queryMap.get("type"))
+    public ResponseDTO<String> createOne(@NotBlank String type, NewAdministrativeAreaDTO dto) {
+        AdministrativeAreaType areaType = AdministrativeAreaType.fromStr(type)
                 .orElseThrow(() -> new MissingDataException("Missing Administrative Area Type"));
 
-        ResponseDTO<String> response = switch (type) {
+        ResponseDTO<String> response = switch (areaType) {
             case REGION -> regionService.create(dto);
             case SUBREGION -> subRegionService.create(dto);
             case LOCALGOVERNMENT -> localGovernmentService.create(dto);
@@ -61,17 +64,16 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             case PARISH -> parishService.create(dto);
         };
 
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return response;
     }
 
     @Override
-    public ResponseEntity<ResponseDTO<String>> newList(Map<String, String> queryMap,
-            List<NewAdministrativeAreaDTO> dtos) {
-        AdministrativeAreaType type = AdministrativeAreaType.fromStr(queryMap.get("type"))
+    public ResponseDTO<String> createList(@NotBlank String type, List<NewAdministrativeAreaDTO> dtos) {
+        AdministrativeAreaType areaType = AdministrativeAreaType.fromStr(type)
                 .orElseThrow(() -> new MissingDataException("Missing Administrative Area Type"));
 
-        ResponseDTO<String> response = switch (type) {
-            case REGION -> regionService.createAll(dtos);
+        ResponseDTO<String> response = switch (areaType) {
+            case REGION -> regionService.createList(dtos);
             case SUBREGION -> subRegionService.createAll(dtos);
             case LOCALGOVERNMENT -> localGovernmentService.createAll(dtos);
             case COUNTY -> countyService.createAll(dtos);
@@ -79,7 +81,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
             case PARISH -> parishService.createAll(dtos);
         };
 
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return response;
     }
 
     @Override

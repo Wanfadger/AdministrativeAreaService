@@ -61,26 +61,14 @@ public class SubRegionServiceImpl implements SubRegionService {
         }
 
         Region region = regionRepository.findByCodeIgnoreCase(dto.getPartOfCode())
-                .orElseThrow(() -> new InvalidException("Invalid PartOfCode: " + dto.getPartOfCode()));
+                .orElseThrow(() -> new NotFoundException("Region with code: " + dto.getPartOfCode() + " not found"));
 
-        if (subRegionRepository.findByNameIgnoreCaseAndRegion_Code(dto.getName(), dto.getPartOfCode()).isPresent()) {
-            throw new AlreadyExistsException("Sub region Already Exists in the region");
+        if (subRegionRepository.existsByNameIgnoreCaseAndRegion_Code(dto.getName(), dto.getPartOfCode())) {
+            throw new AlreadyExistsException(
+                    dto.getName() + " Sub region Already Exists in the " + region.getName() + " region");
         }
 
-        SubRegion subRegion = new SubRegion();
-        subRegion.setCode(generateCode());
-        subRegion.setName(dto.getName());
-        subRegion.setRegion(region);
-
-        if (dto.getLatitude() != null && !dto.getLatitude().isEmpty()) {
-            subRegion.setLatitude(Double.valueOf(dto.getLatitude()));
-        }
-        if (dto.getLongitude() != null && !dto.getLongitude().isEmpty()) {
-            subRegion.setLongitude(Double.valueOf(dto.getLongitude()));
-        }
-        if (dto.getDescription() != null && !dto.getDescription().isEmpty()) {
-            subRegion.setDescription(dto.getDescription());
-        }
+        SubRegion subRegion = toSubRegion(dto, region);
 
         subRegionRepository.save(subRegion);
 
@@ -96,63 +84,43 @@ public class SubRegionServiceImpl implements SubRegionService {
             throw new MissingDataException("Found Administrative Area without PartOfCoce");
         }
 
+        List<String> regionCodes = dtos.stream()
+                .map(NewAdministrativeAreaDTO::getPartOfCode)
+                .collect(Collectors.toList());
+
+        Map<String, Region> regionMap = regionRepository.findByCodeIgnoreCaseIn(regionCodes).stream()
+                .collect(Collectors.toMap(Region::getCode, region -> region, (existing, replacement) -> existing));
+
         List<SubRegion> subRegions = dtos.parallelStream()
                 .filter(dto -> subRegionRepository
-                        .findByNameIgnoreCaseAndRegion_Code(dto.getName(), dto.getPartOfCode()).isEmpty())
-                .map(this::convertDtoSubRegion)
-                .toList();
-
-        // Need to set Region for each. convertDtoSubRegion doesn't set it because it
-        // requires DB lookup.
-        // Wait, convertDtoSubRegion logic in AdminService didn't set parent.
-        // AdminService did it:
-        // subRegion.setRegion(region);
-        // But here we need to fetch region by partOfCode.
-        // Doing it in parallel map might be okay if fetching eagerly or efficiently.
-        // Or fetch all relevant regions first?
-        // Since partOfCode is region code.
-
-        // Let's refine the mapping:
-        subRegions.forEach(subRegion -> {
-            // Retrieve dto again? No, we lost the link.
-            // We should map DTO -> Entity inside the stream correctly.
-        });
-
-        // Correct implementation:
-        List<SubRegion> validSubRegions = dtos.parallelStream()
-                .filter(dto -> subRegionRepository
-                        .findByNameIgnoreCaseAndRegion_Code(dto.getName(), dto.getPartOfCode()).isEmpty())
+                        .existsByNameIgnoreCaseAndRegion_Code(dto.getName(), dto.getPartOfCode()))
+                .filter(dto -> regionMap.containsKey(dto.getPartOfCode()))
                 .map(dto -> {
-                    SubRegion subRegion = new SubRegion();
-                    subRegion.setName(dto.getName());
-                    subRegion.setLatitude(dto.getLatitude() != null && !dto.getLatitude().isEmpty()
-                            ? Double.valueOf(dto.getLatitude())
-                            : null);
-                    subRegion.setLongitude(dto.getLongitude() != null && !dto.getLongitude().isEmpty()
-                            ? Double.valueOf(dto.getLongitude())
-                            : null);
-                    subRegion.setCode(generateCode());
-
-                    // Fetch parent region. Note: this might fail if parent doesn't exist.
-                    // AdminService throws InvalidException if not found.
-                    Region region = regionRepository.findByCodeIgnoreCase(dto.getPartOfCode())
-                            .orElseThrow(() -> new InvalidException("Invalid PartOfCode: " + dto.getPartOfCode()));
-                    subRegion.setRegion(region);
-
-                    return subRegion;
+                    Region region = regionMap.get(dto.getPartOfCode());
+                    return toSubRegion(dto, region);
                 })
                 .toList();
 
-        subRegionRepository.saveAll(Objects.requireNonNull(validSubRegions));
+        subRegionRepository.saveAll(subRegions);
 
         return new ResponseDTO<>("success",
-                "successfully added " + validSubRegions.size() + " administrative areas");
+                "successfully added " + subRegions.size() + " sub regions");
     }
 
-    // Kept for reference but not used in createAll to avoid double mapping
-    private SubRegion convertDtoSubRegion(NewAdministrativeAreaDTO dto) {
-        // ...
-        return null;
+    private SubRegion toSubRegion(NewAdministrativeAreaDTO dto, Region region) {
+        return SubRegion.builder()
+                .code(generateCode())
+                .name(dto.getName().trim())
+                .region(region)
+                .latitude(dto.getLatitude() != null && !dto.getLatitude().isEmpty() ? Double.valueOf(dto.getLatitude())
+                        : null)
+                .longitude(
+                        dto.getLongitude() != null && !dto.getLongitude().isEmpty() ? Double.valueOf(dto.getLongitude())
+                                : null)
+                .description(
+                        dto.getDescription() != null && !dto.getDescription().isEmpty() ? dto.getDescription().trim()
+                                : null)
+                .build();
     }
 
     @Override

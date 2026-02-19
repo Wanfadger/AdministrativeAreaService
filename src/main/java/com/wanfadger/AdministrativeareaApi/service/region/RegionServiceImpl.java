@@ -51,36 +51,22 @@ public class RegionServiceImpl implements RegionService {
     @Transactional
     @CacheEvict(value = CacheValueKeyConfig.REGIONS, allEntries = true)
     public ResponseDTO<String> create(NewAdministrativeAreaDTO dto) {
-        if (regionRepository.findByNameIgnoreCase(dto.getName()).isPresent()) {
-            throw new AlreadyExistsException("Administrative Area Already Exists");
+        if (regionRepository.existsByNameIgnoreCase(dto.getName())) {
+            throw new AlreadyExistsException(AdministrativeAreaType.REGION.getAreaType() + " with name " + dto.getName() + " Already Exists");
         }
 
-        Region region = new Region();
-        region.setCode(generateCode());
-        region.setName(dto.getName());
-
-        if (dto.getLatitude() != null && !dto.getLatitude().isEmpty()) {
-            region.setLatitude(Double.valueOf(dto.getLatitude()));
-        }
-        if (dto.getLongitude() != null && !dto.getLongitude().isEmpty()) {
-            region.setLongitude(Double.valueOf(dto.getLongitude()));
-        }
-        if (dto.getDescription() != null && !dto.getDescription().isEmpty()) {
-            region.setDescription(dto.getDescription());
-        }
-
+        Region region = toRegion(dto);
         regionRepository.save(region);
-
         return new ResponseDTO<>(region.getCode(), "successfully created a region");
     }
 
     @Override
     @Transactional
     @CacheEvict(value = CacheValueKeyConfig.REGIONS, allEntries = true)
-    public ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos) {
+    public ResponseDTO<String> createList(List<NewAdministrativeAreaDTO> dtos) {
         List<Region> regions = dtos.parallelStream()
-                .filter(dto -> regionRepository.findByNameIgnoreCase(dto.getName()).isEmpty())
-                .map(this::convertDtoRegion)
+                .filter(dto -> !regionRepository.existsByNameIgnoreCase(dto.getName()))
+                .map(this::toRegion)
                 .toList();
 
         regionRepository.saveAll(Objects.requireNonNull(regions));
@@ -89,14 +75,15 @@ public class RegionServiceImpl implements RegionService {
                 "successfully added " + regions.size() + " administrative areas");
     }
 
-    private Region convertDtoRegion(NewAdministrativeAreaDTO dto) {
-        Region region = new Region();
-        region.setName(dto.getName());
-        region.setDescription(dto.getDescription());
-        region.setLatitude(dto.getLatitude() != null ? Double.valueOf(dto.getLatitude()) : null);
-        region.setLongitude(dto.getLongitude() != null ? Double.valueOf(dto.getLongitude()) : null);
-        region.setCode(generateCode());
-        return region;
+    private Region toRegion(NewAdministrativeAreaDTO dto) {
+        return Region.builder()
+                .code(generateCode())
+                .name(dto.getName().trim())
+                .latitude(dto.getLatitude() != null && !dto.getLatitude().isEmpty() ? Double.valueOf(dto.getLatitude()) : null)
+                .longitude(dto.getLongitude() != null && !dto.getLongitude().isEmpty() ? Double.valueOf(dto.getLongitude()) : null)
+                .description(dto.getDescription() != null && !dto.getDescription().isEmpty() ? dto.getDescription().trim() : null)
+                .areaType(AdministrativeAreaType.REGION)
+                .build();
     }
 
     @Override

@@ -38,11 +38,11 @@ public class AdministrativeAreaController {
                         @ApiResponse(responseCode = "400", description = "Invalid input data"),
                         @ApiResponse(responseCode = "500", description = "Internal server error")
         })
-        @PostMapping(value = "/one", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseEntity<ResponseDTO<String>> newOne(
-                        @Parameter(hidden = true) @RequestParam Map<String, String> queryMap,
+        @PostMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+        public ResponseDTO<String> createOne(
+                        @RequestParam String type,
                         @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Administrative area data", required = true) @RequestBody NewAdministrativeAreaDTO dto) {
-                return administrativeAreaService.newOne(queryMap, dto);
+                return administrativeAreaService.createOne(type, dto);
         }
 
         @Operation(summary = "Create multiple administrative areas", description = "Creates multiple administrative areas in a single request. Requires 'type' query parameter. Cache is automatically evicted after creation.", parameters = {
@@ -54,10 +54,10 @@ public class AdministrativeAreaController {
                         @ApiResponse(responseCode = "500", description = "Internal server error")
         })
         @PostMapping(value = "/list", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseEntity<ResponseDTO<String>> newList(
-                        @Parameter(hidden = true) @RequestParam Map<String, String> queryMap,
+        public ResponseDTO<String> createList(
+                        @RequestParam String type,
                         @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "List of administrative areas to create", required = true) @RequestBody List<NewAdministrativeAreaDTO> dtos) {
-                return administrativeAreaService.newList(queryMap, dtos);
+                return administrativeAreaService.createList(type, dtos);
         }
 
         @Operation(summary = "Bulk upload administrative areas from Excel", description = "Uploads administrative areas in bulk from Excel format. Supports hierarchical data (Region → Sub-Region → Local Government → County → Sub-County → Parish). Cache is automatically evicted after upload.")

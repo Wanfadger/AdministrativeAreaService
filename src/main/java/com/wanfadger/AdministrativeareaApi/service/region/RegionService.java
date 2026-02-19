@@ -14,6 +14,7 @@ import java.util.Optional;
 
 public interface RegionService {
     ResponseDTO<String> create(NewAdministrativeAreaDTO dto);
+    ResponseDTO<String> createList(List<NewAdministrativeAreaDTO> dtos);
 
     ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto);
 
@@ -25,7 +26,6 @@ public interface RegionService {
 
     List<Region> findAll();
 
-    ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos);
 
     ResponseDTO<List<RegionDTO>> search(String name, String code);
 

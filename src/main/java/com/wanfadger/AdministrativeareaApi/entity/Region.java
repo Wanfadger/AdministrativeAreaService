@@ -35,8 +35,4 @@ public class Region extends BaseEntity {
     @Builder.Default
     @OneToMany(mappedBy = "region", targetEntity = SubRegion.class, cascade = CascadeType.PERSIST)
     private List<SubRegion> subRegions = new ArrayList<>();
-
-    public Region(Long id) {
-        super(id);
-    }
 }

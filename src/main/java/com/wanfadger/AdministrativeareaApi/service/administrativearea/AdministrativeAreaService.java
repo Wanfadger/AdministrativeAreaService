@@ -2,6 +2,9 @@ package com.wanfadger.AdministrativeareaApi.service.administrativearea;
 
 import com.wanfadger.AdministrativeareaApi.dto.*;
 import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
+
+import jakarta.validation.constraints.NotBlank;
+
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 
 import org.springframework.http.ResponseEntity;
@@ -11,11 +14,9 @@ import java.util.Map;
 
 public interface AdministrativeAreaService {
 
-        ResponseEntity<ResponseDTO<String>> newOne(Map<String, String> queryMap,
-                        NewAdministrativeAreaDTO dto);
+        ResponseDTO<String> createOne(@NotBlank String type, NewAdministrativeAreaDTO dto);
 
-        ResponseEntity<ResponseDTO<String>> newList(Map<String, String> queryMap,
-                        List<NewAdministrativeAreaDTO> dtos);
+        ResponseDTO<String> createList(@NotBlank String type, List<NewAdministrativeAreaDTO> dtos);
 
         ResponseDTO<CodeNameDTO> filterOne(Map<String, String> queryMap);
 
