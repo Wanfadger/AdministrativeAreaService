@@ -16,8 +16,6 @@ import com.wanfadger.AdministrativeareaApi.entity.Region;
 import com.wanfadger.AdministrativeareaApi.entity.SubRegion;
 import com.wanfadger.AdministrativeareaApi.repository.RegionRepository;
 import com.wanfadger.AdministrativeareaApi.repository.SubRegionRepository;
-import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
-import com.wanfadger.AdministrativeareaApi.shared.SharedService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,7 +47,7 @@ public class SubRegionServiceImpl implements SubRegionService {
 
     private final SubRegionRepository subRegionRepository;
     private final RegionRepository regionRepository;
-    private final SharedService sharedService;
+    private final SubRegionMapperService subRegionMapperService;
 
     @Override
     @Transactional
@@ -67,7 +65,7 @@ public class SubRegionServiceImpl implements SubRegionService {
                     dto.getName() + " Sub region Already Exists in the " + region.getName() + " region");
         }
 
-        SubRegion subRegion = toSubRegion(dto, region);
+        SubRegion subRegion = subRegionMapperService.toSubRegion(dto, region);
 
         subRegionRepository.save(subRegion);
 
@@ -96,7 +94,7 @@ public class SubRegionServiceImpl implements SubRegionService {
                 .filter(dto -> regionMap.containsKey(dto.getPartOfCode()))
                 .map(dto -> {
                     Region region = regionMap.get(dto.getPartOfCode());
-                    return toSubRegion(dto, region);
+                    return subRegionMapperService.toSubRegion(dto, region);
                 })
                 .toList();
 
@@ -106,21 +104,21 @@ public class SubRegionServiceImpl implements SubRegionService {
                 "successfully added " + subRegions.size() + " sub regions");
     }
 
-    private SubRegion toSubRegion(NewAdministrativeAreaDTO dto, Region region) {
-        return SubRegion.builder()
-                .code(generateCode())
-                .name(dto.getName().trim())
-                .region(region)
-                .latitude(dto.getLatitude() != null && !dto.getLatitude().isEmpty() ? Double.valueOf(dto.getLatitude())
-                        : null)
-                .longitude(
-                        dto.getLongitude() != null && !dto.getLongitude().isEmpty() ? Double.valueOf(dto.getLongitude())
-                                : null)
-                .description(
-                        dto.getDescription() != null && !dto.getDescription().isEmpty() ? dto.getDescription().trim()
-                                : null)
-                .build();
-    }
+    // private SubRegion toSubRegion(NewAdministrativeAreaDTO dto, Region region) {
+    //     return SubRegion.builder()
+    //             .code(generateCode())
+    //             .name(dto.getName().trim())
+    //             .region(region)
+    //             .latitude(dto.getLatitude() != null && !dto.getLatitude().isEmpty() ? Double.valueOf(dto.getLatitude())
+    //                     : null)
+    //             .longitude(
+    //                     dto.getLongitude() != null && !dto.getLongitude().isEmpty() ? Double.valueOf(dto.getLongitude())
+    //                             : null)
+    //             .description(
+    //                     dto.getDescription() != null && !dto.getDescription().isEmpty() ? dto.getDescription().trim()
+    //                             : null)
+    //             .build();
+    // }
 
     @Override
     @Transactional
@@ -158,30 +156,14 @@ public class SubRegionServiceImpl implements SubRegionService {
         return new ResponseDTO<>("SUCCESS");
     }
 
-    // @Override
-    // @Cacheable(value = CacheValueKeyConfig.SUB_REGIONS, key = "'list:' +
-    // #regionCode")
-    // public ResponseDTO<List<SubRegionDTO>> list(String regionCode) {
-    // Specification<SubRegion> spec = Specification.where(null);
-    // if (regionCode != null && !regionCode.isEmpty()) {
-    // spec = spec
-    // .and(new GenericSpecification<>(new SearchCriteria("region.code", regionCode,
-    // MatchType.EQUALS)));
-    // }
 
-    // List<SubRegionDTO> subRegionDTOs = subRegionRepository.findAll(spec).stream()
-    // .map(this::toDTO)
-    // .sorted(Comparator.comparing(SubRegionDTO::getCode))
-    // .toList();
-    // return new ResponseDTO<>(subRegionDTOs);
-    // }
 
     @Override
     @Cacheable(value = CacheValueKeyConfig.SUB_REGIONS, key = "#code")
     public ResponseDTO<SubRegionDTO> getByCode(String code) {
         SubRegion subRegion = subRegionRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("SubRegion not found"));
-        return new ResponseDTO<>(toDTO(subRegion));
+        return new ResponseDTO<>(subRegionMapperService.toDetailDTO(subRegion));
     }
 
     @Override
@@ -231,7 +213,7 @@ public class SubRegionServiceImpl implements SubRegionService {
 
         // 4. Map to DTOs
         List<SubRegionDTO> data = resultPage.getContent().stream()
-                .map(this::toDTO)
+                .map(subRegionMapperService::toDetailDTO)
                 .toList();
 
         // 5. Build Paginated Response
@@ -276,7 +258,7 @@ public class SubRegionServiceImpl implements SubRegionService {
         if (newSubRegionSet.size() > 0) {
             List<SubRegion> newSubRegions = newSubRegionSet.stream().map(uSubRegion -> {
                 SubRegion subRegion = new SubRegion();
-                subRegion.setCode(generateCode());
+                // subRegion.setCode(generateCode());
                 subRegion.setName(uSubRegion.getName());
                 subRegion.setRegion(regionRepository.findById(uSubRegion.getId())
                         .orElseThrow(() -> new NotFoundException("Region not found")));
@@ -325,29 +307,4 @@ public class SubRegionServiceImpl implements SubRegionService {
         return new ResponseDTO<>("SUCCESS", "Sub Region deleted successfully");
     }
 
-    private String generateCode() {
-        return sharedService.generateCode(AdministrativeAreaType.SUBREGION);
-    }
-
-    private SubRegionDTO toDTO(SubRegion subRegion) {
-        SubRegionDTO dto = new SubRegionDTO();
-        dto.setId(subRegion.getId());
-        dto.setCode(subRegion.getCode());
-        dto.setName(subRegion.getName());
-        dto.setLatitude(subRegion.getLatitude() != null ? String.valueOf(subRegion.getLatitude()) : "");
-        dto.setLongitude(subRegion.getLongitude() != null ? String.valueOf(subRegion.getLongitude()) : "");
-        if (subRegion.getRegion() != null) {
-            dto.setRegion(toRegionDTO(subRegion.getRegion()));
-        }
-        return dto;
-    }
-
-    private RegionDTO toRegionDTO(Region region) {
-        RegionDTO dto = new RegionDTO();
-        dto.setCode(region.getCode());
-        dto.setName(region.getName());
-        dto.setLongitude(region.getLongitude() != null ? String.valueOf(region.getLongitude()) : "");
-        dto.setLatitude(region.getLatitude() != null ? String.valueOf(region.getLatitude()) : "");
-        return dto;
-    }
 }

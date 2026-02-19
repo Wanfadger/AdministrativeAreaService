@@ -2,14 +2,16 @@ package com.wanfadger.AdministrativeareaApi.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wanfadger.AdministrativeareaApi.entity.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
+@ToString
+@EqualsAndHashCode
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-//@JsonIgnoreProperties(ignoreUnknown = true)
+// @JsonIgnoreProperties(ignoreUnknown = true)
 public class AdministrativeAreaExcelDTO {
 
     @JsonProperty("REGION")
@@ -37,6 +39,5 @@ public class AdministrativeAreaExcelDTO {
     private Parish dbParish;
 
     // upload level per get codes, then upload again
-
 
 }

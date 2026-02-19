@@ -1,11 +1,13 @@
 package com.wanfadger.AdministrativeareaApi.dto;
 
 import com.wanfadger.AdministrativeareaApi.enums.MatchType;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
+@ToString
+@EqualsAndHashCode
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class SearchCriteria {

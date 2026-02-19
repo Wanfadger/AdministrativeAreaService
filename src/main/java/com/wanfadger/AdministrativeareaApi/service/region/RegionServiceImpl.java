@@ -44,7 +44,7 @@ import java.util.function.Predicate;
 public class RegionServiceImpl implements RegionService {
 
     private final RegionRepository regionRepository;
-    private final SharedService sharedService;
+    private final RegionMapperService regionMapperService;
 
     @Override
     @Transactional
@@ -54,7 +54,7 @@ public class RegionServiceImpl implements RegionService {
             throw new AlreadyExistsException(AdministrativeAreaType.REGION.getAreaType() + " with name " + dto.getName() + " Already Exists");
         }
 
-        Region region = toRegion(dto);
+        Region region = regionMapperService.toRegion(dto);
         regionRepository.save(region);
         return new ResponseDTO<>(region.getCode(), "successfully created a region");
     }
@@ -65,7 +65,7 @@ public class RegionServiceImpl implements RegionService {
     public ResponseDTO<String> createList(List<NewAdministrativeAreaDTO> dtos) {
         List<Region> regions = dtos.parallelStream()
                 .filter(dto -> !regionRepository.existsByNameIgnoreCase(dto.getName()))
-                .map(this::toRegion)
+                .map(regionMapperService::toRegion)
                 .toList();
 
         regionRepository.saveAll(Objects.requireNonNull(regions));
@@ -74,16 +74,6 @@ public class RegionServiceImpl implements RegionService {
                 "successfully added " + regions.size() + " administrative areas");
     }
 
-    private Region toRegion(NewAdministrativeAreaDTO dto) {
-        return Region.builder()
-                .code(sharedService.generateCode(AdministrativeAreaType.REGION))
-                .name(dto.getName().trim())
-                .latitude(dto.getLatitude() != null && !dto.getLatitude().isEmpty() ? Double.valueOf(dto.getLatitude()) : null)
-                .longitude(dto.getLongitude() != null && !dto.getLongitude().isEmpty() ? Double.valueOf(dto.getLongitude()) : null)
-                .description(dto.getDescription() != null && !dto.getDescription().isEmpty() ? dto.getDescription().trim() : null)
-                .areaType(AdministrativeAreaType.REGION)
-                .build();
-    }
 
     @Override
     @Transactional
@@ -115,10 +105,18 @@ public class RegionServiceImpl implements RegionService {
 
     @Override
     @Cacheable(value = CacheValueKeyConfig.REGIONS, key = "#code")
-    public ResponseDTO<RegionDTO> getByCode(String code) {
+    public ResponseDTO<RegionDTO> findByCode(String code) {
         Region region = regionRepository.findByCodeIgnoreCase(code)
-                .orElseThrow(() -> new NotFoundException("Region not found"));
-        return new ResponseDTO<>(toDTO(region));
+                .orElseThrow(() -> new NotFoundException("Region with code " + code + " not found"));
+        return new ResponseDTO<>(regionMapperService.toDTO(region));
+    }
+
+    @Override
+    @Cacheable(value = CacheValueKeyConfig.REGIONS, key = "#code")
+    public ResponseDTO<RegionDTO> findDetailsByCode(String code) {
+        Region region = regionRepository.findByCodeIgnoreCase(code)
+                .orElseThrow(() -> new NotFoundException("Region with code " + code + " not found"));
+        return new ResponseDTO<>(regionMapperService.toDTO(region));
     }
 
 
@@ -165,7 +163,7 @@ public class RegionServiceImpl implements RegionService {
 
         // 4. Map to DTOs
         List<RegionDTO> data = resultPage.getContent().stream()
-                .map(this::toDTO)
+                .map(regionMapperService::toDTO)
                 .toList();
 
         // 5. Build Paginated Response
@@ -197,7 +195,7 @@ public class RegionServiceImpl implements RegionService {
                 .filter(distinctByKey(AdministrativeAreaExcelDTO::getRegion))
                 .map(dto -> {
                     Region region = new Region();
-                    region.setCode(sharedService.generateCode(AdministrativeAreaType.REGION));
+                    // region.setCode(sharedService.generateCode(AdministrativeAreaType.REGION));
                     region.setName(dto.getRegion());
                     return region;
                 })
@@ -227,11 +225,6 @@ public class RegionServiceImpl implements RegionService {
         return t -> map.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
     }
 
-    @Override
-    public Optional<Region> findByCode(String code) {
-        return regionRepository.findByCodeIgnoreCase(code);
-    }
-
 
     @Override
     @Transactional
@@ -244,13 +237,4 @@ public class RegionServiceImpl implements RegionService {
     }
 
 
-    private RegionDTO toDTO(Region region) {
-        RegionDTO dto = RegionDTO.builder()
-                .code(region.getCode())
-                .name(region.getName())
-                .longitude(region.getLongitude() != null ? String.valueOf(region.getLongitude()) : "")
-                .latitude(region.getLatitude() != null ? String.valueOf(region.getLatitude()) : "")
-                .build();
-        return dto;
-    }
 }

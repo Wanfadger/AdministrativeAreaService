@@ -98,7 +98,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
         return switch (type) {
             case REGION -> {
-                RegionDTO dto = regionService.getByCode(code).getData();
+                RegionDTO dto = regionService.findByCode(code).getData();
                 yield new ResponseDTO<>(new CodeNameDTO(dto.getCode(), dto.getName()));
             }
             case SUBREGION -> {

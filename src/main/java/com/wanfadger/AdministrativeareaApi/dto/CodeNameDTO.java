@@ -9,11 +9,12 @@ import java.io.Serializable;
 @NoArgsConstructor
 @Getter
 @Setter
+@Builder
 @Schema(description = "Simplified administrative area data containing only code and name")
 public class CodeNameDTO implements Serializable {
     @Schema(description = "Unique code of the administrative area", example = "001")
     private String code;
-    
+
     @Schema(description = "Name of the administrative area", example = "Central Region")
     private String name;
 }

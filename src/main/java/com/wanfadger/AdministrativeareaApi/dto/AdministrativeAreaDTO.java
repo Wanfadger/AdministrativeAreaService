@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 import lombok.Setter;
 
 import java.io.Serializable;
@@ -14,6 +16,8 @@ import java.io.Serializable;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
+@EqualsAndHashCode
 @Schema(description = "Complete administrative area data with location coordinates")
 public class AdministrativeAreaDTO implements Serializable {
     @Schema(description = "Internal unique identifier", example = "1")
@@ -24,6 +28,9 @@ public class AdministrativeAreaDTO implements Serializable {
 
     @Schema(description = "Name of the administrative area", example = "Central Region")
     private String name;
+
+    @Schema(description = "Description of the administrative area", example = "Central Region")
+    private String description;
 
     @Schema(description = "Latitude coordinate", example = "0.3476")
     private String latitude;

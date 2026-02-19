@@ -21,17 +21,9 @@ public interface SubRegionService {
 
     ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto);
 
-    // ResponseDTO<List<SubRegionDTO>> list(String regionCode);
-
     ResponseDTO<SubRegionDTO> getByCode(String code);
 
     Optional<SubRegion> findByCode(String code);
-
-    // List<SubRegion> findAll();
-
-    // List<SubRegion> findAllByRegionCode(String regionCode);
-
-    // ResponseDTO<List<SubRegionDTO>> search(String name, String code);
 
     void upload(List<AdministrativeAreaExcelDTO> dtoList);
 
