@@ -19,21 +19,22 @@ public interface CountyService {
 
     ResponseDTO<String> delete(String code);
 
-    ResponseDTO<List<CountyDTO>> list(String localGovernmentCode);
+    // ResponseDTO<List<CountyDTO>> list(String localGovernmentCode);
 
     ResponseDTO<CountyDTO> getByCode(String code);
 
     Optional<County> findByCode(String code);
 
-    List<County> findAll();
+    // List<County> findAll();
 
-    List<County> findAllByLocalGovernmentCode(String localGovernmentCode);
+    // List<County> findAllByLocalGovernmentCode(String localGovernmentCode);
 
-    List<County> findAllByLocalGovernmentCodes(List<String> localGovernmentCodes);
+    // List<County> findAllByLocalGovernmentCodes(List<String>
+    // localGovernmentCodes);
 
     ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos);
 
-    ResponseDTO<List<CountyDTO>> search(String name, String code);
+    // ResponseDTO<List<CountyDTO>> search(String name, String code);
 
     void upload(List<AdministrativeAreaExcelDTO> dtoList);
 

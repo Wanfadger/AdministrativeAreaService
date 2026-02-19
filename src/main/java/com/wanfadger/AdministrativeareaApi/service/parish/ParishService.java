@@ -19,21 +19,21 @@ public interface ParishService {
 
     ResponseDTO<String> delete(String code);
 
-    ResponseDTO<List<ParishDTO>> list(String subCountyCode);
+    // ResponseDTO<List<ParishDTO>> list(String subCountyCode);
 
     ResponseDTO<ParishDTO> getByCode(String code);
 
     Optional<Parish> findByCode(String code);
 
-    List<Parish> findAll();
+    // List<Parish> findAll();
 
-    List<Parish> findAllBySubCountyCode(String subCountyCode);
+    // List<Parish> findAllBySubCountyCode(String subCountyCode);
 
-    List<Parish> findAllBySubCountyCodes(List<String> subCountyCodes);
+    // List<Parish> findAllBySubCountyCodes(List<String> subCountyCodes);
 
     ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos);
 
-    ResponseDTO<List<ParishDTO>> search(String name, String code);
+    // ResponseDTO<List<ParishDTO>> search(String name, String code);
 
     void upload(List<AdministrativeAreaExcelDTO> dtoList);
 

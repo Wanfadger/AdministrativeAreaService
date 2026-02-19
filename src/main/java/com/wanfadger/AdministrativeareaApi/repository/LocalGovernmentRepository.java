@@ -30,4 +30,8 @@ public interface LocalGovernmentRepository
 
     Optional<LocalGovernment> findByCodeIgnoreCase(String code);
 
+    boolean existsByNameIgnoreCaseAndSubRegion_Code(String name, String code);
+
+    List<LocalGovernment> findByCodeIgnoreCaseIn(List<String> codes);
+
 }

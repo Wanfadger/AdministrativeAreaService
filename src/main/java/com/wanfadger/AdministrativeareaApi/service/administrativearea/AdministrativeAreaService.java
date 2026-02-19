@@ -5,6 +5,7 @@ import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
 
 import jakarta.validation.constraints.NotBlank;
 
+import com.wanfadger.AdministrativeareaApi.dto.reponses.PaginatedResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 
 import org.springframework.http.ResponseEntity;
@@ -28,7 +29,7 @@ public interface AdministrativeAreaService {
 
         ResponseDTO<?> searchOne(Map<String, String> queryMap);
 
-        ResponseDTO<?> advancedSearch(Map<String, String> queryMap);
+        PaginatedResponseDTO<? extends AdministrativeAreaDTO> search(Map<String, String> queryMap);
 
         ResponseDTO<String> upload(List<AdministrativeAreaExcelDTO> administrativeAreaExcelDtos);
 

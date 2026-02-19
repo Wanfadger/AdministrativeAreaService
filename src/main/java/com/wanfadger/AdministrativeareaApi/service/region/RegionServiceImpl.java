@@ -30,7 +30,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.wanfadger.AdministrativeareaApi.config.CacheValueKeyConfig;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -77,7 +76,7 @@ public class RegionServiceImpl implements RegionService {
 
     private Region toRegion(NewAdministrativeAreaDTO dto) {
         return Region.builder()
-                .code(generateCode())
+                .code(sharedService.generateCode(AdministrativeAreaType.REGION))
                 .name(dto.getName().trim())
                 .latitude(dto.getLatitude() != null && !dto.getLatitude().isEmpty() ? Double.valueOf(dto.getLatitude()) : null)
                 .longitude(dto.getLongitude() != null && !dto.getLongitude().isEmpty() ? Double.valueOf(dto.getLongitude()) : null)
@@ -115,49 +114,22 @@ public class RegionServiceImpl implements RegionService {
     }
 
     @Override
-    @Cacheable(value = CacheValueKeyConfig.REGIONS, key = "'list'")
-    public ResponseDTO<List<RegionDTO>> list() {
-        List<RegionDTO> regionDtos = regionRepository.findAll().stream()
-                .map(this::convertRegionDTO)
-                .sorted(Comparator.comparing(RegionDTO::getCode))
-                .toList();
-        return new ResponseDTO<>(regionDtos);
-    }
-
-    @Override
     @Cacheable(value = CacheValueKeyConfig.REGIONS, key = "#code")
     public ResponseDTO<RegionDTO> getByCode(String code) {
         Region region = regionRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("Region not found"));
-        return new ResponseDTO<>(convertRegionDTO(region));
+        return new ResponseDTO<>(toDTO(region));
     }
 
-    @Override
-    @Cacheable(value = CacheValueKeyConfig.REGIONS, key = "'search:' + #name + '-' + #code")
-    public ResponseDTO<List<RegionDTO>> search(String name, String code) {
-        Specification<Region> spec = Specification.where(null);
-        if (name != null && !name.isEmpty()) {
-            spec = spec.and(new GenericSpecification<>(new SearchCriteria("name", name, MatchType.CONTAINS)));
-        }
-        if (code != null && !code.isEmpty()) {
-            spec = spec.and(new GenericSpecification<>(new SearchCriteria("code", code, MatchType.EQUALS)));
-        }
-
-        List<RegionDTO> regionDtos = regionRepository.findAll(spec).stream()
-                .map(this::convertRegionDTO)
-                .sorted(Comparator.comparing(RegionDTO::getCode))
-                .toList();
-
-        return new ResponseDTO<>(regionDtos);
-    }
 
     @Override
-    @Cacheable(value = CacheValueKeyConfig.REGIONS, key = "#queryMap.toString()", unless = "#result.totalElements == 0")
+    @Cacheable(value = CacheValueKeyConfig.REGIONS, keyGenerator = "sortedMapKeyGenerator", unless = "#result.totalElements == 0")
+    @Transactional(readOnly = true)
     public PaginatedResponseDTO<RegionDTO> search(Map<String, String> queryMap) {
         // 1. Extract Pagination & Sorting
         int page = Optional.ofNullable(queryMap.get("page")).map(Integer::parseInt).orElse(1);
         int size = Optional.ofNullable(queryMap.get("size")).map(Integer::parseInt).orElse(10);
-        String sortBy = Optional.ofNullable(queryMap.get("sortBy")).orElse("id");
+        String sortBy = Optional.ofNullable(queryMap.get("sortBy")).orElse("name");
         String sortDirection = Optional.ofNullable(queryMap.get("sortDirection")).orElse("ASC");
 
         page = page <= 0 ? 0 : page - 1;
@@ -167,6 +139,7 @@ public class RegionServiceImpl implements RegionService {
 
         // 2. Build Specification
         Specification<Region> spec = Specification.where(null);
+        spec = spec.and(new GenericSpecification<>(new SearchCriteria("archived", "false", MatchType.EQUALS)));
         for (Map.Entry<String, String> entry : queryMap.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
@@ -192,7 +165,7 @@ public class RegionServiceImpl implements RegionService {
 
         // 4. Map to DTOs
         List<RegionDTO> data = resultPage.getContent().stream()
-                .map(this::convertRegionDTO)
+                .map(this::toDTO)
                 .toList();
 
         // 5. Build Paginated Response
@@ -224,7 +197,7 @@ public class RegionServiceImpl implements RegionService {
                 .filter(distinctByKey(AdministrativeAreaExcelDTO::getRegion))
                 .map(dto -> {
                     Region region = new Region();
-                    region.setCode(generateCode());
+                    region.setCode(sharedService.generateCode(AdministrativeAreaType.REGION));
                     region.setName(dto.getRegion());
                     return region;
                 })
@@ -259,18 +232,6 @@ public class RegionServiceImpl implements RegionService {
         return regionRepository.findByCodeIgnoreCase(code);
     }
 
-    @Override
-    public List<Region> findAll() {
-        return regionRepository.findAll();
-    }
-
-    @Override
-    @Transactional
-    @CacheEvict(value = CacheValueKeyConfig.REGIONS, allEntries = true)
-    public void saveAll(List<Region> regions) {
-        regionRepository.saveAll(regions);
-
-    }
 
     @Override
     @Transactional
@@ -282,16 +243,14 @@ public class RegionServiceImpl implements RegionService {
         return new ResponseDTO<>("SUCCESS", "Region deleted successfully");
     }
 
-    private String generateCode() {
-        return sharedService.generateCode(AdministrativeAreaType.REGION);
-    }
 
-    private RegionDTO convertRegionDTO(Region region) {
-        RegionDTO dto = new RegionDTO();
-        dto.setCode(region.getCode());
-        dto.setName(region.getName());
-        dto.setLongitude(region.getLongitude() != null ? String.valueOf(region.getLongitude()) : "");
-        dto.setLatitude(region.getLatitude() != null ? String.valueOf(region.getLatitude()) : "");
+    private RegionDTO toDTO(Region region) {
+        RegionDTO dto = RegionDTO.builder()
+                .code(region.getCode())
+                .name(region.getName())
+                .longitude(region.getLongitude() != null ? String.valueOf(region.getLongitude()) : "")
+                .latitude(region.getLatitude() != null ? String.valueOf(region.getLatitude()) : "")
+                .build();
         return dto;
     }
 }

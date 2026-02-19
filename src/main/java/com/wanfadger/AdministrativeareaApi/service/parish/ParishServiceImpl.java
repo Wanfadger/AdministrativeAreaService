@@ -44,9 +44,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.wanfadger.AdministrativeareaApi.config.CacheValueKeyConfig;
 
 import java.util.Comparator;
+import jakarta.persistence.criteria.Fetch;
+import jakarta.persistence.criteria.JoinType;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -71,24 +72,11 @@ public class ParishServiceImpl implements ParishService {
         SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(dto.getPartOfCode())
                 .orElseThrow(() -> new InvalidException("Invalid PartOfCode: " + dto.getPartOfCode()));
 
-        if (parishRepository.findByNameIgnoreCaseAndSubCounty_Code(dto.getName(), subCounty.getCode()).isPresent()) {
-            throw new AlreadyExistsException("Parish Already Exists in the sub county");
+        if (parishRepository.existsByNameIgnoreCaseAndSubCounty_Code(dto.getName(), dto.getPartOfCode())) {
+            throw new AlreadyExistsException("Parish " + dto.getName() + " Already Exists in the sub county");
         }
 
-        Parish parish = new Parish();
-        parish.setCode(generateCode());
-        parish.setName(dto.getName());
-        parish.setSubCounty(subCounty);
-
-        if (dto.getLatitude() != null && !dto.getLatitude().isEmpty()) {
-            parish.setLatitude(Double.valueOf(dto.getLatitude()));
-        }
-        if (dto.getLongitude() != null && !dto.getLongitude().isEmpty()) {
-            parish.setLongitude(Double.valueOf(dto.getLongitude()));
-        }
-        if (dto.getDescription() != null && !dto.getDescription().isEmpty()) {
-            parish.setDescription(dto.getDescription());
-        }
+        Parish parish = toParish(dto, subCounty);
 
         parishRepository.save(parish);
 
@@ -103,35 +91,44 @@ public class ParishServiceImpl implements ParishService {
             throw new MissingDataException("Found Administrative Area without PartOfCoce");
         }
 
+        List<String> subCountyCodes = dtos.stream()
+                .map(NewAdministrativeAreaDTO::getPartOfCode)
+                .collect(Collectors.toList());
+
+        Map<String, SubCounty> subCountyMap = subCountyRepository.findByCodeIgnoreCaseIn(subCountyCodes).stream()
+                .collect(Collectors.toMap(SubCounty::getCode, sc -> sc, (existing, replacement) -> existing));
+
         List<Parish> parishes = dtos.parallelStream()
+                .filter(dto -> !parishRepository
+                        .existsByNameIgnoreCaseAndSubCounty_Code(dto.getName(), dto.getPartOfCode()))
+                .filter(dto -> subCountyMap.containsKey(dto.getPartOfCode()))
                 .map(dto -> {
-                    SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(dto.getPartOfCode())
-                            .orElseThrow(() -> new InvalidException("Invalid PartOfCode: " + dto.getPartOfCode()));
-
-                    if (parishRepository.findByNameIgnoreCaseAndSubCounty_Code(dto.getName(), subCounty.getCode())
-                            .isPresent()) {
-                        return null;
-                    }
-
-                    Parish parish = new Parish();
-                    parish.setName(dto.getName());
-                    parish.setLatitude(dto.getLatitude() != null && !dto.getLatitude().isEmpty()
-                            ? Double.valueOf(dto.getLatitude())
-                            : null);
-                    parish.setLongitude(dto.getLongitude() != null && !dto.getLongitude().isEmpty()
-                            ? Double.valueOf(dto.getLongitude())
-                            : null);
-                    parish.setCode(generateCode());
-                    parish.setSubCounty(subCounty);
-                    return parish;
+                    SubCounty subCounty = subCountyMap.get(dto.getPartOfCode());
+                    return toParish(dto, subCounty);
                 })
-                .filter(java.util.Objects::nonNull)
                 .toList();
 
-        parishRepository.saveAll(Objects.requireNonNull(parishes));
+        parishRepository.saveAll(parishes);
 
         return new ResponseDTO<>("success",
                 "successfully added " + parishes.size() + " administrative areas");
+    }
+
+    private Parish toParish(NewAdministrativeAreaDTO dto, SubCounty subCounty) {
+        return Parish.builder()
+                .code(generateCode())
+                .name(dto.getName().trim())
+                .subCounty(subCounty)
+                .latitude(dto.getLatitude() != null && !dto.getLatitude().isEmpty()
+                        ? Double.valueOf(dto.getLatitude())
+                        : null)
+                .longitude(dto.getLongitude() != null && !dto.getLongitude().isEmpty()
+                        ? Double.valueOf(dto.getLongitude())
+                        : null)
+                .description(dto.getDescription() != null && !dto.getDescription().isEmpty()
+                        ? dto.getDescription().trim()
+                        : null)
+                .build();
     }
 
     @Override
@@ -170,48 +167,53 @@ public class ParishServiceImpl implements ParishService {
         return new ResponseDTO<>("SUCCESS");
     }
 
-    @Override
-    @Cacheable(value = CacheValueKeyConfig.PARISHES, key = "'list:' + #subCountyCode")
-    public ResponseDTO<List<ParishDTO>> list(String subCountyCode) {
-        Specification<Parish> spec = Specification.where(null);
-        if (subCountyCode != null && !subCountyCode.isEmpty()) {
-            spec = spec.and(
-                    new GenericSpecification<>(new SearchCriteria("subCounty.code", subCountyCode, MatchType.EQUALS)));
-        }
+    // @Override
+    // @Cacheable(value = CacheValueKeyConfig.PARISHES, key = "'list:' +
+    // #subCountyCode")
+    // public ResponseDTO<List<ParishDTO>> list(String subCountyCode) {
+    // Specification<Parish> spec = Specification.where(null);
+    // if (subCountyCode != null && !subCountyCode.isEmpty()) {
+    // spec = spec.and(
+    // new GenericSpecification<>(new SearchCriteria("subCounty.code",
+    // subCountyCode, MatchType.EQUALS)));
+    // }
 
-        List<ParishDTO> parishDTOs = parishRepository.findAll(spec).stream()
-                .map(this::convertParishDTO)
-                .sorted(Comparator.comparing(ParishDTO::getCode))
-                .toList();
-        return new ResponseDTO<>(parishDTOs);
-    }
+    // List<ParishDTO> parishDTOs = parishRepository.findAll(spec).stream()
+    // .map(this::toDTO)
+    // .sorted(Comparator.comparing(ParishDTO::getCode))
+    // .toList();
+    // return new ResponseDTO<>(parishDTOs);
+    // }
 
     @Override
     @Cacheable(value = CacheValueKeyConfig.PARISHES, key = "#code")
     public ResponseDTO<ParishDTO> getByCode(String code) {
         Parish parish = parishRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("Parish not found"));
-        return new ResponseDTO<>(convertParishDTO(parish));
+        return new ResponseDTO<>(toDTO(parish));
     }
 
-    @Override
-    @Cacheable(value = CacheValueKeyConfig.PARISHES, key = "'search:' + #name + '-' + #code")
-    public ResponseDTO<List<ParishDTO>> search(String name, String code) {
-        Specification<Parish> spec = Specification.where(null);
-        if (name != null && !name.isEmpty()) {
-            spec = spec.and(new GenericSpecification<>(new SearchCriteria("name", name, MatchType.CONTAINS)));
-        }
-        if (code != null && !code.isEmpty()) {
-            spec = spec.and(new GenericSpecification<>(new SearchCriteria("code", code, MatchType.EQUALS)));
-        }
+    // @Override
+    // @Cacheable(value = CacheValueKeyConfig.PARISHES, key = "'search:' + #name +
+    // '-' + #code")
+    // public ResponseDTO<List<ParishDTO>> search(String name, String code) {
+    // Specification<Parish> spec = Specification.where(null);
+    // if (name != null && !name.isEmpty()) {
+    // spec = spec.and(new GenericSpecification<>(new SearchCriteria("name", name,
+    // MatchType.CONTAINS)));
+    // }
+    // if (code != null && !code.isEmpty()) {
+    // spec = spec.and(new GenericSpecification<>(new SearchCriteria("code", code,
+    // MatchType.EQUALS)));
+    // }
 
-        List<ParishDTO> parishDtos = parishRepository.findAll(spec).stream()
-                .map(this::convertParishDTO)
-                .sorted(Comparator.comparing(ParishDTO::getCode))
-                .toList();
+    // List<ParishDTO> parishDtos = parishRepository.findAll(spec).stream()
+    // .map(this::toDTO)
+    // .sorted(Comparator.comparing(ParishDTO::getCode))
+    // .toList();
 
-        return new ResponseDTO<>(parishDtos);
-    }
+    // return new ResponseDTO<>(parishDtos);
+    // }
 
     @Override
     @Cacheable(value = CacheValueKeyConfig.PARISHES, key = "#queryMap.toString()", unless = "#result.totalElements == 0")
@@ -228,7 +230,19 @@ public class ParishServiceImpl implements ParishService {
                 Sort.by(sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy));
 
         // 2. Build Specification
-        Specification<Parish> spec = Specification.where(null);
+        Specification<Parish> spec = (root, query, cb) -> {
+            if (query != null && Long.class != query.getResultType()) {
+                Fetch<Parish, SubCounty> subCountyFetch = root.fetch("subCounty", JoinType.LEFT);
+                Fetch<SubCounty, County> countyFetch = subCountyFetch.fetch("county", JoinType.LEFT);
+                Fetch<County, LocalGovernment> localGovernmentFetch = countyFetch.fetch("localGovernment",
+                        JoinType.LEFT);
+                Fetch<LocalGovernment, SubRegion> subRegionFetch = localGovernmentFetch.fetch("subRegion",
+                        JoinType.LEFT);
+                subRegionFetch.fetch("region", JoinType.LEFT);
+            }
+            return cb.conjunction();
+        };
+
         for (Map.Entry<String, String> entry : queryMap.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
@@ -254,7 +268,7 @@ public class ParishServiceImpl implements ParishService {
 
         // 4. Map to DTOs
         List<ParishDTO> data = resultPage.getContent().stream()
-                .map(this::convertParishDTO)
+                .map(this::toDTO)
                 .toList();
 
         // 5. Build Paginated Response
@@ -314,22 +328,24 @@ public class ParishServiceImpl implements ParishService {
         return parishRepository.findByCodeIgnoreCase(code);
     }
 
-    @Override
-    public List<Parish> findAll() {
-        return parishRepository.findAll();
-    }
+    // @Override
+    // public List<Parish> findAll() {
+    // return parishRepository.findAll();
+    // }
 
-    @Override
-    public List<Parish> findAllBySubCountyCode(String subCountyCode) {
-        return parishRepository.findAll(
-                new GenericSpecification<>(new SearchCriteria("subCounty.code", subCountyCode, MatchType.EQUALS)));
-    }
+    // @Override
+    // public List<Parish> findAllBySubCountyCode(String subCountyCode) {
+    // return parishRepository.findAll(
+    // new GenericSpecification<>(new SearchCriteria("subCounty.code",
+    // subCountyCode, MatchType.EQUALS)));
+    // }
 
-    @Override
-    public List<Parish> findAllBySubCountyCodes(List<String> subCountyCodes) {
-        return parishRepository.findAll(
-                new GenericSpecification<>(new SearchCriteria("subCounty.code", subCountyCodes, MatchType.IN)));
-    }
+    // @Override
+    // public List<Parish> findAllBySubCountyCodes(List<String> subCountyCodes) {
+    // return parishRepository.findAll(
+    // new GenericSpecification<>(new SearchCriteria("subCounty.code",
+    // subCountyCodes, MatchType.IN)));
+    // }
 
     @Override
     @Transactional
@@ -353,7 +369,7 @@ public class ParishServiceImpl implements ParishService {
         return sharedService.generateCode(AdministrativeAreaType.PARISH);
     }
 
-    private ParishDTO convertParishDTO(Parish parish) {
+    private ParishDTO toDTO(Parish parish) {
         ParishDTO dto = new ParishDTO();
         dto.setId(parish.getId());
         dto.setCode(parish.getCode());

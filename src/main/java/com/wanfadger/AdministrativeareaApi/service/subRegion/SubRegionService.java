@@ -14,22 +14,24 @@ import java.util.Optional;
 
 public interface SubRegionService {
     ResponseDTO<String> create(NewAdministrativeAreaDTO dto);
+
     ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos);
+
+    PaginatedResponseDTO<SubRegionDTO> search(Map<String, String> queryMap);
 
     ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto);
 
-    ResponseDTO<List<SubRegionDTO>> list(String regionCode);
+    // ResponseDTO<List<SubRegionDTO>> list(String regionCode);
 
     ResponseDTO<SubRegionDTO> getByCode(String code);
 
     Optional<SubRegion> findByCode(String code);
 
-    List<SubRegion> findAll();
+    // List<SubRegion> findAll();
 
-    List<SubRegion> findAllByRegionCode(String regionCode);
+    // List<SubRegion> findAllByRegionCode(String regionCode);
 
-
-    ResponseDTO<List<SubRegionDTO>> search(String name, String code);
+    // ResponseDTO<List<SubRegionDTO>> search(String name, String code);
 
     void upload(List<AdministrativeAreaExcelDTO> dtoList);
 
@@ -37,5 +39,4 @@ public interface SubRegionService {
 
     void saveAll(List<SubRegion> subRegions);
 
-    PaginatedResponseDTO<SubRegionDTO> search(Map<String, String> queryMap);
 }

@@ -19,21 +19,21 @@ public interface SubCountyService {
 
     ResponseDTO<String> delete(String code);
 
-    ResponseDTO<List<SubCountyDTO>> list(String countyCode);
+    // ResponseDTO<List<SubCountyDTO>> list(String countyCode);
 
     ResponseDTO<SubCountyDTO> getByCode(String code);
 
     Optional<SubCounty> findByCode(String code);
 
-    List<SubCounty> findAll();
+    // List<SubCounty> findAll();
 
-    List<SubCounty> findAllByCountyCode(String countyCode);
+    // List<SubCounty> findAllByCountyCode(String countyCode);
 
-    List<SubCounty> findAllByCountyCodes(List<String> countyCodes);
+    // List<SubCounty> findAllByCountyCodes(List<String> countyCodes);
 
     ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos);
 
-    ResponseDTO<List<SubCountyDTO>> search(String name, String code);
+    // ResponseDTO<List<SubCountyDTO>> search(String name, String code);
 
     void upload(List<AdministrativeAreaExcelDTO> dtoList);
 

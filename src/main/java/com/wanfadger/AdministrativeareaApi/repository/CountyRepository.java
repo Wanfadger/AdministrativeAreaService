@@ -31,4 +31,8 @@ public interface CountyRepository extends JpaRepository<County, Long>, JpaSpecif
 
     Optional<County> findByNameIgnoreCaseAndLocalGovernment_Code(String name, String localGovernmentCode);
 
+    boolean existsByNameIgnoreCaseAndLocalGovernment_Code(String name, String code);
+
+    List<County> findByCodeIgnoreCaseIn(List<String> codes);
+
 }

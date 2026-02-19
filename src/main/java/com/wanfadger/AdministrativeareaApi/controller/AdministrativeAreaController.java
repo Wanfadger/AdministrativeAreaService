@@ -132,22 +132,7 @@ public class AdministrativeAreaController {
                 return administrativeAreaService.getParishByPartOf(queryMap);
         }
 
-        @Operation(summary = "Search administrative areas (full details)", description = "Retrieves a paginated list of administrative areas with full details (code, name, latitude, longitude). Results are cached for 1 hour. Supports filtering, sorting, and pagination.", parameters = {
-                        @Parameter(name = "type", description = "Administrative area type (REGION, SUBREGION, LOCALGOVERNMENT, COUNTY, SUBCOUNTY, PARISH)", required = true, schema = @Schema(type = "string")),
-                        @Parameter(name = "page", description = "Page number (1-based)", schema = @Schema(type = "integer", defaultValue = "1")),
-                        @Parameter(name = "size", description = "Page size", schema = @Schema(type = "integer", defaultValue = "10")),
-                        @Parameter(name = "sortBy", description = "Sort field", schema = @Schema(type = "string", defaultValue = "id")),
-                        @Parameter(name = "sortDirection", description = "Sort direction (ASC/DESC)", schema = @Schema(type = "string", defaultValue = "ASC")),
-                        @Parameter(name = "partOf", description = "Filter by parent code (optional)", schema = @Schema(type = "string"))
-        }, responses = {
-                        @ApiResponse(responseCode = "200", description = "List of administrative areas with full details", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PaginatedResponseDTO.class))),
-                        @ApiResponse(responseCode = "400", description = "Missing required parameters")
-        })
-        @GetMapping(value = "/searchList", produces = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseDTO<?> searchList(
-                        @Parameter(hidden = true) @RequestParam Map<String, String> queryMap) {
-                return administrativeAreaService.searchList(queryMap);
-        }
+ 
 
         @Operation(summary = "Search a single administrative area (full details)", description = "Retrieves a single administrative area with full details (code, name, latitude, longitude). Results are cached for 1 hour.", parameters = {
                         @Parameter(name = "type", description = "Administrative area type", required = true, schema = @Schema(type = "string"), example = "REGION"),
@@ -206,15 +191,15 @@ public class AdministrativeAreaController {
                         @Parameter(name = "type", description = "Administrative area type (REGION, SUBREGION, LOCALGOVERNMENT, COUNTY, SUBCOUNTY, PARISH)", required = true, schema = @Schema(type = "string")),
                         @Parameter(name = "page", description = "Page number (1-based)", schema = @Schema(type = "integer", defaultValue = "1")),
                         @Parameter(name = "size", description = "Page size (max 1000 for seeding validation)", schema = @Schema(type = "integer", defaultValue = "10")),
-                        @Parameter(name = "sortBy", description = "Sort field (e.g., name, code, id)", schema = @Schema(type = "string", defaultValue = "id")),
+                        @Parameter(name = "sortBy", description = "Sort field (e.g., name, code, id)", schema = @Schema(type = "string", defaultValue = "name")),
                         @Parameter(name = "sortDirection", description = "Sort direction (ASC/DESC)", schema = @Schema(type = "string", defaultValue = "ASC"))
         }, responses = {
                         @ApiResponse(responseCode = "200", description = "Successfully retrieved results", content = @Content(schema = @Schema(implementation = PaginatedResponseDTO.class)))
         })
-        @GetMapping(value = "/advancedSearch", produces = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseDTO<?> advancedSearch(
+        @GetMapping(value = "/search", produces = MediaType.APPLICATION_JSON_VALUE)
+        public ResponseDTO<?> search(
                         @Parameter(hidden = true) @RequestParam Map<String, String> queryMap) {
-                return administrativeAreaService.advancedSearch(queryMap);
+                return administrativeAreaService.search(queryMap);
         }
 
         @Operation(summary = "Soft delete an administrative area", description = "Marks an administrative area as 'archived'. Requires 'type' and 'code' query parameters. Cache is automatically evicted after deletion.", parameters = {

@@ -19,21 +19,21 @@ public interface LocalGovernmentService {
 
     ResponseDTO<String> delete(String code);
 
-    ResponseDTO<List<LocalGovernmentDTO>> list(String subRegionCode);
+    // ResponseDTO<List<LocalGovernmentDTO>> list(String subRegionCode);
 
     ResponseDTO<LocalGovernmentDTO> getByCode(String code);
 
     Optional<LocalGovernment> findByCode(String code);
 
-    List<LocalGovernment> findAll();
+    // List<LocalGovernment> findAll();
 
-    List<LocalGovernment> findAllBySubRegionCode(String subRegionCode);
+    // List<LocalGovernment> findAllBySubRegionCode(String subRegionCode);
 
-    List<LocalGovernment> findAllBySubRegionCodes(List<String> subRegionCodes);
+    // List<LocalGovernment> findAllBySubRegionCodes(List<String> subRegionCodes);
 
     ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos);
 
-    ResponseDTO<List<LocalGovernmentDTO>> search(String name, String code);
+    // ResponseDTO<List<LocalGovernmentDTO>> search(String name, String code);
 
     void upload(List<AdministrativeAreaExcelDTO> dtoList);
 

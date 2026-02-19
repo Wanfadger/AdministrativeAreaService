@@ -35,10 +35,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.wanfadger.AdministrativeareaApi.config.CacheValueKeyConfig;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -159,56 +158,39 @@ public class SubRegionServiceImpl implements SubRegionService {
         return new ResponseDTO<>("SUCCESS");
     }
 
-    @Override
-    @Cacheable(value = CacheValueKeyConfig.SUB_REGIONS, key = "'list:' + #regionCode")
-    public ResponseDTO<List<SubRegionDTO>> list(String regionCode) {
-        Specification<SubRegion> spec = Specification.where(null);
-        if (regionCode != null && !regionCode.isEmpty()) {
-            spec = spec
-                    .and(new GenericSpecification<>(new SearchCriteria("region.code", regionCode, MatchType.EQUALS)));
-        }
+    // @Override
+    // @Cacheable(value = CacheValueKeyConfig.SUB_REGIONS, key = "'list:' +
+    // #regionCode")
+    // public ResponseDTO<List<SubRegionDTO>> list(String regionCode) {
+    // Specification<SubRegion> spec = Specification.where(null);
+    // if (regionCode != null && !regionCode.isEmpty()) {
+    // spec = spec
+    // .and(new GenericSpecification<>(new SearchCriteria("region.code", regionCode,
+    // MatchType.EQUALS)));
+    // }
 
-        List<SubRegionDTO> subRegionDTOs = subRegionRepository.findAll(spec).stream()
-                .map(this::convertSubRegionDTO)
-                .sorted(Comparator.comparing(SubRegionDTO::getCode))
-                .toList();
-        return new ResponseDTO<>(subRegionDTOs);
-    }
+    // List<SubRegionDTO> subRegionDTOs = subRegionRepository.findAll(spec).stream()
+    // .map(this::toDTO)
+    // .sorted(Comparator.comparing(SubRegionDTO::getCode))
+    // .toList();
+    // return new ResponseDTO<>(subRegionDTOs);
+    // }
 
     @Override
     @Cacheable(value = CacheValueKeyConfig.SUB_REGIONS, key = "#code")
     public ResponseDTO<SubRegionDTO> getByCode(String code) {
         SubRegion subRegion = subRegionRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("SubRegion not found"));
-        return new ResponseDTO<>(convertSubRegionDTO(subRegion));
+        return new ResponseDTO<>(toDTO(subRegion));
     }
 
     @Override
-    @Cacheable(value = CacheValueKeyConfig.SUB_REGIONS, key = "'search:' + #name + '-' + #code")
-    public ResponseDTO<List<SubRegionDTO>> search(String name, String code) {
-        Specification<SubRegion> spec = Specification.where(null);
-        if (name != null && !name.isEmpty()) {
-            spec = spec.and(new GenericSpecification<>(new SearchCriteria("name", name, MatchType.CONTAINS)));
-        }
-        if (code != null && !code.isEmpty()) {
-            spec = spec.and(new GenericSpecification<>(new SearchCriteria("code", code, MatchType.EQUALS)));
-        }
-
-        List<SubRegionDTO> subRegionDtos = subRegionRepository.findAll(spec).stream()
-                .map(this::convertSubRegionDTO)
-                .sorted(Comparator.comparing(SubRegionDTO::getCode))
-                .toList();
-
-        return new ResponseDTO<>(subRegionDtos);
-    }
-
-    @Override
-    @Cacheable(value = CacheValueKeyConfig.SUB_REGIONS, key = "#queryMap.toString()", unless = "#result.totalElements == 0")
+    @Cacheable(value = CacheValueKeyConfig.SUB_REGIONS, keyGenerator = "sortedMapKeyGenerator", unless = "#result.totalElements == 0")
     public PaginatedResponseDTO<SubRegionDTO> search(Map<String, String> queryMap) {
         // 1. Extract Pagination & Sorting
         int page = Optional.ofNullable(queryMap.get("page")).map(Integer::parseInt).orElse(1);
         int size = Optional.ofNullable(queryMap.get("size")).map(Integer::parseInt).orElse(10);
-        String sortBy = Optional.ofNullable(queryMap.get("sortBy")).orElse("id");
+        String sortBy = Optional.ofNullable(queryMap.get("sortBy")).orElse("name");
         String sortDirection = Optional.ofNullable(queryMap.get("sortDirection")).orElse("ASC");
 
         page = page <= 0 ? 0 : page - 1;
@@ -217,7 +199,13 @@ public class SubRegionServiceImpl implements SubRegionService {
                 Sort.by(sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy));
 
         // 2. Build Specification
-        Specification<SubRegion> spec = Specification.where(null);
+        Specification<SubRegion> spec = (root, query, cb) -> {
+            if (query != null && Long.class != query.getResultType()) {
+                root.fetch("region", jakarta.persistence.criteria.JoinType.LEFT); // 3. Fetch Region to avoid n+1
+            }
+            return cb.conjunction();
+        };
+        spec = spec.and(new GenericSpecification<>(new SearchCriteria("archived", "false", MatchType.EQUALS)));
         for (Map.Entry<String, String> entry : queryMap.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
@@ -238,12 +226,12 @@ public class SubRegionServiceImpl implements SubRegionService {
             spec = spec.and(new GenericSpecification<>(new SearchCriteria(key, value, matchType)));
         }
 
-        // 3. Execute Search
+        // 4. Execute Search
         Page<SubRegion> resultPage = subRegionRepository.findAll(spec, pageable);
 
         // 4. Map to DTOs
         List<SubRegionDTO> data = resultPage.getContent().stream()
-                .map(this::convertSubRegionDTO)
+                .map(this::toDTO)
                 .toList();
 
         // 5. Build Paginated Response
@@ -320,17 +308,6 @@ public class SubRegionServiceImpl implements SubRegionService {
     }
 
     @Override
-    public List<SubRegion> findAll() {
-        return subRegionRepository.findAll();
-    }
-
-    @Override
-    public List<SubRegion> findAllByRegionCode(String regionCode) {
-        return subRegionRepository
-                .findAll(new GenericSpecification<>(new SearchCriteria("region.code", regionCode, MatchType.EQUALS)));
-    }
-
-    @Override
     @Transactional
     @CacheEvict(value = { CacheValueKeyConfig.SUB_REGIONS }, allEntries = true)
     public void saveAll(List<SubRegion> subRegions) {
@@ -352,18 +329,20 @@ public class SubRegionServiceImpl implements SubRegionService {
         return sharedService.generateCode(AdministrativeAreaType.SUBREGION);
     }
 
-    private SubRegionDTO convertSubRegionDTO(SubRegion subRegion) {
+    private SubRegionDTO toDTO(SubRegion subRegion) {
         SubRegionDTO dto = new SubRegionDTO();
         dto.setId(subRegion.getId());
         dto.setCode(subRegion.getCode());
         dto.setName(subRegion.getName());
         dto.setLatitude(subRegion.getLatitude() != null ? String.valueOf(subRegion.getLatitude()) : "");
         dto.setLongitude(subRegion.getLongitude() != null ? String.valueOf(subRegion.getLongitude()) : "");
-        dto.setRegion(convertRegionDTO(subRegion.getRegion()));
+        if (subRegion.getRegion() != null) {
+            dto.setRegion(toRegionDTO(subRegion.getRegion()));
+        }
         return dto;
     }
 
-    private RegionDTO convertRegionDTO(Region region) {
+    private RegionDTO toRegionDTO(Region region) {
         RegionDTO dto = new RegionDTO();
         dto.setCode(region.getCode());
         dto.setName(region.getName());

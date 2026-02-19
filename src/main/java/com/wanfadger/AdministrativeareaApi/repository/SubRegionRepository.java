@@ -3,6 +3,7 @@ package com.wanfadger.AdministrativeareaApi.repository;
 import com.wanfadger.AdministrativeareaApi.entity.SubRegion;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
 import org.springframework.lang.NonNull;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,6 +19,7 @@ public interface SubRegionRepository extends JpaRepository<SubRegion, Long>, Jpa
     Optional<SubRegion> findByNameIgnoreCase(String name);
 
     Optional<SubRegion> findByNameIgnoreCaseAndRegion_Code(String name, String regionCode);
+
     boolean existsByNameIgnoreCaseAndRegion_Code(String name, String regionCode);
 
     @Override
@@ -32,5 +34,7 @@ public interface SubRegionRepository extends JpaRepository<SubRegion, Long>, Jpa
 
     @EntityGraph(attributePaths = { "region" }, type = EntityGraph.EntityGraphType.FETCH)
     Optional<SubRegion> findByCodeIgnoreCase(String code);
+
+    List<SubRegion> findByCodeIgnoreCaseIn(List<String> codes);
 
 }

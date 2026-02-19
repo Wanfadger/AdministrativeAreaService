@@ -41,7 +41,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.wanfadger.AdministrativeareaApi.config.CacheValueKeyConfig;
 
-import java.util.Comparator;
+import jakarta.persistence.criteria.Fetch;
+import jakarta.persistence.criteria.JoinType;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,24 +69,11 @@ public class SubCountyServiceImpl implements SubCountyService {
         County county = countyRepository.findByCodeIgnoreCase(dto.getPartOfCode())
                 .orElseThrow(() -> new InvalidException("Invalid PartOfCode: " + dto.getPartOfCode()));
 
-        if (subCountyRepository.findByNameIgnoreCaseAndCounty_Id(dto.getName(), county.getId()).isPresent()) {
-            throw new AlreadyExistsException("Sub county Already Exists in the county");
+        if (subCountyRepository.existsByNameIgnoreCaseAndCounty_Code(dto.getName(), dto.getPartOfCode())) {
+            throw new AlreadyExistsException("Sub county " + dto.getName() + " Already Exists in the county");
         }
 
-        SubCounty subCounty = new SubCounty();
-        subCounty.setCode(generateCode());
-        subCounty.setName(dto.getName());
-        subCounty.setCounty(county);
-
-        if (dto.getLatitude() != null && !dto.getLatitude().isEmpty()) {
-            subCounty.setLatitude(Double.valueOf(dto.getLatitude()));
-        }
-        if (dto.getLongitude() != null && !dto.getLongitude().isEmpty()) {
-            subCounty.setLongitude(Double.valueOf(dto.getLongitude()));
-        }
-        if (dto.getDescription() != null && !dto.getDescription().isEmpty()) {
-            subCounty.setDescription(dto.getDescription());
-        }
+        SubCounty subCounty = toSubCounty(dto, county);
 
         subCountyRepository.save(subCounty);
 
@@ -100,71 +88,44 @@ public class SubCountyServiceImpl implements SubCountyService {
             throw new MissingDataException("Found Administrative Area without PartOfCoce");
         }
 
+        List<String> countyCodes = dtos.stream()
+                .map(NewAdministrativeAreaDTO::getPartOfCode)
+                .collect(Collectors.toList());
+
+        Map<String, County> countyMap = countyRepository.findByCodeIgnoreCaseIn(countyCodes).stream()
+                .collect(Collectors.toMap(County::getCode, c -> c, (existing, replacement) -> existing));
+
         List<SubCounty> subCounties = dtos.parallelStream()
-                .filter(dto -> {
-                    // Manually fetch county to check existence?
-                    // The original implementation used
-                    // subCountyRepository.findByNameIgnoreCaseAndCounty_Id
-                    // This requires County ID.
-                    // So we must fetch county first.
-                    // But we can filter by querying repository.
-                    // Wait, findByNameIgnoreCaseAndCounty_Id expects a Long ID? Original code
-                    // implies it takes String or Long?
-                    // "subCountyRepository.findByNameIgnoreCaseAndCounty_Id(dto.getName(),
-                    // dto.getPartOfCode())"
-                    // If PartOfCode is String code, then method signature might be
-                    // findByNameIgnoreCaseAndCounty_Code?
-                    // Let's assume it works as implemented in old Service.
-                    // Actually, let's play safe and check if it takes Code or ID.
-                    // The old code:
-                    // findByNameIgnoreCaseAndCounty_Id(dto.getName(), dto.getPartOfCode())
-                    // If PartOfCode is String, this implies County_Id is mapped to String Code in a
-                    // custom query or it is actually County_Code.
-                    // Given the pattern so far, likely County_Code.
-
-                    // However, to be safe and consistent with create(), I will fetch County by
-                    // code.
-                    // But for filtering in stream, fetching County for each checking is expensive.
-                    // But `createAll` assumes not too many items or accepts this cost.
-
-                    // Let's rely on repository method if it works.
-                    // But I need to construct the entity.
-                    return true;
-                })
+                .filter(dto -> !subCountyRepository
+                        .existsByNameIgnoreCaseAndCounty_Code(dto.getName(), dto.getPartOfCode()))
+                .filter(dto -> countyMap.containsKey(dto.getPartOfCode()))
                 .map(dto -> {
-                    // This whole block is inside map, so filters need to happen before map or
-                    // inside map (returning null and filtering nulls).
-                    return dto;
+                    County county = countyMap.get(dto.getPartOfCode());
+                    return toSubCounty(dto, county);
                 })
-                // Let's rewrite cleaner:
-                .map(dto -> {
-                    County county = countyRepository.findByCodeIgnoreCase(dto.getPartOfCode())
-                            .orElseThrow(() -> new InvalidException("Invalid PartOfCode: " + dto.getPartOfCode()));
-
-                    if (subCountyRepository.findByNameIgnoreCaseAndCounty_Id(dto.getName(), county.getId())
-                            .isPresent()) {
-                        return null; // Skip existing
-                    }
-
-                    SubCounty subCounty = new SubCounty();
-                    subCounty.setName(dto.getName());
-                    subCounty.setLatitude(dto.getLatitude() != null && !dto.getLatitude().isEmpty()
-                            ? Double.valueOf(dto.getLatitude())
-                            : null);
-                    subCounty.setLongitude(dto.getLongitude() != null && !dto.getLongitude().isEmpty()
-                            ? Double.valueOf(dto.getLongitude())
-                            : null);
-                    subCounty.setCode(generateCode());
-                    subCounty.setCounty(county);
-                    return subCounty;
-                })
-                .filter(java.util.Objects::nonNull)
                 .toList();
 
         subCountyRepository.saveAll(subCounties);
 
         return new ResponseDTO<>("success",
                 "successfully added " + subCounties.size() + " administrative areas");
+    }
+
+    private SubCounty toSubCounty(NewAdministrativeAreaDTO dto, County county) {
+        return SubCounty.builder()
+                .code(generateCode())
+                .name(dto.getName().trim())
+                .county(county)
+                .latitude(dto.getLatitude() != null && !dto.getLatitude().isEmpty()
+                        ? Double.valueOf(dto.getLatitude())
+                        : null)
+                .longitude(dto.getLongitude() != null && !dto.getLongitude().isEmpty()
+                        ? Double.valueOf(dto.getLongitude())
+                        : null)
+                .description(dto.getDescription() != null && !dto.getDescription().isEmpty()
+                        ? dto.getDescription().trim()
+                        : null)
+                .build();
     }
 
     @Override
@@ -203,47 +164,30 @@ public class SubCountyServiceImpl implements SubCountyService {
         return new ResponseDTO<>("SUCCESS");
     }
 
-    @Override
-    @Cacheable(value = CacheValueKeyConfig.SUB_COUNTIES, key = "'list:' + #countyCode")
-    public ResponseDTO<List<SubCountyDTO>> list(String countyCode) {
-        Specification<SubCounty> spec = Specification.where(null);
-        if (countyCode != null && !countyCode.isEmpty()) {
-            spec = spec
-                    .and(new GenericSpecification<>(new SearchCriteria("county.code", countyCode, MatchType.EQUALS)));
-        }
+    // @Override
+    // @Cacheable(value = CacheValueKeyConfig.SUB_COUNTIES, key = "'list:' +
+    // #countyCode")
+    // public ResponseDTO<List<SubCountyDTO>> list(String countyCode) {
+    // Specification<SubCounty> spec = Specification.where(null);
+    // if (countyCode != null && !countyCode.isEmpty()) {
+    // spec = spec
+    // .and(new GenericSpecification<>(new SearchCriteria("county.code", countyCode,
+    // MatchType.EQUALS)));
+    // }
 
-        List<SubCountyDTO> subCountyDTOs = subCountyRepository.findAll(spec).stream()
-                .map(this::convertSubCountyDTO)
-                .sorted(Comparator.comparing(SubCountyDTO::getCode))
-                .toList();
-        return new ResponseDTO<>(subCountyDTOs);
-    }
+    // List<SubCountyDTO> subCountyDTOs = subCountyRepository.findAll(spec).stream()
+    // .map(this::toDTO)
+    // .sorted(Comparator.comparing(SubCountyDTO::getCode))
+    // .toList();
+    // return new ResponseDTO<>(subCountyDTOs);
+    // }
 
     @Override
     @Cacheable(value = CacheValueKeyConfig.SUB_COUNTIES, key = "#code")
     public ResponseDTO<SubCountyDTO> getByCode(String code) {
         SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("SubCounty not found"));
-        return new ResponseDTO<>(convertSubCountyDTO(subCounty));
-    }
-
-    @Override
-    @Cacheable(value = CacheValueKeyConfig.SUB_COUNTIES, key = "'search:' + #name + '-' + #code")
-    public ResponseDTO<List<SubCountyDTO>> search(String name, String code) {
-        Specification<SubCounty> spec = Specification.where(null);
-        if (name != null && !name.isEmpty()) {
-            spec = spec.and(new GenericSpecification<>(new SearchCriteria("name", name, MatchType.CONTAINS)));
-        }
-        if (code != null && !code.isEmpty()) {
-            spec = spec.and(new GenericSpecification<>(new SearchCriteria("code", code, MatchType.EQUALS)));
-        }
-
-        List<SubCountyDTO> subCountyDtos = subCountyRepository.findAll(spec).stream()
-                .map(this::convertSubCountyDTO)
-                .sorted(Comparator.comparing(SubCountyDTO::getCode))
-                .toList();
-
-        return new ResponseDTO<>(subCountyDtos);
+        return new ResponseDTO<>(toDTO(subCounty));
     }
 
     @Override
@@ -252,7 +196,7 @@ public class SubCountyServiceImpl implements SubCountyService {
         // 1. Extract Pagination & Sorting
         int page = Optional.ofNullable(queryMap.get("page")).map(Integer::parseInt).orElse(1);
         int size = Optional.ofNullable(queryMap.get("size")).map(Integer::parseInt).orElse(10);
-        String sortBy = Optional.ofNullable(queryMap.get("sortBy")).orElse("id");
+        String sortBy = Optional.ofNullable(queryMap.get("sortBy")).orElse("name");
         String sortDirection = Optional.ofNullable(queryMap.get("sortDirection")).orElse("ASC");
 
         page = page <= 0 ? 0 : page - 1;
@@ -261,7 +205,18 @@ public class SubCountyServiceImpl implements SubCountyService {
                 Sort.by(sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy));
 
         // 2. Build Specification
-        Specification<SubCounty> spec = Specification.where(null);
+        Specification<SubCounty> spec = (root, query, cb) -> {
+            if (query != null && Long.class != query.getResultType()) {
+                Fetch<SubCounty, County> countyFetch = root.fetch("county", JoinType.LEFT);
+                Fetch<County, LocalGovernment> localGovernmentFetch = countyFetch.fetch("localGovernment",
+                        JoinType.LEFT);
+                Fetch<LocalGovernment, SubRegion> subRegionFetch = localGovernmentFetch.fetch("subRegion",
+                        JoinType.LEFT);
+                subRegionFetch.fetch("region", JoinType.LEFT);
+            }
+            return cb.conjunction();
+        };
+        spec = spec.and(new GenericSpecification<>(new SearchCriteria("archived", "false", MatchType.EQUALS)));
         for (Map.Entry<String, String> entry : queryMap.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
@@ -287,7 +242,7 @@ public class SubCountyServiceImpl implements SubCountyService {
 
         // 4. Map to DTOs
         List<SubCountyDTO> data = resultPage.getContent().stream()
-                .map(this::convertSubCountyDTO)
+                .map(this::toDTO)
                 .toList();
 
         // 5. Build Paginated Response
@@ -366,22 +321,24 @@ public class SubCountyServiceImpl implements SubCountyService {
         return subCountyRepository.findByCodeIgnoreCase(code);
     }
 
-    @Override
-    public List<SubCounty> findAll() {
-        return subCountyRepository.findAll();
-    }
+    // @Override
+    // public List<SubCounty> findAll() {
+    // return subCountyRepository.findAll();
+    // }
 
-    @Override
-    public List<SubCounty> findAllByCountyCode(String countyCode) {
-        return subCountyRepository
-                .findAll(new GenericSpecification<>(new SearchCriteria("county.code", countyCode, MatchType.EQUALS)));
-    }
+    // @Override
+    // public List<SubCounty> findAllByCountyCode(String countyCode) {
+    // return subCountyRepository
+    // .findAll(new GenericSpecification<>(new SearchCriteria("county.code",
+    // countyCode, MatchType.EQUALS)));
+    // }
 
-    @Override
-    public List<SubCounty> findAllByCountyCodes(List<String> countyCodes) {
-        return subCountyRepository
-                .findAll(new GenericSpecification<>(new SearchCriteria("county.code", countyCodes, MatchType.IN)));
-    }
+    // @Override
+    // public List<SubCounty> findAllByCountyCodes(List<String> countyCodes) {
+    // return subCountyRepository
+    // .findAll(new GenericSpecification<>(new SearchCriteria("county.code",
+    // countyCodes, MatchType.IN)));
+    // }
 
     @Override
     @Transactional
@@ -405,48 +362,50 @@ public class SubCountyServiceImpl implements SubCountyService {
         return sharedService.generateCode(AdministrativeAreaType.SUBCOUNTY);
     }
 
-    private SubCountyDTO convertSubCountyDTO(SubCounty subCounty) {
+    private SubCountyDTO toDTO(SubCounty subCounty) {
         SubCountyDTO dto = new SubCountyDTO();
         dto.setId(subCounty.getId());
         dto.setCode(subCounty.getCode());
         dto.setName(subCounty.getName());
         dto.setLatitude(subCounty.getLatitude() != null ? String.valueOf(subCounty.getLatitude()) : "");
         dto.setLongitude(subCounty.getLongitude() != null ? String.valueOf(subCounty.getLongitude()) : "");
-        dto.setCounty(convertCountyDTO(subCounty.getCounty()));
+        if (subCounty.getCounty() != null) {
+            dto.setCounty(toCountyDTO(subCounty.getCounty()));
+        }
         return dto;
     }
 
-    private CountyDTO convertCountyDTO(County county) {
+    private CountyDTO toCountyDTO(County county) {
         CountyDTO dto = new CountyDTO();
         dto.setCode(county.getCode());
         dto.setName(county.getName());
         dto.setLatitude(county.getLatitude() != null ? String.valueOf(county.getLatitude()) : "");
         dto.setLongitude(county.getLongitude() != null ? String.valueOf(county.getLongitude()) : "");
-        dto.setLocalGovernment(convertLocalGovernmentDTO(county.getLocalGovernment()));
+        dto.setLocalGovernment(toLocalGovernmentDTO(county.getLocalGovernment()));
         return dto;
     }
 
-    private LocalGovernmentDTO convertLocalGovernmentDTO(LocalGovernment localGovernment) {
+    private LocalGovernmentDTO toLocalGovernmentDTO(LocalGovernment localGovernment) {
         LocalGovernmentDTO dto = new LocalGovernmentDTO();
         dto.setCode(localGovernment.getCode());
         dto.setName(localGovernment.getName());
         dto.setLatitude(localGovernment.getLatitude() != null ? String.valueOf(localGovernment.getLatitude()) : "");
         dto.setLongitude(localGovernment.getLongitude() != null ? String.valueOf(localGovernment.getLongitude()) : "");
-        dto.setSubRegion(convertSubRegionDTO(localGovernment.getSubRegion()));
+        dto.setSubRegion(toSubRegionDTO(localGovernment.getSubRegion()));
         return dto;
     }
 
-    private SubRegionDTO convertSubRegionDTO(SubRegion subRegion) {
+    private SubRegionDTO toSubRegionDTO(SubRegion subRegion) {
         SubRegionDTO dto = new SubRegionDTO();
         dto.setCode(subRegion.getCode());
         dto.setName(subRegion.getName());
         dto.setLatitude(subRegion.getLatitude() != null ? String.valueOf(subRegion.getLatitude()) : "");
         dto.setLongitude(subRegion.getLongitude() != null ? String.valueOf(subRegion.getLongitude()) : "");
-        dto.setRegion(convertRegionDTO(subRegion.getRegion()));
+        dto.setRegion(toRegionDTO(subRegion.getRegion()));
         return dto;
     }
 
-    private RegionDTO convertRegionDTO(Region region) {
+    private RegionDTO toRegionDTO(Region region) {
         RegionDTO dto = new RegionDTO();
         dto.setCode(region.getCode());
         dto.setName(region.getName());

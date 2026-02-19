@@ -1,9 +1,14 @@
 package com.wanfadger.AdministrativeareaApi.dto;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
-@Data
-@EqualsAndHashCode(callSuper = true)
+@Getter
+@Setter
+@SuperBuilder
+
+@NoArgsConstructor
 public class RegionDTO extends AdministrativeAreaDTO {
 }
