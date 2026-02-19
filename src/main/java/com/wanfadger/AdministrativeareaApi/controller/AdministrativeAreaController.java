@@ -65,7 +65,7 @@ public class AdministrativeAreaController {
                         @ApiResponse(responseCode = "400", description = "Invalid Excel data format"),
                         @ApiResponse(responseCode = "500", description = "Internal server error")
         })
-        @PostMapping(value = "/upload") 
+        @PostMapping(value = "/upload")
         public ResponseDTO<String> upload(
                         @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "List of administrative areas in Excel format", required = true) @RequestBody List<AdministrativeAreaExcelDTO> administrativeAreaExcelDtos) {
                 return administrativeAreaService.upload(administrativeAreaExcelDtos);
@@ -202,10 +202,11 @@ public class AdministrativeAreaController {
                         @ApiResponse(responseCode = "400", description = "Missing required parameters"),
                         @ApiResponse(responseCode = "500", description = "Internal server error")
         })
-        @DeleteMapping(value = "/one", produces = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseDTO<String> deleteOne(
-                        @Parameter(hidden = true) @RequestParam Map<String, String> queryMap) {
-                return administrativeAreaService.deleteOne(queryMap);
+        @DeleteMapping()
+        public ResponseDTO<String> delete(
+                        @RequestParam String type,
+                        @RequestParam String code) {
+                return administrativeAreaService.delete(type, code);
         }
 
 }

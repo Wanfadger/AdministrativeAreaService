@@ -193,17 +193,14 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public ResponseDTO<String> deleteOne(Map<String, String> queryMap) {
-        String typeStr = queryMap.get("type");
-        String code = queryMap.get("code");
-
+    public ResponseDTO<String> delete(String typeStr, String code) {
         if (!notNullEmpty(typeStr))
             throw new MissingDataException("Missing Administrative Area Type");
         if (!notNullEmpty(code))
             throw new MissingDataException("Missing Administrative Area Code");
 
         AdministrativeAreaType type = AdministrativeAreaType.fromStr(typeStr)
-                .orElseThrow(() -> new MissingDataException("Missing Administrative Area Type"));
+                .orElseThrow(() -> new MissingDataException("Missing or Unknown Administrative Area Type"));
 
         return switch (type) {
             case REGION -> regionService.delete(code);

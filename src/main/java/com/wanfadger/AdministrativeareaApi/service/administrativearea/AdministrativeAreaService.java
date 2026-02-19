@@ -28,6 +28,6 @@ public interface AdministrativeAreaService {
 
         ResponseDTO<String> update(@NotBlank String type, UpdateAdministrativeAreaDTO dto);
 
-        ResponseDTO<String> deleteOne(Map<String, String> queryMap);
+        ResponseDTO<String> delete(@NotBlank String type, @NotBlank String code);
 
 }
