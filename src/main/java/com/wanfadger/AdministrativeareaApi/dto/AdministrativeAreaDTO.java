@@ -20,8 +20,8 @@ import java.io.Serializable;
 @EqualsAndHashCode
 @Schema(description = "Complete administrative area data with location coordinates")
 public class AdministrativeAreaDTO implements Serializable {
-    @Schema(description = "Internal unique identifier", example = "1")
-    private Long id;
+    // @Schema(description = "Internal unique identifier", example = "1")
+    // private Long id;
 
     @Schema(description = "Unique code of the administrative area", example = "001")
     private String code;
