@@ -16,7 +16,7 @@ public interface AdministrativeAreaService {
 
         ResponseDTO<String> createList(@NotBlank String type, List<NewAdministrativeAreaDTO> dtos);
 
-        ResponseDTO<List<CodeNameDTO>> filter(Map<String, String> queryMap);
+        ResponseDTO<List<AdministrativeAreaDTO>> filter(Map<String, String> queryMap);
 
         ResponseDTO<?> searchList(Map<String, String> queryMap);
 

@@ -11,6 +11,7 @@ import java.io.Serializable;
 @Setter
 @Builder
 @Schema(description = "Simplified administrative area data containing only code and name")
+@Deprecated
 public class CodeNameDTO implements Serializable {
     @Schema(description = "Unique code of the administrative area", example = "001")
     private String code;
