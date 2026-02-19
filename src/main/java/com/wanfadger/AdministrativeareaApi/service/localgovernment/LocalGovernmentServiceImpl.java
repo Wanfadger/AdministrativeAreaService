@@ -7,8 +7,7 @@ import com.wanfadger.AdministrativeareaApi.areaexceptions.NotFoundException;
 import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
 import com.wanfadger.AdministrativeareaApi.dto.LocalGovernmentDTO;
 import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDTO;
-import com.wanfadger.AdministrativeareaApi.dto.RegionDTO;
-import com.wanfadger.AdministrativeareaApi.dto.SubRegionDTO;
+
 import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.PaginatedResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;

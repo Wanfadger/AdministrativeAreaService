@@ -88,21 +88,31 @@ public class AdministrativeAreaController {
                 return administrativeAreaService.updateOne(queryMap, dto);
         }
 
-        @Operation(summary = "Get a single administrative area (code and name only)", description = "Retrieves a single administrative area by type and code. Returns only code and name. Results are cached for 7 days.", parameters = {
-                        @Parameter(name = "type", description = "Administrative area type", required = true, schema = @Schema(type = "string"), example = "REGION"),
-                        @Parameter(name = "code", description = "Administrative area code", required = true, schema = @Schema(type = "string"), example = "001"),
-                        @Parameter(name = "partOf", description = "Filter by parent code (optional)", schema = @Schema(type = "string"))
-        })
-        @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "Administrative area found", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ResponseDTO.class))),
-                        @ApiResponse(responseCode = "404", description = "Administrative area not found"),
-                        @ApiResponse(responseCode = "400", description = "Missing required parameters")
-        })
-        @GetMapping(value = "/filter-one", produces = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseDTO<CodeNameDTO> filterOne(
-                        @Parameter(hidden = true) @RequestParam Map<String, String> queryMap) {
-                return administrativeAreaService.filterOne(queryMap);
-        }
+        // @Operation(summary = "Get a single administrative area (code and name only)",
+        // description = "Retrieves a single administrative area by type and code.
+        // Returns only code and name. Results are cached for 7 days.", parameters = {
+        // @Parameter(name = "type", description = "Administrative area type", required
+        // = true, schema = @Schema(type = "string"), example = "REGION"),
+        // @Parameter(name = "code", description = "Administrative area code", required
+        // = true, schema = @Schema(type = "string"), example = "001"),
+        // @Parameter(name = "partOf", description = "Filter by parent code (optional)",
+        // schema = @Schema(type = "string"))
+        // })
+        // @ApiResponses(value = {
+        // @ApiResponse(responseCode = "200", description = "Administrative area found",
+        // content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema =
+        // @Schema(implementation = ResponseDTO.class))),
+        // @ApiResponse(responseCode = "404", description = "Administrative area not
+        // found"),
+        // @ApiResponse(responseCode = "400", description = "Missing required
+        // parameters")
+        // })
+        // @GetMapping(value = "/filter-one", produces =
+        // MediaType.APPLICATION_JSON_VALUE)
+        // public ResponseDTO<CodeNameDTO> filterOne(
+        // @Parameter(hidden = true) @RequestParam Map<String, String> queryMap) {
+        // return administrativeAreaService.filterOne(queryMap);
+        // }
 
         @Operation(summary = "Get a list of administrative areas (code and name only)", description = "Retrieves a list of administrative areas by type. Returns only code and name. Results are cached for 7 days. Query parameters: 'type' (required), optionally 'partOf' for filtering by parent area.", parameters = {
                         @Parameter(name = "type", description = "Administrative area type", required = true, schema = @Schema(type = "string"), example = "REGION"),
@@ -115,25 +125,23 @@ public class AdministrativeAreaController {
         @GetMapping(value = "/filterList", produces = MediaType.APPLICATION_JSON_VALUE)
         public ResponseDTO<List<CodeNameDTO>> filterList(
                         @Parameter(hidden = true) @RequestParam Map<String, String> queryMap) {
-                return administrativeAreaService.filterList(queryMap);
+                return administrativeAreaService.filter(queryMap);
         }
-
-      
 
         @Operation(summary = "Get a single administrative area details (full details)", description = "Retrieves a single administrative area with full details (code, name, latitude, longitude). Results are cached for 1 hour.", parameters = {
                         @Parameter(name = "type", description = "Administrative area type", required = true, schema = @Schema(type = "string"), example = "REGION"),
                         @Parameter(name = "code", description = "Administrative area code", required = true, schema = @Schema(type = "string"), example = "001"),
-                        @Parameter(name = "partOf", description = "Filter by parent code (optional)", schema = @Schema(type = "string"))
         })
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "Administrative area found with full details", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ResponseDTO.class))),
                         @ApiResponse(responseCode = "404", description = "Administrative area not found"),
                         @ApiResponse(responseCode = "400", description = "Missing required parameters")
         })
-        @GetMapping(value = "/{type}/{code}/details", produces = MediaType.APPLICATION_JSON_VALUE)
+        @GetMapping(value = "/details", produces = MediaType.APPLICATION_JSON_VALUE)
         public ResponseDTO<?> findDetailsByCode(
-                        @PathVariable String type,
-                        @PathVariable String code) {
+                        @Parameter(hidden = true) @RequestParam Map<String, String> queryMap) {
+                String type = queryMap.get("type");
+                String code = queryMap.get("code");
                 return administrativeAreaService.getDetailsByCode(type, code);
         }
 
@@ -146,10 +154,11 @@ public class AdministrativeAreaController {
                         @ApiResponse(responseCode = "404", description = "Administrative area not found"),
                         @ApiResponse(responseCode = "400", description = "Missing required parameters")
         })
-        @GetMapping(value = "/{type}/{code}", produces = MediaType.APPLICATION_JSON_VALUE)
+        @GetMapping(value = "/one", produces = MediaType.APPLICATION_JSON_VALUE)
         public ResponseDTO<?> getByCode(
-                        @PathVariable String type,
-                        @PathVariable String code) {
+                        @Parameter(hidden = true) @RequestParam Map<String, String> queryMap) {
+                String type = queryMap.get("type");
+                String code = queryMap.get("code");
                 return administrativeAreaService.getByCode(type, code);
         }
 
@@ -221,19 +230,27 @@ public class AdministrativeAreaController {
                 return administrativeAreaService.deleteOne(queryMap);
         }
 
-
-          @Operation(summary = "Get parishes by parent administrative area", description = "Retrieves all parishes that belong to a parent administrative area (Region, Sub-Region, Local Government, County, or Sub-County). Returns only code and name. Results are cached for 7 days.", parameters = {
-                        @Parameter(name = "type", description = "Parent administrative area type", required = true, schema = @Schema(type = "string"), example = "REGION"),
-                        @Parameter(name = "partOfCode", description = "Parent administrative area code", required = true, schema = @Schema(type = "string"), example = "001")
-        })
-        @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "List of parishes", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ResponseDTO.class))),
-                        @ApiResponse(responseCode = "400", description = "Missing required parameters")
-        })
-        @GetMapping(value = "/parishListByPartOf", produces = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseDTO<List<CodeNameDTO>> getParishByPartOf(
-                        @Parameter(hidden = true) @RequestParam Map<String, String> queryMap) {
-                return administrativeAreaService.getParishByPartOf(queryMap);
-        }
+        // @Operation(summary = "Get parishes by parent administrative area",
+        // description = "Retrieves all parishes that belong to a parent administrative
+        // area (Region, Sub-Region, Local Government, County, or Sub-County). Returns
+        // only code and name. Results are cached for 7 days.", parameters = {
+        // @Parameter(name = "type", description = "Parent administrative area type",
+        // required = true, schema = @Schema(type = "string"), example = "REGION"),
+        // @Parameter(name = "partOfCode", description = "Parent administrative area
+        // code", required = true, schema = @Schema(type = "string"), example = "001")
+        // })
+        // @ApiResponses(value = {
+        // @ApiResponse(responseCode = "200", description = "List of parishes", content
+        // = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema =
+        // @Schema(implementation = ResponseDTO.class))),
+        // @ApiResponse(responseCode = "400", description = "Missing required
+        // parameters")
+        // })
+        // @GetMapping(value = "/parishListByPartOf", produces =
+        // MediaType.APPLICATION_JSON_VALUE)
+        // public ResponseDTO<List<CodeNameDTO>> getParishByPartOf(
+        // @Parameter(hidden = true) @RequestParam Map<String, String> queryMap) {
+        // return administrativeAreaService.getParishByPartOf(queryMap);
+        // }
 
 }

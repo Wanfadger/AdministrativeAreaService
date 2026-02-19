@@ -1,12 +1,10 @@
 package com.wanfadger.AdministrativeareaApi.service.administrativearea;
 
 import com.wanfadger.AdministrativeareaApi.areaexceptions.MissingDataException;
-import com.wanfadger.AdministrativeareaApi.areaexceptions.NotFoundException;
 import com.wanfadger.AdministrativeareaApi.dto.*;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.PaginatedResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 import com.wanfadger.AdministrativeareaApi.entity.*;
-import com.wanfadger.AdministrativeareaApi.repository.*;
 import com.wanfadger.AdministrativeareaApi.service.county.CountyService;
 import com.wanfadger.AdministrativeareaApi.service.localgovernment.LocalGovernmentService;
 import com.wanfadger.AdministrativeareaApi.service.parish.ParishService;
@@ -16,8 +14,6 @@ import com.wanfadger.AdministrativeareaApi.service.subcounty.SubCountyService;
 
 import jakarta.validation.constraints.NotBlank;
 
-import com.wanfadger.AdministrativeareaApi.repository.specification.GenericSpecification;
-import com.wanfadger.AdministrativeareaApi.enums.MatchType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,13 +33,6 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     private final CountyService countyService;
     private final SubCountyService subCountyService;
     private final ParishService parishService;
-
-    // Repositories needed for cross-cutting logic (getParishByPartOf)
-    private final SubRegionRepository subRegionRepository;
-    private final LocalGovernmentRepository localGovernmentRepository;
-    private final CountyRepository countyRepository;
-    private final SubCountyRepository subCountyRepository;
-    private final ParishRepository parishRepository;
 
     private boolean notNullEmpty(String value) {
         return value != null && !value.isEmpty();
@@ -83,49 +72,10 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         return response;
     }
 
-    @Override
-    public ResponseDTO<CodeNameDTO> filterOne(Map<String, String> queryMap) {
-        String typeStr = queryMap.get("type");
-        String code = queryMap.get("code");
 
-        if (!notNullEmpty(typeStr))
-            throw new MissingDataException("Missing Administrative Area Type");
-        if (!notNullEmpty(code))
-            throw new MissingDataException("Missing Administrative Area Code");
-
-        AdministrativeAreaType type = AdministrativeAreaType.fromStr(typeStr)
-                .orElseThrow(() -> new MissingDataException("Missing Administrative Area Type"));
-
-        return switch (type) {
-            case REGION -> {
-                RegionDTO dto = regionService.findByCode(code).getData();
-                yield new ResponseDTO<>(new CodeNameDTO(dto.getCode(), dto.getName()));
-            }
-            case SUBREGION -> {
-                SubRegionDTO dto = subRegionService.findByCode(code).getData();
-                yield new ResponseDTO<>(new CodeNameDTO(dto.getCode(), dto.getName()));
-            }
-            case LOCALGOVERNMENT -> {
-                LocalGovernmentDTO dto = localGovernmentService.getByCode(code).getData();
-                yield new ResponseDTO<>(new CodeNameDTO(dto.getCode(), dto.getName()));
-            }
-            case COUNTY -> {
-                CountyDTO dto = countyService.getByCode(code).getData();
-                yield new ResponseDTO<>(new CodeNameDTO(dto.getCode(), dto.getName()));
-            }
-            case SUBCOUNTY -> {
-                SubCountyDTO dto = subCountyService.getByCode(code).getData();
-                yield new ResponseDTO<>(new CodeNameDTO(dto.getCode(), dto.getName()));
-            }
-            case PARISH -> {
-                ParishDTO dto = parishService.getByCode(code).getData();
-                yield new ResponseDTO<>(new CodeNameDTO(dto.getCode(), dto.getName()));
-            }
-        };
-    }
 
     @Override
-    public ResponseDTO<List<CodeNameDTO>> filterList(Map<String, String> queryMap) {
+    public ResponseDTO<List<CodeNameDTO>> filter(Map<String, String> queryMap) {
         String typeStr = queryMap.get("type");
         String partOf = queryMap.get("partOf");
 
@@ -266,109 +216,6 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                         .collect(Collectors.toList()));
             }
         };
-    }
-
-    @Override
-    public ResponseDTO<List<CodeNameDTO>> getParishByPartOf(Map<String, String> queryMap) {
-        String typeStr = queryMap.get("type");
-        String partOfCode = queryMap.get("partOfCode");
-
-        if (!notNullEmpty(typeStr))
-            throw new MissingDataException("Missing Administrative Area Type");
-        if (!notNullEmpty(partOfCode))
-            throw new MissingDataException("Missing Administrative Area partOfCode");
-
-        AdministrativeAreaType type = AdministrativeAreaType.fromStr(typeStr)
-                .orElseThrow(() -> new MissingDataException("Missing Administrative Area Type"));
-
-        // Retaining original logic as this is a cross-cutting traversal
-        switch (type) {
-            case REGION -> {
-                List<String> subRegionCodes = subRegionRepository
-                        .findAll(new GenericSpecification<>(
-                                new SearchCriteria("region.code", partOfCode, MatchType.EQUALS)))
-                        .parallelStream().map(SubRegion::getCode).distinct().toList();
-                List<String> lgCodes = localGovernmentRepository
-                        .findAll(new GenericSpecification<>(
-                                new SearchCriteria("subRegion.code", subRegionCodes, MatchType.IN)))
-                        .parallelStream().map(LocalGovernment::getCode).distinct().toList();
-                List<String> countyCodes = countyRepository
-                        .findAll(new GenericSpecification<>(
-                                new SearchCriteria("localGovernment.code", lgCodes, MatchType.IN)))
-                        .parallelStream().map(County::getCode).distinct().toList();
-                List<String> subCounties = subCountyRepository
-                        .findAll(new GenericSpecification<>(
-                                new SearchCriteria("county.code", countyCodes, MatchType.IN)))
-                        .parallelStream().map(SubCounty::getCode).distinct().toList();
-                List<CodeNameDTO> codeNameDtoList = parishRepository
-                        .findAll(new GenericSpecification<>(
-                                new SearchCriteria("subCounty.code", subCounties, MatchType.IN)))
-                        .parallelStream().map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
-                        .distinct().toList();
-                return new ResponseDTO<>(codeNameDtoList);
-            }
-            case SUBREGION -> {
-                List<String> lgCodes = localGovernmentRepository
-                        .findAll(new GenericSpecification<>(
-                                new SearchCriteria("subRegion.code", partOfCode, MatchType.EQUALS)))
-                        .parallelStream().map(LocalGovernment::getCode).distinct().toList();
-                List<String> countyCodes = countyRepository
-                        .findAll(new GenericSpecification<>(
-                                new SearchCriteria("localGovernment.code", lgCodes, MatchType.IN)))
-                        .parallelStream().map(County::getCode).distinct().toList();
-                List<String> subCounties = subCountyRepository
-                        .findAll(new GenericSpecification<>(
-                                new SearchCriteria("county.code", countyCodes, MatchType.IN)))
-                        .parallelStream().map(SubCounty::getCode).distinct().toList();
-                List<CodeNameDTO> codeNameDtoList = parishRepository
-                        .findAll(new GenericSpecification<>(
-                                new SearchCriteria("subCounty.code", subCounties, MatchType.IN)))
-                        .parallelStream().map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
-                        .sorted(Comparator.comparing(CodeNameDTO::getCode)).toList();
-                return new ResponseDTO<>(codeNameDtoList);
-            }
-            case LOCALGOVERNMENT -> {
-                List<String> countyCodes = countyRepository
-                        .findAll(new GenericSpecification<>(
-                                new SearchCriteria("localGovernment.code", partOfCode, MatchType.EQUALS)))
-                        .parallelStream().map(County::getCode).distinct().toList();
-                List<String> subCountyCodes = subCountyRepository
-                        .findAll(new GenericSpecification<>(
-                                new SearchCriteria("county.code", countyCodes, MatchType.IN)))
-                        .parallelStream().map(SubCounty::getCode).distinct().toList();
-                List<CodeNameDTO> codeNameDtoList = parishRepository
-                        .findAll(new GenericSpecification<>(
-                                new SearchCriteria("subCounty.code", subCountyCodes, MatchType.IN)))
-                        .parallelStream().map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
-                        .sorted(Comparator.comparing(CodeNameDTO::getCode)).toList();
-                return new ResponseDTO<>(codeNameDtoList);
-            }
-            case COUNTY -> {
-                List<String> subCountyCodes = subCountyRepository
-                        .findAll(new GenericSpecification<>(
-                                new SearchCriteria("county.code", partOfCode, MatchType.EQUALS)))
-                        .parallelStream().map(SubCounty::getCode).distinct().toList();
-                List<CodeNameDTO> codeNameDtoList = parishRepository
-                        .findAll(new GenericSpecification<>(
-                                new SearchCriteria("subCounty.code", subCountyCodes, MatchType.IN)))
-                        .parallelStream().map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
-                        .sorted(Comparator.comparing(CodeNameDTO::getCode)).toList();
-                return new ResponseDTO<>(codeNameDtoList);
-            }
-            case SUBCOUNTY -> {
-                List<CodeNameDTO> codeNameDtoList = parishRepository
-                        .findAll(new GenericSpecification<>(
-                                new SearchCriteria("subCounty.code", partOfCode, MatchType.EQUALS)))
-                        .parallelStream().map(parish -> new CodeNameDTO(parish.getCode(), parish.getName()))
-                        .sorted(Comparator.comparing(CodeNameDTO::getCode)).toList();
-                return new ResponseDTO<>(codeNameDtoList);
-            }
-            case PARISH -> {
-                return new ResponseDTO<>(Collections.emptyList());
-            }
-            default ->
-                throw new MissingDataException("Unsupported Administrative Area Type: " + type);
-        }
     }
 
     @Override

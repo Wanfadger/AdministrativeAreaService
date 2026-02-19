@@ -11,7 +11,7 @@ import com.wanfadger.AdministrativeareaApi.dto.reponses.PaginatedResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 import com.wanfadger.AdministrativeareaApi.entity.Region;
 import com.wanfadger.AdministrativeareaApi.repository.RegionRepository;
-import com.wanfadger.AdministrativeareaApi.shared.SharedService;
+
 import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
 
 import lombok.RequiredArgsConstructor;
