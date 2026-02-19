@@ -16,7 +16,7 @@ public interface AdministrativeAreaService {
 
         ResponseDTO<String> createList(@NotBlank String type, List<NewAdministrativeAreaDTO> dtos);
 
-        ResponseDTO<List<AdministrativeAreaDTO>> filter(Map<String, String> queryMap);
+        PaginatedResponseDTO<? extends AdministrativeAreaDTO> filter(Map<String, String> queryMap);
 
         ResponseDTO<?> getByCode(@NotBlank String type, @NotBlank String code);
 

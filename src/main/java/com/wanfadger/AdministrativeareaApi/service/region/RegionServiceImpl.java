@@ -120,8 +120,7 @@ public class RegionServiceImpl implements RegionService {
     }
 
     @Override
-    @Cacheable(value = CacheValueKeyConfig.REGIONS, keyGenerator = "sortedMapKeyGenerator", unless = "#result.totalElements == 0")
-    @Transactional(readOnly = true)
+    @Cacheable(value = CacheValueKeyConfig.REGIONS, key = "#queryMap.toString()", unless = "#result.totalElements == 0")
     public PaginatedResponseDTO<RegionDTO> search(Map<String, String> queryMap) {
         // 1. Extract Pagination & Sorting
         int page = Optional.ofNullable(queryMap.get("page")).map(Integer::parseInt).orElse(1);
@@ -135,7 +134,7 @@ public class RegionServiceImpl implements RegionService {
                 Sort.by(sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy));
 
         // 2. Build Specification
-        Specification<Region> spec = Specification.where(null);
+        Specification<Region> spec = (root, query, cb) -> cb.conjunction();
         spec = spec.and(new GenericSpecification<>(new SearchCriteria("archived", "false", MatchType.EQUALS)));
         for (Map.Entry<String, String> entry : queryMap.entrySet()) {
             String key = entry.getKey();

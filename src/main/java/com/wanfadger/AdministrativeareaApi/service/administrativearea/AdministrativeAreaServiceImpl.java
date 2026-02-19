@@ -73,7 +73,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public ResponseDTO<List<AdministrativeAreaDTO>> filter(Map<String, String> queryMap) {
+    public PaginatedResponseDTO<? extends AdministrativeAreaDTO> filter(Map<String, String> queryMap) {
         String typeStr = queryMap.get("type");
         String selected = queryMap.get("selected");
 
@@ -85,134 +85,16 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
         if (notNullEmpty(selected)) {
             return switch (type) {
-                case REGION -> {
-                    List<SubRegionDTO> dtos = new ArrayList<>();
-                    int page = 1;
-                    int size = 100;
-                    PaginatedResponseDTO<SubRegionDTO> response = subRegionService
-                            .search(Map.of("region.code", selected, "page", String.valueOf(page), "size",
-                                    String.valueOf(size)));
-
-                    while (response.getTotalElements() > 0) {
-                        dtos.addAll(response.getData());
-                        if (!response.isHasNext())
-                            break;
-                        page++;
-                        response = subRegionService.search(Map.of("region.code", selected, "page", String.valueOf(page),
-                                "size", String.valueOf(size)));
-                    }
-
-                    yield new ResponseDTO<>(dtos.stream()
-                            .map(d -> new AdministrativeAreaDTO(d.getCode(), d.getName(), d.getDescription(),
-                                    d.getLatitude(), d.getLongitude()))
-                            .collect(Collectors.toList()));
-                }
-                case SUBREGION -> {
-                    List<LocalGovernmentDTO> dtos = new ArrayList<>();
-                    int page = 1;
-                    int size = 100;
-                    PaginatedResponseDTO<LocalGovernmentDTO> response = localGovernmentService
-                            .search(Map.of("subRegion.code", selected, "page", String.valueOf(page), "size",
-                                    String.valueOf(size)));
-
-                    while (response.getTotalElements() > 0) {
-                        dtos.addAll(response.getData());
-                        if (!response.isHasNext())
-                            break;
-                        page++;
-                        response = localGovernmentService.search(Map.of("subRegion.code", selected, "page",
-                                String.valueOf(page), "size", String.valueOf(size)));
-                    }
-                    yield new ResponseDTO<>(dtos.stream()
-                            .map(d -> new AdministrativeAreaDTO(d.getCode(), d.getName(), d.getDescription(),
-                                    d.getLatitude(), d.getLongitude()))
-                            .collect(Collectors.toList()));
-                }
-                case LOCALGOVERNMENT -> {
-                    List<CountyDTO> dtos = new ArrayList<>();
-                    int page = 1;
-                    int size = 100;
-                    PaginatedResponseDTO<CountyDTO> response = countyService
-                            .search(Map.of("localGovernment.code", selected, "page", String.valueOf(page), "size",
-                                    String.valueOf(size)));
-
-                    while (response.getTotalElements() > 0) {
-                        dtos.addAll(response.getData());
-                        if (!response.isHasNext())
-                            break;
-                        page++;
-                        response = countyService.search(Map.of("localGovernment.code", selected, "page",
-                                String.valueOf(page), "size", String.valueOf(size)));
-                    }
-                    yield new ResponseDTO<>(dtos.stream()
-                            .map(d -> new AdministrativeAreaDTO(d.getCode(), d.getName(), d.getDescription(),
-                                    d.getLatitude(), d.getLongitude()))
-                            .collect(Collectors.toList()));
-                }
-                case COUNTY -> {
-                    List<SubCountyDTO> dtos = new ArrayList<>();
-                    int page = 1;
-                    int size = 100;
-                    PaginatedResponseDTO<SubCountyDTO> response = subCountyService
-                            .search(Map.of("county.code", selected, "page", String.valueOf(page), "size",
-                                    String.valueOf(size)));
-
-                    while (response.getTotalElements() > 0) {
-                        dtos.addAll(response.getData());
-                        if (!response.isHasNext())
-                            break;
-                        page++;
-                        response = subCountyService.search(Map.of("county.code", selected, "page", String.valueOf(page),
-                                "size", String.valueOf(size)));
-                    }
-                    yield new ResponseDTO<>(dtos.stream()
-                            .map(d -> new AdministrativeAreaDTO(d.getCode(), d.getName(), d.getDescription(),
-                                    d.getLatitude(), d.getLongitude()))
-                            .collect(Collectors.toList()));
-                }
-                case SUBCOUNTY -> {
-                    List<ParishDTO> dtos = new ArrayList<>();
-                    int page = 1;
-                    int size = 100;
-                    PaginatedResponseDTO<ParishDTO> response = parishService
-                            .search(Map.of("subCounty.code", selected, "page", String.valueOf(page), "size",
-                                    String.valueOf(size)));
-
-                    while (response.getTotalElements() > 0) {
-                        dtos.addAll(response.getData());
-                        if (!response.isHasNext())
-                            break;
-                        page++;
-                        response = parishService.search(Map.of("subCounty.code", selected, "page", String.valueOf(page),
-                                "size", String.valueOf(size)));
-                    }
-                    yield new ResponseDTO<>(dtos.stream()
-                            .map(d -> new AdministrativeAreaDTO(d.getCode(), d.getName(), d.getDescription(),
-                                    d.getLatitude(), d.getLongitude()))
-                            .collect(Collectors.toList()));
-                }
-                case PARISH -> {
-                    yield new ResponseDTO<>(Collections.emptyList());
-                }
+                case SUBREGION -> subRegionService.filter(queryMap);
+                case LOCALGOVERNMENT -> localGovernmentService.filter(queryMap);
+                case COUNTY -> countyService.filter(queryMap);
+                case SUBCOUNTY -> subCountyService.filter(queryMap);
+                case PARISH -> parishService.filter(queryMap);
+                default -> regionService.search(queryMap);
             };
+
         } else {
-            // if nothing is selected , then return regions
-            List<RegionDTO> dtos = new ArrayList<>();
-            int page = 1;
-            int size = 100;
-            PaginatedResponseDTO<RegionDTO> response = regionService
-                    .search(Map.of("page", String.valueOf(page), "size", String.valueOf(size)));
-
-            while (response.getTotalElements() > 0) {
-                dtos.addAll(response.getData());
-                page++;
-                response = regionService.search(Map.of("page", String.valueOf(page), "size", String.valueOf(size)));
-            }
-
-            return new ResponseDTO<>(dtos.stream()
-                    .map(d -> new AdministrativeAreaDTO(d.getCode(), d.getName(), d.getDescription(), d.getLatitude(),
-                            d.getLongitude()))
-                    .collect(Collectors.toList()));
+            return regionService.search(queryMap);
         }
     }
 

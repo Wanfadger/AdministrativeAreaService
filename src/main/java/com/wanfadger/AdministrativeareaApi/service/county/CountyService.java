@@ -43,4 +43,6 @@ public interface CountyService {
     void saveAll(List<County> counties);
 
     PaginatedResponseDTO<CountyDTO> search(Map<String, String> queryMap);
+
+    PaginatedResponseDTO<CountyDTO> filter(Map<String, String> queryMap);
 }

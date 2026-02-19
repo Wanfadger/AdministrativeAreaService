@@ -20,6 +20,9 @@ import com.wanfadger.AdministrativeareaApi.repository.SubRegionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.wanfadger.AdministrativeareaApi.repository.specification.GenericSpecification;
+
+import jakarta.persistence.criteria.JoinType;
+
 import com.wanfadger.AdministrativeareaApi.enums.MatchType;
 import com.wanfadger.AdministrativeareaApi.dto.SearchCriteria;
 import org.springframework.cache.annotation.CacheEvict;
@@ -32,6 +35,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.wanfadger.AdministrativeareaApi.config.CacheValueKeyConfig;
+
+import jakarta.persistence.criteria.Fetch;
+import jakarta.persistence.criteria.JoinType;
 
 import java.util.List;
 import java.util.Map;
@@ -176,7 +182,7 @@ public class SubRegionServiceImpl implements SubRegionService {
         // 2. Build Specification
         Specification<SubRegion> spec = (root, query, cb) -> {
             if (query != null && Long.class != query.getResultType()) {
-                root.fetch("region", jakarta.persistence.criteria.JoinType.LEFT); // 3. Fetch Region to avoid n+1
+                root.fetch("region", JoinType.LEFT); // 3. Fetch Region to avoid n+1
             }
             return cb.conjunction();
         };
@@ -207,6 +213,78 @@ public class SubRegionServiceImpl implements SubRegionService {
         // 4. Map to DTOs
         List<SubRegionDTO> data = resultPage.getContent().stream()
                 .map(subRegionMapperService::toDetailDTO)
+                .toList();
+
+        // 5. Build Paginated Response
+        PaginatedResponseDTO<SubRegionDTO> response = new PaginatedResponseDTO<>();
+        response.setData(data);
+        response.setPage(resultPage.getNumber() + 1);
+        response.setSize(resultPage.getSize());
+        response.setTotalElements(resultPage.getTotalElements());
+        response.setTotalPages(resultPage.getTotalPages());
+        response.setHasNext(resultPage.hasNext());
+        response.setHasPrevious(resultPage.hasPrevious());
+        response.setMessage("success");
+        response.setStatus(true);
+
+        return response;
+    }
+
+    @Override
+    @Cacheable(value = CacheValueKeyConfig.SUB_REGIONS_FILTERED, keyGenerator = "sortedMapKeyGenerator", unless = "#result.totalElements == 0")
+    @Transactional(readOnly = true)
+    public PaginatedResponseDTO<SubRegionDTO> filter(Map<String, String> queryMap) {
+        // 1. Extract Pagination & Sorting
+        int page = Optional.ofNullable(queryMap.get("page")).map(Integer::parseInt).orElse(1);
+        int size = Optional.ofNullable(queryMap.get("size")).map(Integer::parseInt).orElse(10);
+        String sortBy = Optional.ofNullable(queryMap.get("sortBy")).orElse("name");
+        String sortDirection = Optional.ofNullable(queryMap.get("sortDirection")).orElse("ASC");
+
+        page = page <= 0 ? 0 : page - 1;
+
+        Pageable pageable = PageRequest.of(page, size,
+                Sort.by(sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy));
+
+        // 2. Build Specification
+        Specification<SubRegion> spec = (root, query, cb) -> {
+            if (query != null && Long.class != query.getResultType()) {
+                root.fetch("region", JoinType.LEFT);
+            }
+            return cb.conjunction();
+        };
+        spec = spec.and(new GenericSpecification<>(new SearchCriteria("archived", "false", MatchType.EQUALS)));
+        for (Map.Entry<String, String> entry : queryMap.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+
+            if (List.of("page", "size", "sortBy", "sortDirection", "type", "selected").contains(key))
+                continue;
+
+            MatchType matchType = MatchType.EQUALS;
+            if (key.contains(":")) {
+                String[] parts = key.split(":", 2);
+                key = parts[0];
+                try {
+                    matchType = MatchType.valueOf(parts[1].toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    log.warn("Invalid MatchType: {}, defaulting to EQUALS", parts[1]);
+                }
+            }
+            spec = spec.and(new GenericSpecification<>(new SearchCriteria(key, value, matchType)));
+        }
+
+        if (queryMap.containsKey("selected") && queryMap.get("selected") != null
+                && !queryMap.get("selected").isEmpty()) {
+            spec = spec.and(new GenericSpecification<>(
+                    new SearchCriteria("region.code", queryMap.get("selected"), MatchType.EQUALS)));
+        }
+
+        // 4. Execute Search
+        Page<SubRegion> resultPage = subRegionRepository.findAll(spec, pageable);
+
+        // 4. Map to DTOs
+        List<SubRegionDTO> data = resultPage.getContent().stream()
+                .map(subRegionMapperService::toDTO)
                 .toList();
 
         // 5. Build Paginated Response

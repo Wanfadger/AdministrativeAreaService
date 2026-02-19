@@ -19,6 +19,10 @@ public interface LocalGovernmentService {
 
     ResponseDTO<String> delete(String code);
 
+    PaginatedResponseDTO<LocalGovernmentDTO> search(Map<String, String> queryMap);
+
+    PaginatedResponseDTO<LocalGovernmentDTO> filter(Map<String, String> queryMap);
+
     // ResponseDTO<List<LocalGovernmentDTO>> list(String subRegionCode);
 
     ResponseDTO<LocalGovernmentDTO> getByCode(String code);
@@ -41,5 +45,4 @@ public interface LocalGovernmentService {
 
     void saveAll(List<LocalGovernment> localGovernments);
 
-    PaginatedResponseDTO<LocalGovernmentDTO> search(Map<String, String> queryMap);
 }

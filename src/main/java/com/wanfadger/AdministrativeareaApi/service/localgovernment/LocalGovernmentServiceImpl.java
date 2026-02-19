@@ -163,6 +163,78 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
     }
 
     @Override
+    @Cacheable(value = CacheValueKeyConfig.LOCAL_GOVERNMENTS_FILTERED, keyGenerator = "sortedMapKeyGenerator", unless = "#result.totalElements == 0")
+    @Transactional(readOnly = true)
+    public PaginatedResponseDTO<LocalGovernmentDTO> filter(Map<String, String> queryMap) {
+        // 1. Extract Pagination & Sorting
+        int page = Optional.ofNullable(queryMap.get("page")).map(Integer::parseInt).orElse(1);
+        int size = Optional.ofNullable(queryMap.get("size")).map(Integer::parseInt).orElse(10);
+        String sortBy = Optional.ofNullable(queryMap.get("sortBy")).orElse("name");
+        String sortDirection = Optional.ofNullable(queryMap.get("sortDirection")).orElse("ASC");
+
+        page = page <= 0 ? 0 : page - 1;
+
+        Pageable pageable = PageRequest.of(page, size,
+                Sort.by(sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy));
+
+        // 2. Build Specification, including generic filtering
+        Specification<LocalGovernment> spec = (root, query, cb) -> {
+            if (query != null && Long.class != query.getResultType()) {
+                root.fetch("subRegion", JoinType.LEFT);
+            }
+            return cb.conjunction();
+        };
+        spec = spec.and(new GenericSpecification<>(new SearchCriteria("archived", "false", MatchType.EQUALS)));
+        for (Map.Entry<String, String> entry : queryMap.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+
+            if (List.of("page", "size", "sortBy", "sortDirection", "type", "selected").contains(key))
+                continue;
+
+            MatchType matchType = MatchType.EQUALS;
+            if (key.contains(":")) {
+                String[] parts = key.split(":", 2);
+                key = parts[0];
+                try {
+                    matchType = MatchType.valueOf(parts[1].toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    log.warn("Invalid MatchType: {}, defaulting to EQUALS", parts[1]);
+                }
+            }
+            spec = spec.and(new GenericSpecification<>(new SearchCriteria(key, value, matchType)));
+        }
+
+        if (queryMap.containsKey("selected") && queryMap.get("selected") != null
+                && !queryMap.get("selected").isEmpty()) {
+            spec = spec.and(new GenericSpecification<>(
+                    new SearchCriteria("subRegion.code", queryMap.get("selected"), MatchType.EQUALS)));
+        }
+
+        // 3. Execute Search
+        Page<LocalGovernment> resultPage = localGovernmentRepository.findAll(spec, pageable);
+
+        // 4. Map to DTOs
+        List<LocalGovernmentDTO> data = resultPage.getContent().stream()
+                .map(localGovernmentMapperService::toDTO)
+                .toList();
+
+        // 5. Build Paginated Response
+        PaginatedResponseDTO<LocalGovernmentDTO> response = new PaginatedResponseDTO<>();
+        response.setData(data);
+        response.setPage(resultPage.getNumber() + 1);
+        response.setSize(resultPage.getSize());
+        response.setTotalElements(resultPage.getTotalElements());
+        response.setTotalPages(resultPage.getTotalPages());
+        response.setHasNext(resultPage.hasNext());
+        response.setHasPrevious(resultPage.hasPrevious());
+        response.setMessage("success");
+        response.setStatus(true);
+
+        return response;
+    }
+
+    @Override
     @Cacheable(value = CacheValueKeyConfig.LOCAL_GOVERNMENTS, key = "#queryMap.toString()", unless = "#result.totalElements == 0")
     public PaginatedResponseDTO<LocalGovernmentDTO> search(Map<String, String> queryMap) {
         // 1. Extract Pagination & Sorting

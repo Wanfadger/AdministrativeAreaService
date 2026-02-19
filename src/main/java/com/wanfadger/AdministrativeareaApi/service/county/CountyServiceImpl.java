@@ -6,10 +6,8 @@ import com.wanfadger.AdministrativeareaApi.areaexceptions.MissingDataException;
 import com.wanfadger.AdministrativeareaApi.areaexceptions.NotFoundException;
 import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
 import com.wanfadger.AdministrativeareaApi.dto.CountyDTO;
-import com.wanfadger.AdministrativeareaApi.dto.LocalGovernmentDTO;
 import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDTO;
-import com.wanfadger.AdministrativeareaApi.dto.RegionDTO;
-import com.wanfadger.AdministrativeareaApi.dto.SubRegionDTO;
+
 import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.PaginatedResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
@@ -180,6 +178,78 @@ public class CountyServiceImpl implements CountyService {
         County county = countyRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("County not found"));
         return new ResponseDTO<>(countyMapperService.toDTO(county));
+    }
+
+    @Override
+    @Cacheable(value = CacheValueKeyConfig.COUNTIES_FILTERED, keyGenerator = "sortedMapKeyGenerator", unless = "#result.totalElements == 0")
+    @Transactional(readOnly = true)
+    public PaginatedResponseDTO<CountyDTO> filter(Map<String, String> queryMap) {
+        // 1. Extract Pagination & Sorting
+        int page = Optional.ofNullable(queryMap.get("page")).map(Integer::parseInt).orElse(1);
+        int size = Optional.ofNullable(queryMap.get("size")).map(Integer::parseInt).orElse(10);
+        String sortBy = Optional.ofNullable(queryMap.get("sortBy")).orElse("name");
+        String sortDirection = Optional.ofNullable(queryMap.get("sortDirection")).orElse("ASC");
+
+        page = page <= 0 ? 0 : page - 1;
+
+        Pageable pageable = PageRequest.of(page, size,
+                Sort.by(sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy));
+
+        // 2. Build Specification
+        Specification<County> spec = (root, query, cb) -> {
+            if (query != null && Long.class != query.getResultType()) {
+                root.fetch("localGovernment", JoinType.LEFT);
+            }
+            return cb.conjunction();
+        };
+        spec = spec.and(new GenericSpecification<>(new SearchCriteria("archived", "false", MatchType.EQUALS)));
+        for (Map.Entry<String, String> entry : queryMap.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+
+            if (List.of("page", "size", "sortBy", "sortDirection", "type", "selected").contains(key))
+                continue;
+
+            MatchType matchType = MatchType.EQUALS;
+            if (key.contains(":")) {
+                String[] parts = key.split(":", 2);
+                key = parts[0];
+                try {
+                    matchType = MatchType.valueOf(parts[1].toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    log.warn("Invalid MatchType: {}, defaulting to EQUALS", parts[1]);
+                }
+            }
+            spec = spec.and(new GenericSpecification<>(new SearchCriteria(key, value, matchType)));
+        }
+
+        if (queryMap.containsKey("selected") && queryMap.get("selected") != null
+                && !queryMap.get("selected").isEmpty()) {
+            spec = spec.and(new GenericSpecification<>(
+                    new SearchCriteria("localGovernment.code", queryMap.get("selected"), MatchType.EQUALS)));
+        }
+
+        // 3. Execute Search
+        Page<County> resultPage = countyRepository.findAll(spec, pageable);
+
+        // 4. Map to DTOs
+        List<CountyDTO> data = resultPage.getContent().stream()
+                .map(countyMapperService::toDTO)
+                .toList();
+
+        // 5. Build Paginated Response
+        PaginatedResponseDTO<CountyDTO> response = new PaginatedResponseDTO<>();
+        response.setData(data);
+        response.setPage(resultPage.getNumber() + 1);
+        response.setSize(resultPage.getSize());
+        response.setTotalElements(resultPage.getTotalElements());
+        response.setTotalPages(resultPage.getTotalPages());
+        response.setHasNext(resultPage.hasNext());
+        response.setHasPrevious(resultPage.hasPrevious());
+        response.setMessage("success");
+        response.setStatus(true);
+
+        return response;
     }
 
     @Override

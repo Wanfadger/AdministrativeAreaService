@@ -10,7 +10,6 @@ import com.wanfadger.AdministrativeareaApi.entity.SubRegion;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 public interface SubRegionService {
     ResponseDTO<String> create(NewAdministrativeAreaDTO dto);
@@ -18,6 +17,7 @@ public interface SubRegionService {
     ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos);
 
     PaginatedResponseDTO<SubRegionDTO> search(Map<String, String> queryMap);
+    PaginatedResponseDTO<SubRegionDTO> filter(Map<String, String> queryMap);
 
     ResponseDTO<SubRegionDTO> findByCode(String code);
 

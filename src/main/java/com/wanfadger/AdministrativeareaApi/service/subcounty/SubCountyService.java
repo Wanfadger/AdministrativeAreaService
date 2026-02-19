@@ -42,4 +42,6 @@ public interface SubCountyService {
     void saveAll(List<SubCounty> subCounties);
 
     PaginatedResponseDTO<SubCountyDTO> search(Map<String, String> queryMap);
+
+    PaginatedResponseDTO<SubCountyDTO> filter(Map<String, String> queryMap);
 }

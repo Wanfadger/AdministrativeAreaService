@@ -101,7 +101,7 @@ public class AdministrativeAreaController {
                         @ApiResponse(responseCode = "400", description = "Missing required parameters")
         })
         @GetMapping(value = "/filter", produces = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseDTO<List<AdministrativeAreaDTO>> filter(
+        public PaginatedResponseDTO<? extends AdministrativeAreaDTO> filter(
                         @Parameter(hidden = true) @RequestParam Map<String, String> queryMap) {
                 return administrativeAreaService.filter(queryMap);
         }

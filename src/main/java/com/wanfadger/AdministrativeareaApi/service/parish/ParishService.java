@@ -21,8 +21,9 @@ public interface ParishService {
 
     ResponseDTO<ParishDTO> getDetailsByCode(String code);
 
-
     PaginatedResponseDTO<ParishDTO> search(Map<String, String> queryMap);
+
+    PaginatedResponseDTO<ParishDTO> filter(Map<String, String> queryMap);
 
     ResponseDTO<String> update(String code, UpdateAdministrativeAreaDTO dto);
 
