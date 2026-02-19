@@ -194,14 +194,9 @@ public class SubCountyServiceImpl implements SubCountyService {
         Pageable pageable = PageRequest.of(page, size,
                 Sort.by(sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy));
 
-        // 2. Build Specification
-        Specification<SubCounty> spec = (root, query, cb) -> {
-            if (query != null && Long.class != query.getResultType()) {
-                root.fetch("county", JoinType.LEFT);
-            }
-            return cb.conjunction();
-        };
-        spec = spec.and(new GenericSpecification<>(new SearchCriteria("archived", "false", MatchType.EQUALS)));
+        // 2. Build Specification, including generic filtering
+        Specification<SubCounty> spec = new GenericSpecification<>(
+                new SearchCriteria("archived", "false", MatchType.EQUALS));
         for (Map.Entry<String, String> entry : queryMap.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
@@ -303,7 +298,7 @@ public class SubCountyServiceImpl implements SubCountyService {
 
         // 4. Map to DTOs
         List<SubCountyDTO> data = resultPage.getContent().stream()
-                .map(subCountyMapperService::toDTO)
+                .map(subCountyMapperService::toDetailDTO) // Changed to toDetailDTO
                 .toList();
 
         // 5. Build Paginated Response

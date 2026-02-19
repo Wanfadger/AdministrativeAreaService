@@ -195,14 +195,9 @@ public class CountyServiceImpl implements CountyService {
         Pageable pageable = PageRequest.of(page, size,
                 Sort.by(sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy));
 
-        // 2. Build Specification
-        Specification<County> spec = (root, query, cb) -> {
-            if (query != null && Long.class != query.getResultType()) {
-                root.fetch("localGovernment", JoinType.LEFT);
-            }
-            return cb.conjunction();
-        };
-        spec = spec.and(new GenericSpecification<>(new SearchCriteria("archived", "false", MatchType.EQUALS)));
+        // 2. Build Specification, including generic filtering
+        Specification<County> spec = new GenericSpecification<>(
+                new SearchCriteria("archived", "false", MatchType.EQUALS));
         for (Map.Entry<String, String> entry : queryMap.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
@@ -302,7 +297,7 @@ public class CountyServiceImpl implements CountyService {
 
         // 4. Map to DTOs
         List<CountyDTO> data = resultPage.getContent().stream()
-                .map(countyMapperService::toDTO)
+                .map(countyMapperService::toDetailDTO) // Changed to toDetailDTO
                 .toList();
 
         // 5. Build Paginated Response

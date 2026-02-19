@@ -85,11 +85,11 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
         if (notNullEmpty(selected)) {
             return switch (type) {
-                case SUBREGION -> subRegionService.filter(queryMap);
-                case LOCALGOVERNMENT -> localGovernmentService.filter(queryMap);
-                case COUNTY -> countyService.filter(queryMap);
-                case SUBCOUNTY -> subCountyService.filter(queryMap);
-                case PARISH -> parishService.filter(queryMap);
+                case REGION -> subRegionService.filter(queryMap);// fetches selected region sub regions
+                case SUBREGION -> localGovernmentService.filter(queryMap); // fetches selected subregion local governments
+                case LOCALGOVERNMENT -> countyService.filter(queryMap); // fetches selected local government counties
+                case COUNTY -> subCountyService.filter(queryMap); // fetches selected county sub counties
+                case SUBCOUNTY -> parishService.filter(queryMap); // fetches selected sub county parishes
                 default -> regionService.search(queryMap);
             };
 

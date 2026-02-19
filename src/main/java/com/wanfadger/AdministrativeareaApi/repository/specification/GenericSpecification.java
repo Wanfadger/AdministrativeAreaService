@@ -99,7 +99,34 @@ public class GenericSpecification<T> implements Specification<T> {
         query.distinct(true);
 
         for (int i = 0; i < parts.length - 1; i++) {
-            from = from.join(parts[i], JoinType.LEFT);
+            String part = parts[i];
+            boolean found = false;
+
+            // Check existing joins
+            for (Join<?, ?> join : from.getJoins()) {
+                if (join.getAttribute().getName().equals(part) && join.getJoinType() == JoinType.LEFT) {
+                    from = join;
+                    found = true;
+                    break;
+                }
+            }
+
+            // Check existing fetches if not found in joins
+            if (!found) {
+                for (Fetch<?, ?> fetch : from.getFetches()) {
+                    if (fetch.getAttribute().getName().equals(part) && fetch.getJoinType() == JoinType.LEFT) {
+                        if (fetch instanceof From) {
+                            from = (From<?, ?>) fetch;
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!found) {
+                from = from.join(part, JoinType.LEFT);
+            }
         }
         return from.get(parts[parts.length - 1]);
     }

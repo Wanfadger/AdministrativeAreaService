@@ -246,13 +246,8 @@ public class SubRegionServiceImpl implements SubRegionService {
                 Sort.by(sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy));
 
         // 2. Build Specification
-        Specification<SubRegion> spec = (root, query, cb) -> {
-            if (query != null && Long.class != query.getResultType()) {
-                root.fetch("region", JoinType.LEFT);
-            }
-            return cb.conjunction();
-        };
-        spec = spec.and(new GenericSpecification<>(new SearchCriteria("archived", "false", MatchType.EQUALS)));
+        Specification<SubRegion> spec = new GenericSpecification<>(
+                new SearchCriteria("archived", "false", MatchType.EQUALS));
         for (Map.Entry<String, String> entry : queryMap.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();

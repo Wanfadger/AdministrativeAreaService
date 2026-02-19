@@ -178,13 +178,8 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
                 Sort.by(sortDirection.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy));
 
         // 2. Build Specification, including generic filtering
-        Specification<LocalGovernment> spec = (root, query, cb) -> {
-            if (query != null && Long.class != query.getResultType()) {
-                root.fetch("subRegion", JoinType.LEFT);
-            }
-            return cb.conjunction();
-        };
-        spec = spec.and(new GenericSpecification<>(new SearchCriteria("archived", "false", MatchType.EQUALS)));
+        Specification<LocalGovernment> spec = new GenericSpecification<>(
+                new SearchCriteria("archived", "false", MatchType.EQUALS));
         for (Map.Entry<String, String> entry : queryMap.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
@@ -282,7 +277,7 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
 
         // 4. Map to DTOs
         List<LocalGovernmentDTO> data = resultPage.getContent().stream()
-                .map(localGovernmentMapperService::toDTO)
+                .map(localGovernmentMapperService::toDetailDTO)
                 .toList();
 
         // 5. Build Paginated Response
