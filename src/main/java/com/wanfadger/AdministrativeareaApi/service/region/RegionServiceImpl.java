@@ -2,6 +2,7 @@ package com.wanfadger.AdministrativeareaApi.service.region;
 
 import com.wanfadger.AdministrativeareaApi.areaexceptions.AlreadyExistsException;
 import com.wanfadger.AdministrativeareaApi.areaexceptions.InvalidException;
+import com.wanfadger.AdministrativeareaApi.areaexceptions.MissingDataException;
 import com.wanfadger.AdministrativeareaApi.areaexceptions.NotFoundException;
 import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
 import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDTO;
