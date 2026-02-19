@@ -182,14 +182,13 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         AdministrativeAreaType areaType = AdministrativeAreaType.fromStr(typeStr)
                 .orElseThrow(() -> new MissingDataException("Missing or Unknown Administrative Area Type: " + typeStr));
 
-
         return switch (areaType) {
-            case REGION -> regionService.update(code, dto);
-            case SUBREGION -> subRegionService.update(code, dto);
+            case REGION -> regionService.update(dto);
+            case SUBREGION -> subRegionService.update(dto);
             case LOCALGOVERNMENT -> localGovernmentService.update(dto);
-            case COUNTY -> countyService.update(code, dto);
-            case SUBCOUNTY -> subCountyService.update(code, dto);
-            case PARISH -> parishService.update(code, dto);
+            case COUNTY -> countyService.update(dto);
+            case SUBCOUNTY -> subCountyService.update(dto);
+            case PARISH -> parishService.update(dto);
         };
     }
 
