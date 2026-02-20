@@ -8,6 +8,7 @@ import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.ExcelJsonDTO;
 import com.wanfadger.AdministrativeareaApi.entity.County;
 import com.wanfadger.AdministrativeareaApi.entity.LocalGovernment;
+import jakarta.validation.constraints.NotBlank;
 
 import java.util.List;
 import java.util.Map;
@@ -18,26 +19,15 @@ public interface CountyService {
 
     ResponseDTO<String> update(UpdateAdministrativeAreaDTO dto);
 
-    ResponseDTO<String> delete(String code);
+    ResponseDTO<String> delete(@NotBlank String code);
 
-    // ResponseDTO<List<CountyDTO>> list(String localGovernmentCode);
+    ResponseDTO<CountyDTO> getByCode(@NotBlank String code);
 
-    ResponseDTO<CountyDTO> getByCode(String code);
+    ResponseDTO<CountyDTO> findDetailsByCode(@NotBlank String code);
 
-    ResponseDTO<CountyDTO> findDetailsByCode(String code);
-
-    Optional<County> findByCode(String code);
-
-    // List<County> findAll();
-
-    // List<County> findAllByLocalGovernmentCode(String localGovernmentCode);
-
-    // List<County> findAllByLocalGovernmentCodes(List<String>
-    // localGovernmentCodes);
+    Optional<County> findByCode(@NotBlank String code);
 
     ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos);
-
-    // ResponseDTO<List<CountyDTO>> search(String name, String code);
 
     List<County> upload(List<ExcelJsonDTO> dtos, Map<String, LocalGovernment> localGovernmentMap);
 

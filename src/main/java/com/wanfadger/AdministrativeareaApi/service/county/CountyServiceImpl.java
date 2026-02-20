@@ -35,6 +35,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import org.springframework.validation.annotation.Validated;
+import jakarta.validation.constraints.NotBlank;
 import com.wanfadger.AdministrativeareaApi.config.CacheValueKeyConfig;
 
 import jakarta.persistence.criteria.Fetch;
@@ -44,11 +47,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
+
+@Validated
 public class CountyServiceImpl implements CountyService {
 
     private final CountyRepository countyRepository;
@@ -156,7 +162,7 @@ public class CountyServiceImpl implements CountyService {
 
     @Override
     @Cacheable(value = CacheValueKeyConfig.COUNTIES, key = "#code")
-    public ResponseDTO<CountyDTO> getByCode(String code) {
+    public ResponseDTO<CountyDTO> getByCode(@NotBlank String code) {
         County county = countyRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("County not found"));
         return new ResponseDTO<>(countyMapperService.toDTO(county));
@@ -164,7 +170,7 @@ public class CountyServiceImpl implements CountyService {
 
     @Override
     @Cacheable(value = CacheValueKeyConfig.COUNTIES, key = "#code+'_details'")
-    public ResponseDTO<CountyDTO> findDetailsByCode(String code) {
+    public ResponseDTO<CountyDTO> findDetailsByCode(@NotBlank String code) {
         County county = countyRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("County not found"));
         return new ResponseDTO<>(countyMapperService.toDTO(county));
@@ -374,7 +380,7 @@ public class CountyServiceImpl implements CountyService {
     }
 
     @Override
-    public Optional<County> findByCode(String code) {
+    public Optional<County> findByCode(@NotBlank String code) {
         return countyRepository.findByCodeIgnoreCase(code);
     }
 
@@ -394,7 +400,7 @@ public class CountyServiceImpl implements CountyService {
     @Override
     @Transactional
     @CacheEvict(value = { CacheValueKeyConfig.COUNTIES, CacheValueKeyConfig.COUNTIES_FILTERED }, allEntries = true)
-    public ResponseDTO<String> delete(String code) {
+    public ResponseDTO<String> delete(@NotBlank String code) {
         if (subCountyRepository.existsByCounty_Code(code)) {
             throw new InvalidException("County with code " + code + " cannot be deleted because it has sub counties");
         }
