@@ -30,25 +30,25 @@ services:
       timeout: 5s
       retries: 5
 
-  api:
-    build: .
-    image: administrativearea-api:latest
-    ports:
-      - "8084:8084"
-    environment:
-      DB-URL: jdbc:postgresql://db:5432/areadevdb?reWriteBatchedInserts=true
-      DB-USERNAME: siip-db-user-dev
-      DB-PASSWORD: qwertyuftdytrsdev
-      ACTIVE-PROFILE: dev1
-      REDIS-HOST: redis
-      REDIS-PORT: 6379
-      APP-PORT: 8084
-    depends_on:
-      db:
-        condition: service_started
-      redis:
-        condition: service_healthy
-    restart: always
+  # api:
+  #   build: .
+  #   image: administrativearea-api:latest
+  #   ports:
+  #     - "8084:8084"
+  #   environment:
+  #     DB-URL: jdbc:postgresql://db:5432/areadevdb?reWriteBatchedInserts=true
+  #     DB-USERNAME: siip-db-user-dev
+  #     DB-PASSWORD: qwertyuftdytrsdev
+  #     ACTIVE-PROFILE: dev1
+  #     REDIS-HOST: redis
+  #     REDIS-PORT: 6379
+  #     APP-PORT: 8084
+  #   depends_on:
+  #     db:
+  #       condition: service_started
+  #     redis:
+  #       condition: service_healthy
+  #   restart: always
 
   # ui:
   #   image: wanfadger/siip-ui:v0.0.1
