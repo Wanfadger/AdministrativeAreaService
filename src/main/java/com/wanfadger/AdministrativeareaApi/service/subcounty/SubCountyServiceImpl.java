@@ -153,24 +153,6 @@ public class SubCountyServiceImpl implements SubCountyService {
         return new ResponseDTO<>(subCounty.getCode(), "successfully updated sub county");
     }
 
-    // @Override
-    // @Cacheable(value = CacheValueKeyConfig.SUB_COUNTIES, key = "'list:' +
-    // #countyCode")
-    // public ResponseDTO<List<SubCountyDTO>> list(String countyCode) {
-    // Specification<SubCounty> spec = Specification.where(null);
-    // if (countyCode != null && !countyCode.isEmpty()) {
-    // spec = spec
-    // .and(new GenericSpecification<>(new SearchCriteria("county.code", countyCode,
-    // MatchType.EQUALS)));
-    // }
-
-    // List<SubCountyDTO> subCountyDTOs = subCountyRepository.findAll(spec).stream()
-    // .map(this::toDTO)
-    // .sorted(Comparator.comparing(SubCountyDTO::getCode))
-    // .toList();
-    // return new ResponseDTO<>(subCountyDTOs);
-    // }
-
     @Override
     @Cacheable(value = CacheValueKeyConfig.SUB_COUNTIES, key = "#code")
     public ResponseDTO<SubCountyDTO> getByCode(String code) {
@@ -350,7 +332,8 @@ public class SubCountyServiceImpl implements SubCountyService {
                     County county = countyMap.get(key);
                     SubCounty subCounty = SubCounty.builder()
                             .name(excel.getSubCounty())
-                            .code(sharedService.generateUniqueCode(AdministrativeAreaType.SUBCOUNTY , code -> subCountyRepository.existsByCodeIgnoreCase(code)))
+                            .code(sharedService.generateUniqueCode(AdministrativeAreaType.SUBCOUNTY,
+                                    code -> subCountyRepository.existsByCodeIgnoreCase(code)))
                             .county(county)
                             .build();
                     return subCounty;
@@ -401,25 +384,6 @@ public class SubCountyServiceImpl implements SubCountyService {
     public Optional<SubCounty> findByCode(String code) {
         return subCountyRepository.findByCodeIgnoreCase(code);
     }
-
-    // @Override
-    // public List<SubCounty> findAll() {
-    // return subCountyRepository.findAll();
-    // }
-
-    // @Override
-    // public List<SubCounty> findAllByCountyCode(String countyCode) {
-    // return subCountyRepository
-    // .findAll(new GenericSpecification<>(new SearchCriteria("county.code",
-    // countyCode, MatchType.EQUALS)));
-    // }
-
-    // @Override
-    // public List<SubCounty> findAllByCountyCodes(List<String> countyCodes) {
-    // return subCountyRepository
-    // .findAll(new GenericSpecification<>(new SearchCriteria("county.code",
-    // countyCodes, MatchType.IN)));
-    // }
 
     @Override
 
