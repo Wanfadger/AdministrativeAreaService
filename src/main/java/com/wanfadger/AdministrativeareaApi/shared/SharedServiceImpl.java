@@ -48,6 +48,15 @@ public class SharedServiceImpl implements SharedService {
     }
 
     @Override
+    public String generateUniqueCode(AdministrativeAreaType areaType, Predicate<String> existsCheck) {
+        String code = generateCode(areaType);
+        while (existsCheck.test(code)) {
+            code = generateCode(areaType);
+        }
+        return code;
+    }
+
+    @Override
     public <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
         ConcurrentHashMap<Object, Boolean> map = new ConcurrentHashMap<>();
         return t -> map.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;

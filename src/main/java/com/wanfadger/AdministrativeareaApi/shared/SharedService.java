@@ -7,5 +7,8 @@ import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
 
 public interface SharedService {
     String generateCode(AdministrativeAreaType areaType);
+
+    String generateUniqueCode(AdministrativeAreaType areaType, Predicate<String> existsCheck);
+
     <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor);
 }
