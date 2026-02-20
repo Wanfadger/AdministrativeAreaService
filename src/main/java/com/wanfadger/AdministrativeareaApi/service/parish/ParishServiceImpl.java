@@ -12,7 +12,6 @@ import com.wanfadger.AdministrativeareaApi.dto.ParishDTO;
 import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.PaginatedResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
-import com.wanfadger.AdministrativeareaApi.dto.uniqueDtos.UParish;
 import com.wanfadger.AdministrativeareaApi.entity.County;
 import com.wanfadger.AdministrativeareaApi.entity.LocalGovernment;
 import com.wanfadger.AdministrativeareaApi.entity.Parish;

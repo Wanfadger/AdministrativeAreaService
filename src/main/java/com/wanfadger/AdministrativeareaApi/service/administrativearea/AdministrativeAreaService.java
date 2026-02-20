@@ -18,11 +18,12 @@ public interface AdministrativeAreaService {
 
         PaginatedResponseDTO<? extends AdministrativeAreaDTO> filter(Map<String, String> queryMap);
 
+        PaginatedResponseDTO<? extends AdministrativeAreaDTO> search(Map<String, String> queryMap);
+
         ResponseDTO<?> getByCode(@NotBlank String type, @NotBlank String code);
 
         ResponseDTO<?> getDetailsByCode(@NotBlank String type, @NotBlank String code);
 
-        PaginatedResponseDTO<? extends AdministrativeAreaDTO> search(Map<String, String> queryMap);
 
         ResponseDTO<String> excelJson(List<ExcelJsonDTO> excelJsonDtos);
 

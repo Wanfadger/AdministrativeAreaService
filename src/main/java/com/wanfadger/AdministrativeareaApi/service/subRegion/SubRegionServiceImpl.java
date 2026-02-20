@@ -12,7 +12,6 @@ import com.wanfadger.AdministrativeareaApi.dto.SubRegionDTO;
 import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.PaginatedResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
-import com.wanfadger.AdministrativeareaApi.dto.uniqueDtos.USubRegion;
 import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
 import com.wanfadger.AdministrativeareaApi.entity.Region;
 import com.wanfadger.AdministrativeareaApi.entity.SubRegion;

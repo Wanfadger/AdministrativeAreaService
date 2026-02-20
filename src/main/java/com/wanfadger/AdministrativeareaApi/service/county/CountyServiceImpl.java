@@ -11,7 +11,6 @@ import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.PaginatedResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
-import com.wanfadger.AdministrativeareaApi.dto.uniqueDtos.UCounty;
 import com.wanfadger.AdministrativeareaApi.entity.County;
 import com.wanfadger.AdministrativeareaApi.entity.LocalGovernment;
 import com.wanfadger.AdministrativeareaApi.entity.Region;
