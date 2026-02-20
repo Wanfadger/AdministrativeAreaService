@@ -155,24 +155,6 @@ public class CountyServiceImpl implements CountyService {
         return new ResponseDTO<>(county.getCode(), "successfully updated county");
     }
 
-    // @Override
-    // @Cacheable(value = CacheValueKeyConfig.COUNTIES, key = "'list:' +
-    // #localGovernmentCode")
-    // public ResponseDTO<List<CountyDTO>> list(String localGovernmentCode) {
-    // Specification<County> spec = Specification.where(null);
-    // if (localGovernmentCode != null && !localGovernmentCode.isEmpty()) {
-    // spec = spec.and(new GenericSpecification<>(
-    // new SearchCriteria("localGovernment.code", localGovernmentCode,
-    // MatchType.EQUALS)));
-    // }
-
-    // List<CountyDTO> countyDtos = countyRepository.findAll(spec).stream()
-    // .map(this::toDTO)
-    // .sorted(Comparator.comparing(CountyDTO::getCode))
-    // .toList();
-    // return new ResponseDTO<>(countyDtos);
-    // }
-
     @Override
     @Cacheable(value = CacheValueKeyConfig.COUNTIES, key = "#code")
     public ResponseDTO<CountyDTO> getByCode(String code) {
@@ -346,7 +328,8 @@ public class CountyServiceImpl implements CountyService {
                     LocalGovernment localGovernment = localGovernmentMap.get(key);
                     County county = County.builder()
                             .name(excel.getCounty())
-                            .code(sharedService.generateUniqueCode(AdministrativeAreaType.COUNTY, code -> countyRepository.existsByCodeIgnoreCase(code)))
+                            .code(sharedService.generateUniqueCode(AdministrativeAreaType.COUNTY,
+                                    code -> countyRepository.existsByCodeIgnoreCase(code)))
                             .localGovernment(localGovernment)
                             .build();
                     return county;
@@ -396,27 +379,6 @@ public class CountyServiceImpl implements CountyService {
         return countyRepository.findByCodeIgnoreCase(code);
     }
 
-    // @Override
-    // public List<County> findAll() {
-    // return countyRepository.findAll();
-    // }
-
-    // @Override
-    // public List<County> findAllByLocalGovernmentCode(String localGovernmentCode)
-    // {
-    // return countyRepository.findAll(new GenericSpecification<>(
-    // new SearchCriteria("localGovernment.code", localGovernmentCode,
-    // MatchType.EQUALS)));
-    // }
-
-    // @Override
-    // public List<County> findAllByLocalGovernmentCodes(List<String>
-    // localGovernmentCodes) {
-    // return countyRepository.findAll(new GenericSpecification<>(
-    // new SearchCriteria("localGovernment.code", localGovernmentCodes,
-    // MatchType.IN)));
-    // }
-
     @Override
     public List<County> findByNames(List<String> names) {
         return countyRepository.findByNameIgnoreCaseIn(names);
@@ -443,5 +405,4 @@ public class CountyServiceImpl implements CountyService {
         return new ResponseDTO<>("SUCCESS", "County deleted successfully");
     }
 
-  
 }
