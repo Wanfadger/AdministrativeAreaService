@@ -2,7 +2,6 @@ package com.wanfadger.AdministrativeareaApi.config;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.DefaultTyping;
 import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 
@@ -24,8 +23,10 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class RedisConfig {
 
+        private final ObjectMapper objectMapper;
+
         private GenericJacksonJsonRedisSerializer getJsonSerializer() {
-                ObjectMapper objectMapper = JsonMapper.builder()
+                ObjectMapper redisMapper = objectMapper.rebuild()
                                 .activateDefaultTyping(
                                                 BasicPolymorphicTypeValidator.builder()
                                                                 .allowIfBaseType(Object.class)
@@ -33,7 +34,7 @@ public class RedisConfig {
                                                 DefaultTyping.NON_FINAL,
                                                 JsonTypeInfo.As.PROPERTY)
                                 .build();
-                return new GenericJacksonJsonRedisSerializer(objectMapper);
+                return new GenericJacksonJsonRedisSerializer(redisMapper);
         }
 
         @Bean
