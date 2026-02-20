@@ -28,8 +28,7 @@ public interface LocalGovernmentRepository
 
     Optional<LocalGovernment> findByNameIgnoreCaseAndSubRegion_Code(String name, String code);
 
-    boolean existsByNameIgnoreCaseAndSubRegion_NameIgnoreCaseAndSubRegion_Region_NameIgnoreCase(String name,
-            String subRegionName, String regionName);
+  
 
     Optional<LocalGovernment> findByCodeIgnoreCase(String code);
 
@@ -44,5 +43,15 @@ public interface LocalGovernmentRepository
     List<LocalGovernment> findByNameIgnoreCaseIn(List<String> names);
 
     boolean existsByNameIgnoreCaseAndSubRegion_NameIgnoreCase(String name, String subRegionName);
+
+    @org.springframework.data.jpa.repository.Query("SELECT CASE WHEN COUNT(lg) > 0 THEN true ELSE false END FROM LocalGovernment lg "
+            + "JOIN lg.subRegion sr "
+            + "JOIN sr.region r "
+            + "WHERE LOWER(lg.name) = LOWER(:name) "
+            + "AND LOWER(sr.name) = LOWER(:subRegionName) "
+            + "AND LOWER(r.name) = LOWER(:regionName)")
+    boolean existsByDetails(@org.springframework.data.repository.query.Param("name") String name,
+            @org.springframework.data.repository.query.Param("subRegionName") String subRegionName,
+            @org.springframework.data.repository.query.Param("regionName") String regionName);
 
 }

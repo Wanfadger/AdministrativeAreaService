@@ -318,11 +318,14 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
                         && !e.getRegion().isEmpty() && !e.getSubRegion().isEmpty() && !e.getLocalGovernment().isEmpty())
                 .filter(sharedService
                         .distinctByKey(e -> e.getRegion() + ":" + e.getSubRegion() + ":" + e.getLocalGovernment()))
-                .filter(excel -> subRegionMap.containsKey(excel.getSubRegion()))
-                .filter(excel -> !localGovernmentRepository.existsByNameIgnoreCaseAndSubRegion_NameIgnoreCaseAndSubRegion_Region_NameIgnoreCase(
-                        excel.getLocalGovernment(), excel.getSubRegion(), excel.getRegion()))
+                .filter(excel -> subRegionMap
+                        .containsKey((excel.getRegion() + "_" + excel.getSubRegion()).toLowerCase()))
+                .filter(excel -> !localGovernmentRepository
+                        .existsByDetails(
+                                excel.getLocalGovernment(), excel.getSubRegion(), excel.getRegion()))
                 .map(excel -> {
-                    SubRegion subRegion = subRegionMap.get(excel.getSubRegion());
+                    String key = (excel.getRegion() + "_" + excel.getSubRegion()).toLowerCase();
+                    SubRegion subRegion = subRegionMap.get(key);
                     LocalGovernment localGovernment = LocalGovernment.builder()
                             .name(excel.getLocalGovernment())
                             .code(sharedService.generateCode(AdministrativeAreaType.LOCALGOVERNMENT))
@@ -337,17 +340,22 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
         }
 
         // search for existing local governments, join sub region
+        Set<String> involvedSubRegions = dtoList.stream()
+                .filter(e -> e.getSubRegion() != null)
+                .map(e -> e.getSubRegion().toLowerCase())
+                .collect(Collectors.toSet());
+
         Specification<LocalGovernment> spec = (root, query, cb) -> {
             if (query != null && Long.class != query.getResultType()) {
                 Fetch<LocalGovernment, SubRegion> subRegionFetch = root.fetch("subRegion", JoinType.LEFT);
                 subRegionFetch.fetch("region", JoinType.LEFT);
             }
-            return cb.conjunction();
+            return cb.lower(root.get("subRegion").get("name")).in(involvedSubRegions);
         };
         spec = spec.and(new GenericSpecification<>(new SearchCriteria("archived", "false", MatchType.EQUALS)));
 
         int page = 0;
-        int size = 100;
+        int size = 1000;
         List<LocalGovernment> existingLGs = new java.util.ArrayList<>();
         Page<LocalGovernment> lgPage = localGovernmentRepository.findAll(spec, PageRequest.of(page, size));
 

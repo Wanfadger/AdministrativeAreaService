@@ -47,8 +47,21 @@ public interface SubCountyRepository extends JpaRepository<SubCounty, Long>, Jpa
 
         List<SubCounty> findByNameIgnoreCaseIn(List<String> names);
 
-        boolean existsByNameIgnoreCaseAndCounty_NameIgnoreCaseAndLocalGovernment_NameIgnoreCaseAndLocalGovernment_SubRegion_NameIgnoreCaseAndSubRegion_Region_NameIgnoreCase(
-                        String name, String countyName, String localGovernmentName, String subRegionName,
-                        String regionName);
+        @org.springframework.data.jpa.repository.Query("SELECT CASE WHEN COUNT(sc) > 0 THEN true ELSE false END FROM SubCounty sc "
+                        +
+                        "JOIN sc.county c " +
+                        "JOIN c.localGovernment lg " +
+                        "JOIN lg.subRegion sr " +
+                        "JOIN sr.region r " +
+                        "WHERE LOWER(sc.name) = LOWER(:name) " +
+                        "AND LOWER(c.name) = LOWER(:countyName) " +
+                        "AND LOWER(lg.name) = LOWER(:lgName) " +
+                        "AND LOWER(sr.name) = LOWER(:subRegionName) " +
+                        "AND LOWER(r.name) = LOWER(:regionName)")
+        boolean existsByDetails(@org.springframework.data.repository.query.Param("name") String name,
+                        @org.springframework.data.repository.query.Param("countyName") String countyName,
+                        @org.springframework.data.repository.query.Param("lgName") String lgName,
+                        @org.springframework.data.repository.query.Param("subRegionName") String subRegionName,
+                        @org.springframework.data.repository.query.Param("regionName") String regionName);
 
 }

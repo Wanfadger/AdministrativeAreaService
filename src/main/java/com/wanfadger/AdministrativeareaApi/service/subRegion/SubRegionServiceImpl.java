@@ -316,12 +316,14 @@ public class SubRegionServiceImpl implements SubRegionService {
     public List<SubRegion> upload(List<ExcelJsonDTO> dtoList, Map<String, Region> regionMap) {
         // filter unique sub regions in each region
         List<SubRegion> uniqueSubRegions = dtoList.stream()
-                .filter(e -> e.getRegion() != null && e.getSubRegion() != null && !e.getRegion().isEmpty() && !e.getSubRegion().isEmpty())
+                .filter(e -> e.getRegion() != null && e.getSubRegion() != null && !e.getRegion().isEmpty()
+                        && !e.getSubRegion().isEmpty())
                 .filter(sharedService.distinctByKey(e -> e.getRegion() + ":" + e.getSubRegion()))
                 .filter(excel -> regionMap.containsKey(excel.getRegion()))
-                .filter(excel -> !subRegionRepository.existsByNameIgnoreCaseAndRegion_NameIgnoreCase(excel.getSubRegion(), excel.getRegion()))
+                .filter(excel -> !subRegionRepository
+                        .existsByDetails(excel.getSubRegion(), excel.getRegion()))
                 .map(excel -> {
-                    Region region = regionMap.get(excel.getRegion());
+                    Region region = regionMap.get(excel.getRegion() == null ? "" : excel.getRegion().toLowerCase());
                     SubRegion subRegion = SubRegion.builder()
                             .name(excel.getSubRegion())
                             .code(sharedService.generateCode(AdministrativeAreaType.SUBREGION))
@@ -334,7 +336,7 @@ public class SubRegionServiceImpl implements SubRegionService {
         log.info("Unique sub regions: {}", uniqueSubRegions.size());
 
         // search for existing sub regions, join region
-         Specification<SubRegion> spec = (root, query, cb) -> {
+        Specification<SubRegion> spec = (root, query, cb) -> {
             if (query != null && Long.class != query.getResultType()) {
                 root.fetch("region", JoinType.LEFT); // Fetch Region to avoid n+1
             }
@@ -345,12 +347,11 @@ public class SubRegionServiceImpl implements SubRegionService {
         int page = 0;
         int size = 100;
         List<SubRegion> existingSubRegions = new ArrayList<>();
-        Page<SubRegion> subRegionsPage = subRegionRepository.findAll(spec , PageRequest.of(page, size));
+        Page<SubRegion> subRegionsPage = subRegionRepository.findAll(spec, PageRequest.of(page, size));
 
-        
-        while(subRegionsPage.hasNext()) {
+        while (subRegionsPage.hasNext()) {
             existingSubRegions.addAll(subRegionsPage.getContent());
-            subRegionsPage = subRegionRepository.findAll(spec , PageRequest.of(++page, size));
+            subRegionsPage = subRegionRepository.findAll(spec, PageRequest.of(++page, size));
         }
 
         return existingSubRegions;

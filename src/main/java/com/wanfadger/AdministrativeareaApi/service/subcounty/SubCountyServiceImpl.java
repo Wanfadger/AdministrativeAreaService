@@ -336,13 +336,18 @@ public class SubCountyServiceImpl implements SubCountyService {
                         && !e.getCounty().isEmpty() && !e.getSubCounty().isEmpty())
                 .filter(sharedService.distinctByKey(e -> e.getRegion() + ":" + e.getSubRegion() + ":"
                         + e.getLocalGovernment() + ":" + e.getCounty() + ":" + e.getSubCounty()))
-                .filter(excel -> countyMap.containsKey(excel.getCounty()))
+                .filter(excel -> {
+                    String key = (excel.getRegion() + "_" + excel.getSubRegion() + "_" + excel.getLocalGovernment()
+                            + "_" + excel.getCounty()).toLowerCase();
+                    return countyMap.containsKey(key);
+                })
                 .filter(excel -> !subCountyRepository
-                        .existsByNameIgnoreCaseAndCounty_NameIgnoreCaseAndLocalGovernment_NameIgnoreCaseAndLocalGovernment_SubRegion_NameIgnoreCaseAndSubRegion_Region_NameIgnoreCase(
-                                excel.getSubCounty(), excel.getCounty(), excel.getLocalGovernment(),
+                        .existsByDetails(excel.getSubCounty(), excel.getCounty(), excel.getLocalGovernment(),
                                 excel.getSubRegion(), excel.getRegion()))
                 .map(excel -> {
-                    County county = countyMap.get(excel.getCounty());
+                    String key = (excel.getRegion() + "_" + excel.getSubRegion() + "_" + excel.getLocalGovernment()
+                            + "_" + excel.getCounty()).toLowerCase();
+                    County county = countyMap.get(key);
                     SubCounty subCounty = SubCounty.builder()
                             .name(excel.getSubCounty())
                             .code(generateCode())
@@ -357,6 +362,11 @@ public class SubCountyServiceImpl implements SubCountyService {
         }
 
         // search for existing sub counties, join county
+        Set<String> involvedCounties = dtoList.stream()
+                .filter(e -> e.getCounty() != null)
+                .map(e -> e.getCounty().toLowerCase())
+                .collect(Collectors.toSet());
+
         Specification<SubCounty> spec = (root, query, cb) -> {
             if (query != null && Long.class != query.getResultType()) {
                 Fetch<SubCounty, County> countyFetch = root.fetch("county", JoinType.LEFT);
@@ -366,12 +376,12 @@ public class SubCountyServiceImpl implements SubCountyService {
                         JoinType.LEFT);
                 subRegionFetch.fetch("region", JoinType.LEFT);
             }
-            return cb.conjunction();
+            return cb.lower(root.get("county").get("name")).in(involvedCounties);
         };
         spec = spec.and(new GenericSpecification<>(new SearchCriteria("archived", "false", MatchType.EQUALS)));
 
         int page = 0;
-        int size = 100;
+        int size = 1000;
         List<SubCounty> existingSubCounties = new java.util.ArrayList<>();
         Page<SubCounty> subCountyPage = subCountyRepository.findAll(spec, PageRequest.of(page, size));
 

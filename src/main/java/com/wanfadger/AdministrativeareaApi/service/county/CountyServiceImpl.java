@@ -336,11 +336,14 @@ public class CountyServiceImpl implements CountyService {
                         && !e.getCounty().isEmpty())
                 .filter(sharedService.distinctByKey(e -> e.getRegion() + ":" + e.getSubRegion() + ":"
                         + e.getLocalGovernment() + ":" + e.getCounty()))
-                .filter(excel -> localGovernmentMap.containsKey(excel.getLocalGovernment()))
-                .filter(excel -> !countyRepository.existsByNameIgnoreCaseAndLocalGovernment_NameIgnoreCaseAndLocalGovernment_SubRegion_NameIgnoreCaseAndSubRegion_Region_NameIgnoreCase(
+                .filter(excel -> localGovernmentMap.containsKey((excel.getRegion() + "_" + excel.getSubRegion() + "_"
+                        + excel.getLocalGovernment()).toLowerCase()))
+                .filter(excel -> !countyRepository.existsByDetails(
                         excel.getCounty(), excel.getLocalGovernment(), excel.getSubRegion(), excel.getRegion()))
                 .map(excel -> {
-                    LocalGovernment localGovernment = localGovernmentMap.get(excel.getLocalGovernment());
+                    String key = (excel.getRegion() + "_" + excel.getSubRegion() + "_" + excel.getLocalGovernment())
+                            .toLowerCase();
+                    LocalGovernment localGovernment = localGovernmentMap.get(key);
                     County county = County.builder()
                             .name(excel.getCounty())
                             .code(generateCode())
@@ -355,6 +358,11 @@ public class CountyServiceImpl implements CountyService {
         }
 
         // search for existing counties, join local government
+        Set<String> involvedLGs = dtoList.stream()
+                .filter(e -> e.getLocalGovernment() != null)
+                .map(e -> e.getLocalGovernment().toLowerCase())
+                .collect(Collectors.toSet());
+
         Specification<County> spec = (root, query, cb) -> {
             if (query != null && Long.class != query.getResultType()) {
                 Fetch<County, LocalGovernment> localGovernmentFetch = root.fetch("localGovernment", JoinType.LEFT);
@@ -362,12 +370,12 @@ public class CountyServiceImpl implements CountyService {
                         JoinType.LEFT);
                 subRegionFetch.fetch("region", JoinType.LEFT);
             }
-            return cb.conjunction();
+            return cb.lower(root.get("localGovernment").get("name")).in(involvedLGs);
         };
         spec = spec.and(new GenericSpecification<>(new SearchCriteria("archived", "false", MatchType.EQUALS)));
 
         int page = 0;
-        int size = 100;
+        int size = 1000; // Increased batch size for efficiency
         List<County> existingCounties = new java.util.ArrayList<>();
         Page<County> countyPage = countyRepository.findAll(spec, PageRequest.of(page, size));
 

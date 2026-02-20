@@ -320,12 +320,18 @@ public class ParishServiceImpl implements ParishService {
                         && !e.getCounty().isEmpty() && !e.getSubCounty().isEmpty() && !e.getParish().isEmpty())
                 .filter(sharedService.distinctByKey(e -> e.getRegion() + ":" + e.getSubRegion() + ":"
                         + e.getLocalGovernment() + ":" + e.getCounty() + ":" + e.getSubCounty() + ":" + e.getParish()))
-                .filter(excel -> subCountyMap.containsKey(excel.getSubCounty()))
-                .filter(excel -> !parishRepository.existsByNameIgnoreCaseAndSubCounty_NameIgnoreCaseAndSubCounty_County_NameIgnoreCaseAndSubCounty_County_LocalGovernment_NameIgnoreCaseAndSubCounty_County_LocalGovernment_SubRegion_NameIgnoreCaseAndSubCounty_County_LocalGovernment_SubRegion_Region_NameIgnoreCase(excel.getParish(),
+                .filter(excel -> {
+                    String key = (excel.getRegion() + "_" + excel.getSubRegion() + "_" + excel.getLocalGovernment()
+                            + "_" + excel.getCounty() + "_" + excel.getSubCounty()).toLowerCase();
+                    return subCountyMap.containsKey(key);
+                })
+                .filter(excel -> !parishRepository.existsByDetails(excel.getParish(),
                         excel.getSubCounty(), excel.getCounty(), excel.getLocalGovernment(), excel.getSubRegion(),
                         excel.getRegion()))
                 .map(excel -> {
-                    SubCounty subCounty = subCountyMap.get(excel.getSubCounty());
+                    String key = (excel.getRegion() + "_" + excel.getSubRegion() + "_" + excel.getLocalGovernment()
+                            + "_" + excel.getCounty() + "_" + excel.getSubCounty()).toLowerCase();
+                    SubCounty subCounty = subCountyMap.get(key);
                     Parish parish = Parish.builder()
                             .name(excel.getParish())
                             .code(generateCode())

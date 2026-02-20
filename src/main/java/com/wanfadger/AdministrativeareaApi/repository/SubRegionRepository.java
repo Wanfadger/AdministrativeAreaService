@@ -45,4 +45,11 @@ public interface SubRegionRepository extends JpaRepository<SubRegion, Long>, Jpa
 
     List<SubRegion> findByNameIgnoreCaseIn(List<String> names);
 
+    @org.springframework.data.jpa.repository.Query("SELECT CASE WHEN COUNT(sr) > 0 THEN true ELSE false END FROM SubRegion sr "
+            + "JOIN sr.region r "
+            + "WHERE LOWER(sr.name) = LOWER(:name) "
+            + "AND LOWER(r.name) = LOWER(:regionName)")
+    boolean existsByDetails(@org.springframework.data.repository.query.Param("name") String name,
+            @org.springframework.data.repository.query.Param("regionName") String regionName);
+
 }

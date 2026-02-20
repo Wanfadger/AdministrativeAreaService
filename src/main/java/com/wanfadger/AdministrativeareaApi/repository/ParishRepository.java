@@ -50,8 +50,24 @@ public interface ParishRepository extends JpaRepository<Parish, Long>, JpaSpecif
 
         boolean existsBySubCounty_Code(String subCountyCode);
 
-        boolean existsByNameIgnoreCaseAndSubCounty_NameIgnoreCaseAndSubCounty_County_NameIgnoreCaseAndSubCounty_County_LocalGovernment_NameIgnoreCaseAndSubCounty_County_LocalGovernment_SubRegion_NameIgnoreCaseAndSubCounty_County_LocalGovernment_SubRegion_Region_NameIgnoreCase(
-                        String name, String subCountyName, String countyName, String localGovernmentName,
-                        String subRegionName, String regionName);
+        @org.springframework.data.jpa.repository.Query("SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END FROM Parish p "
+                        +
+                        "JOIN p.subCounty sc " +
+                        "JOIN sc.county c " +
+                        "JOIN c.localGovernment lg " +
+                        "JOIN lg.subRegion sr " +
+                        "JOIN sr.region r " +
+                        "WHERE LOWER(p.name) = LOWER(:name) " +
+                        "AND LOWER(sc.name) = LOWER(:subCountyName) " +
+                        "AND LOWER(c.name) = LOWER(:countyName) " +
+                        "AND LOWER(lg.name) = LOWER(:lgName) " +
+                        "AND LOWER(sr.name) = LOWER(:subRegionName) " +
+                        "AND LOWER(r.name) = LOWER(:regionName)")
+        boolean existsByDetails(@org.springframework.data.repository.query.Param("name") String name,
+                        @org.springframework.data.repository.query.Param("subCountyName") String subCountyName,
+                        @org.springframework.data.repository.query.Param("countyName") String countyName,
+                        @org.springframework.data.repository.query.Param("lgName") String lgName,
+                        @org.springframework.data.repository.query.Param("subRegionName") String subRegionName,
+                        @org.springframework.data.repository.query.Param("regionName") String regionName);
 
 }

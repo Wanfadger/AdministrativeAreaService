@@ -171,20 +171,52 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         }
 
         try {
-            CompletableFuture
-                    .supplyAsync(() -> regionService.upload(excelJsonDtos).stream()
-                            .collect(Collectors.toMap(Region::getName, (r) -> r, (existing, replacement) -> existing)))
-                    .thenApplyAsync(regionMap -> subRegionService.upload(excelJsonDtos, regionMap).stream().collect(
-                            Collectors.toMap(SubRegion::getName, (r) -> r, (existing, replacement) -> existing)))
+            CompletableFuture.supplyAsync(() -> regionService.upload(excelJsonDtos).stream()
+                    .collect(Collectors.toMap(r -> r.getName().toLowerCase(), r -> r,
+                            (existing, replacement) -> existing)))
+                    .thenApplyAsync(regionMap -> subRegionService.upload(excelJsonDtos, regionMap).stream()
+                            .collect(Collectors.toMap(
+                                    sr -> sr.getRegion().getName().toLowerCase() + "_" + sr.getName().toLowerCase(),
+                                    sr -> sr, (existing, replacement) -> existing)))
                     .thenApplyAsync(subRegionMap -> localGovernmentService.upload(excelJsonDtos, subRegionMap).stream()
-                            .collect(Collectors.toMap(LocalGovernment::getName, (r) -> r,
-                                    (existing, replacement) -> existing)))
+                            .collect(Collectors.toMap(
+                                    lg -> lg.getSubRegion().getRegion().getName().toLowerCase() + "_"
+                                            + lg.getSubRegion().getName().toLowerCase() + "_"
+                                            + lg.getName().toLowerCase(),
+                                    lg -> lg, (existing, replacement) -> existing)))
                     .thenApplyAsync(lgMap -> countyService.upload(excelJsonDtos, lgMap).stream()
-                            .collect(Collectors.toMap(County::getName, (r) -> r, (existing, replacement) -> existing)))
-                    .thenApplyAsync(countyMap -> subCountyService.upload(excelJsonDtos, countyMap).stream().collect(
-                            Collectors.toMap(SubCounty::getName, (r) -> r, (existing, replacement) -> existing)))
+                            .collect(Collectors.toMap(
+                                    c -> c.getLocalGovernment().getSubRegion().getRegion().getName().toLowerCase()
+                                            + "_" + c.getLocalGovernment().getSubRegion().getName().toLowerCase()
+                                            + "_" + c.getLocalGovernment().getName().toLowerCase() + "_"
+                                            + c.getName().toLowerCase(),
+                                    c -> c, (existing, replacement) -> existing)))
+                    .thenApplyAsync(countyMap -> subCountyService.upload(excelJsonDtos, countyMap).stream()
+                            .collect(Collectors.toMap(
+                                    sc -> sc.getCounty().getLocalGovernment().getSubRegion().getRegion().getName()
+                                            .toLowerCase()
+                                            + "_"
+                                            + sc.getCounty().getLocalGovernment().getSubRegion().getName().toLowerCase()
+                                            + "_"
+                                            + sc.getCounty().getLocalGovernment().getName().toLowerCase() + "_"
+                                            + sc.getCounty().getName().toLowerCase() + "_" + sc.getName().toLowerCase(),
+                                    sc -> sc, (existing, replacement) -> existing)))
                     .thenApplyAsync(subCountyMap -> parishService.upload(excelJsonDtos, subCountyMap).stream()
-                            .collect(Collectors.toMap(Parish::getName, (r) -> r, (existing, replacement) -> existing)))
+                            .collect(
+                                    Collectors.toMap(
+                                            p -> p.getSubCounty().getCounty().getLocalGovernment().getSubRegion()
+                                                    .getRegion()
+                                                    .getName().toLowerCase() + "_" +
+                                                    p.getSubCounty().getCounty().getLocalGovernment().getSubRegion()
+                                                            .getName().toLowerCase()
+                                                    + "_" +
+                                                    p.getSubCounty().getCounty().getLocalGovernment().getName()
+                                                            .toLowerCase()
+                                                    + "_" +
+                                                    p.getSubCounty().getCounty().getName().toLowerCase() + "_" +
+                                                    p.getSubCounty().getName().toLowerCase() + "_" +
+                                                    p.getName().toLowerCase(),
+                                            p -> p, (existing, replacement) -> existing)))
                     .join(); // Wait for completion
         } catch (Exception e) {
             log.error("Error processing Excel upload", e);
