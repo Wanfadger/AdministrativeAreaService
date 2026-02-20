@@ -35,8 +35,6 @@ public interface ParishRepository extends JpaRepository<Parish, Long>, JpaSpecif
         @NonNull
         Optional<Parish> findById(@NonNull Long id);
 
-        Optional<Parish> findByNameIgnoreCaseAndSubCounty_Code(String name, String countyCode);
-
         @EntityGraph(attributePaths = { "subCounty", "subCounty.county", "subCounty.county.localGovernment",
                         "subCounty.county.localGovernment.subRegion",
                         "subCounty.county.localGovernment.subRegion.region" }, type = EntityGraph.EntityGraphType.FETCH)
