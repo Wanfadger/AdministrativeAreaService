@@ -1,8 +1,10 @@
 package com.wanfadger.AdministrativeareaApi.config;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.DefaultTyping;
+import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -12,7 +14,7 @@ import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
@@ -22,14 +24,16 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class RedisConfig {
 
-        private GenericJackson2JsonRedisSerializer getJsonSerializer() {
-                ObjectMapper objectMapper = new ObjectMapper();
-                objectMapper.registerModule(new JavaTimeModule());
-                objectMapper.activateDefaultTyping(
-                                objectMapper.getPolymorphicTypeValidator(),
-                                ObjectMapper.DefaultTyping.NON_FINAL,
-                                JsonTypeInfo.As.PROPERTY);
-                return new GenericJackson2JsonRedisSerializer(objectMapper);
+        private GenericJacksonJsonRedisSerializer getJsonSerializer() {
+                ObjectMapper objectMapper = JsonMapper.builder()
+                                .activateDefaultTyping(
+                                                BasicPolymorphicTypeValidator.builder()
+                                                                .allowIfBaseType(Object.class)
+                                                                .build(),
+                                                DefaultTyping.NON_FINAL,
+                                                JsonTypeInfo.As.PROPERTY)
+                                .build();
+                return new GenericJacksonJsonRedisSerializer(objectMapper);
         }
 
         @Bean
@@ -37,7 +41,7 @@ public class RedisConfig {
                 RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
                 redisTemplate.setConnectionFactory(redisConnectionFactory);
 
-                GenericJackson2JsonRedisSerializer serializer = getJsonSerializer();
+                GenericJacksonJsonRedisSerializer serializer = getJsonSerializer();
 
                 redisTemplate.setKeySerializer(new StringRedisSerializer());
                 redisTemplate.setValueSerializer(serializer);
@@ -50,7 +54,7 @@ public class RedisConfig {
         @Bean
         @Primary
         public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-                GenericJackson2JsonRedisSerializer serializer = getJsonSerializer();
+                GenericJacksonJsonRedisSerializer serializer = getJsonSerializer();
 
                 RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
                                 .serializeKeysWith(RedisSerializationContext.SerializationPair
@@ -67,7 +71,7 @@ public class RedisConfig {
 
         @Bean("searchCacheManager")
         public RedisCacheManager searchCacheManager(RedisConnectionFactory connectionFactory) {
-                GenericJackson2JsonRedisSerializer serializer = getJsonSerializer();
+                GenericJacksonJsonRedisSerializer serializer = getJsonSerializer();
 
                 RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
                                 .serializeKeysWith(RedisSerializationContext.SerializationPair
