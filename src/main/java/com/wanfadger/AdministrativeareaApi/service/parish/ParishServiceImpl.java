@@ -5,7 +5,7 @@ import com.wanfadger.AdministrativeareaApi.areaexceptions.InvalidException;
 import com.wanfadger.AdministrativeareaApi.areaexceptions.MissingDataException;
 import com.wanfadger.AdministrativeareaApi.areaexceptions.NotFoundException;
 import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
-import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
+import com.wanfadger.AdministrativeareaApi.dto.ExcelJsonDTO;
 import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.ParishDTO;
 
@@ -311,46 +311,75 @@ public class ParishServiceImpl implements ParishService {
     @Override
     @Transactional
     @CacheEvict(value = { CacheValueKeyConfig.PARISHES }, allEntries = true)
-    public void upload(List<AdministrativeAreaExcelDTO> dtoList) {
-        List<Parish> dbParishes = parishRepository.findAll();
+    public List<Parish> upload(List<ExcelJsonDTO> dtoList, Map<String, SubCounty> subCountyMap) {
+        // filter unique parishes in each sub county
+        List<Parish> uniqueParishes = dtoList.stream()
+                .filter(e -> e.getRegion() != null && e.getSubRegion() != null && e.getLocalGovernment() != null
+                        && e.getCounty() != null && e.getSubCounty() != null && e.getParish() != null
+                        && !e.getRegion().isEmpty() && !e.getSubRegion().isEmpty() && !e.getLocalGovernment().isEmpty()
+                        && !e.getCounty().isEmpty() && !e.getSubCounty().isEmpty() && !e.getParish().isEmpty())
+                .filter(sharedService.distinctByKey(e -> e.getRegion() + ":" + e.getSubRegion() + ":"
+                        + e.getLocalGovernment() + ":" + e.getCounty() + ":" + e.getSubCounty() + ":" + e.getParish()))
+                .filter(excel -> subCountyMap.containsKey(excel.getSubCounty()))
+                .filter(excel -> !parishRepository.existsByNameIgnoreCaseAndSubCounty_NameIgnoreCaseAndSubCounty_County_NameIgnoreCaseAndSubCounty_County_LocalGovernment_NameIgnoreCaseAndSubCounty_County_LocalGovernment_SubRegion_NameIgnoreCaseAndSubCounty_County_LocalGovernment_SubRegion_Region_NameIgnoreCase(excel.getParish(),
+                        excel.getSubCounty(), excel.getCounty(), excel.getLocalGovernment(), excel.getSubRegion(),
+                        excel.getRegion()))
+                .map(excel -> {
+                    SubCounty subCounty = subCountyMap.get(excel.getSubCounty());
+                    Parish parish = Parish.builder()
+                            .name(excel.getParish())
+                            .code(generateCode())
+                            .subCounty(subCounty)
+                            .build();
+                    return parish;
+                })
+                .toList();
 
-        Set<UParish> newParishSet = dtoList.parallelStream()
-                .filter(dto -> dbParishes.stream().parallel().noneMatch(dbParish -> {
-                    SubCounty subCounty = dbParish.getSubCounty();
-                    County county = subCounty.getCounty();
-                    LocalGovernment localGovernment = county.getLocalGovernment();
-                    SubRegion subRegion = localGovernment.getSubRegion();
-                    Region region = subRegion.getRegion();
-                    return (dbParish.getName().equalsIgnoreCase(dto.getParish())
-                            && subCounty.getName().equalsIgnoreCase(dto.getSubCounty())
-                            && county.getName().equalsIgnoreCase(dto.getCounty())
-                            && localGovernment.getName().equalsIgnoreCase(dto.getLocalGovernment())
-                            && subRegion.getName().equalsIgnoreCase(dto.getSubRegion())
-                            && region.getName().equalsIgnoreCase(dto.getRegion()));
-                }))
-                .map(dto -> new UParish(dto.getParish(), dto.getDbSubCounty().getId()))
-                .collect(Collectors.toSet());
-
-        if (newParishSet.size() > 0) {
-            List<Parish> newParishes = newParishSet.stream().map(uP -> {
-                Parish parish = new Parish();
-                parish.setCode(generateCode());
-                parish.setName(uP.getName());
-                parish.setSubCounty(subCountyRepository.findById(uP.getId())
-                        .orElseThrow(() -> new NotFoundException("SubCounty not found")));
-                return parish;
-            }).toList();
-            parishRepository.saveAll(newParishes);
+        if (!uniqueParishes.isEmpty()) {
+            parishRepository.saveAll(uniqueParishes);
         }
 
+        // search for existing parishes, join sub county
+        Specification<Parish> spec = (root, query, cb) -> {
+            if (query != null && Long.class != query.getResultType()) {
+                Fetch<Parish, SubCounty> subCountyFetch = root.fetch("subCounty", JoinType.LEFT);
+                Fetch<SubCounty, County> countyFetch = subCountyFetch.fetch("county", JoinType.LEFT);
+                Fetch<County, LocalGovernment> localGovernmentFetch = countyFetch.fetch("localGovernment",
+                        JoinType.LEFT);
+                Fetch<LocalGovernment, SubRegion> subRegionFetch = localGovernmentFetch.fetch("subRegion",
+                        JoinType.LEFT);
+                subRegionFetch.fetch("region", JoinType.LEFT);
+            }
+            return cb.conjunction();
+        };
+        spec = spec.and(new GenericSpecification<>(new SearchCriteria("archived", "false", MatchType.EQUALS)));
+
+        int page = 0;
+        int size = 100;
+        List<Parish> existingParishes = new java.util.ArrayList<>();
+        Page<Parish> parishPage = parishRepository.findAll(spec, PageRequest.of(page, size));
+
+        while (parishPage.hasNext()) {
+            existingParishes.addAll(parishPage.getContent());
+            parishPage = parishRepository.findAll(spec, PageRequest.of(++page, size));
+        }
+        // add remaining elements
+        if (!parishPage.getContent().isEmpty()) {
+            existingParishes.addAll(parishPage.getContent());
+        }
+
+        return existingParishes;
+    }
+
+    @Override
+    public List<Parish> findByNames(List<String> names) {
+        return parishRepository.findByNameIgnoreCaseIn(names);
     }
 
     @Override
     @Transactional
-    @CacheEvict(value = { CacheValueKeyConfig.PARISHES }, allEntries = true)
-    public void saveAll(List<Parish> parishes) {
-        parishRepository.saveAll(parishes);
-
+    public List<Parish> saveAll(List<Parish> parishes) {
+        return parishRepository.saveAll(parishes);
     }
 
     @Override

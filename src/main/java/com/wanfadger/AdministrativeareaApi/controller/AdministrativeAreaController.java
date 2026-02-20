@@ -65,10 +65,10 @@ public class AdministrativeAreaController {
                         @ApiResponse(responseCode = "400", description = "Invalid Excel data format"),
                         @ApiResponse(responseCode = "500", description = "Internal server error")
         })
-        @PostMapping(value = "/upload")
-        public ResponseDTO<String> upload(
-                        @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "List of administrative areas in Excel format", required = true) @RequestBody List<AdministrativeAreaExcelDTO> administrativeAreaExcelDtos) {
-                return administrativeAreaService.upload(administrativeAreaExcelDtos);
+        @PostMapping(value = "/excelJson")
+        public ResponseDTO<String> excelJson(
+                        @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "List of administrative areas in Excel format", required = true) @RequestBody List<ExcelJsonDTO> excelJsonDtos) {
+                return administrativeAreaService.excelJson(excelJsonDtos);
         }
 
         @Operation(summary = "Update an administrative area", description = "Updates an existing administrative area. Requires 'type' query parameter and 'code' in the request body. Cache is automatically evicted after update.", parameters = {

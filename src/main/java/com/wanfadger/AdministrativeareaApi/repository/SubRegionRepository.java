@@ -24,6 +24,8 @@ public interface SubRegionRepository extends JpaRepository<SubRegion, Long>, Jpa
 
     boolean existsByNameIgnoreCaseAndRegion_Code(String name, String regionCode);
 
+    boolean existsByNameIgnoreCaseAndRegion_NameIgnoreCase(String subRegionName, String regionName);
+
     boolean existsByRegion_Code(String regionCode);
 
     @Override
@@ -40,5 +42,7 @@ public interface SubRegionRepository extends JpaRepository<SubRegion, Long>, Jpa
     Optional<SubRegion> findByCodeIgnoreCase(String code);
 
     List<SubRegion> findByCodeIgnoreCaseIn(List<String> codes);
+
+    List<SubRegion> findByNameIgnoreCaseIn(List<String> names);
 
 }

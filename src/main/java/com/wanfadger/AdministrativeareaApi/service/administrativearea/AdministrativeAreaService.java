@@ -24,7 +24,7 @@ public interface AdministrativeAreaService {
 
         PaginatedResponseDTO<? extends AdministrativeAreaDTO> search(Map<String, String> queryMap);
 
-        ResponseDTO<String> upload(List<AdministrativeAreaExcelDTO> administrativeAreaExcelDtos);
+        ResponseDTO<String> excelJson(List<ExcelJsonDTO> excelJsonDtos);
 
         ResponseDTO<String> update(@NotBlank String type, UpdateAdministrativeAreaDTO dto);
 

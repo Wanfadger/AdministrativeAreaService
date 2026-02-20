@@ -5,7 +5,8 @@ import com.wanfadger.AdministrativeareaApi.dto.SubCountyDTO;
 import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.PaginatedResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
-import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
+import com.wanfadger.AdministrativeareaApi.dto.ExcelJsonDTO;
+import com.wanfadger.AdministrativeareaApi.entity.County;
 import com.wanfadger.AdministrativeareaApi.entity.SubCounty;
 
 import java.util.List;
@@ -37,9 +38,11 @@ public interface SubCountyService {
 
     // ResponseDTO<List<SubCountyDTO>> search(String name, String code);
 
-    void upload(List<AdministrativeAreaExcelDTO> dtoList);
+    List<SubCounty> upload(List<ExcelJsonDTO> dtos, Map<String, County> countyMap);
 
-    void saveAll(List<SubCounty> subCounties);
+    List<SubCounty> findByNames(List<String> names);
+
+    List<SubCounty> saveAll(List<SubCounty> subCounties);
 
     PaginatedResponseDTO<SubCountyDTO> search(Map<String, String> queryMap);
 

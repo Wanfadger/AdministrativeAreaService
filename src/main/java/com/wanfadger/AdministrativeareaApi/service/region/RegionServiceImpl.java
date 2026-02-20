@@ -5,6 +5,7 @@ import com.wanfadger.AdministrativeareaApi.areaexceptions.InvalidException;
 import com.wanfadger.AdministrativeareaApi.areaexceptions.MissingDataException;
 import com.wanfadger.AdministrativeareaApi.areaexceptions.NotFoundException;
 import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
+import com.wanfadger.AdministrativeareaApi.dto.ExcelJsonDTO;
 import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.RegionDTO;
 import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDTO;
@@ -19,6 +20,8 @@ import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.wanfadger.AdministrativeareaApi.repository.specification.GenericSpecification;
+import com.wanfadger.AdministrativeareaApi.shared.SharedService;
+import com.wanfadger.AdministrativeareaApi.shared.SharedServiceImpl;
 import com.wanfadger.AdministrativeareaApi.enums.MatchType;
 import com.wanfadger.AdministrativeareaApi.dto.SearchCriteria;
 import org.springframework.cache.annotation.CacheEvict;
@@ -32,6 +35,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.wanfadger.AdministrativeareaApi.config.CacheValueKeyConfig;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -47,6 +51,7 @@ public class RegionServiceImpl implements RegionService {
 
     private final RegionRepository regionRepository;
     private final RegionMapperService regionMapperService;
+    private final SharedService sharedService;
 
     @Override
     @Transactional
@@ -194,46 +199,49 @@ public class RegionServiceImpl implements RegionService {
 
     @Override
     @Transactional
-    @CacheEvict(value = CacheValueKeyConfig.REGIONS, allEntries = true)
-    public void upload(List<AdministrativeAreaExcelDTO> dtoList) {
-        // Step 1: Get all existing regions from database
-        List<Region> dbRegions = regionRepository.findAll();
-
-        // Step 2: Extract unique new regions from Excel (exclude existing ones)
-        List<Region> newRegions = dtoList.parallelStream()
-                .filter(dto -> dbRegions.stream()
-                        .noneMatch(dbRegion -> dbRegion.getName().equalsIgnoreCase(dto.getRegion())))
-                .filter(distinctByKey(AdministrativeAreaExcelDTO::getRegion))
-                .map(dto -> {
-                    Region region = new Region();
-                    // region.setCode(sharedService.generateCode(AdministrativeAreaType.REGION));
-                    region.setName(dto.getRegion());
+    @CacheEvict(value = { CacheValueKeyConfig.REGIONS, CacheValueKeyConfig.REGIONS_FILTERED }, allEntries = true)
+    public List<Region> upload(List<ExcelJsonDTO> excelJsonDtos) {
+        List<String> regionNames = excelJsonDtos.stream()
+                .map(ExcelJsonDTO::getRegion)
+                .filter(r -> r != null && !r.isEmpty())
+                .map(String::trim)
+                .distinct()
+                .filter(r -> !regionRepository.existsByNameIgnoreCase(r))
+                .toList();
+                
+        List<Region> regions = regionNames.stream()
+                .map(name -> {
+                    Region region = Region.builder()
+                            .name(name)
+                            .code(sharedService.generateCode(AdministrativeAreaType.REGION))
+                            .areaType(AdministrativeAreaType.REGION)
+                            .description(name)
+                            .build();
                     return region;
                 })
                 .toList();
 
-        // Step 3: Save new regions and fetch updated complete list
-        List<Region> dbRegions2;
-        if (newRegions.size() > 0) {
-            regionRepository.saveAll(newRegions);
-            dbRegions2 = regionRepository.findAll(); // Fetch updated list (existing + new)
-        } else {
-            dbRegions2 = dbRegions; // No new regions, use existing list
+        if (regions.size() > 0) {
+            regionRepository.saveAll(regions);
         }
 
-        // Step 4: Update DTOs with DB region references
-        dtoList.parallelStream().forEach(dto -> {
-            dbRegions2.stream()
-                    .filter(r -> r.getName().equalsIgnoreCase(dto.getRegion()))
-                    .findFirst()
-                    .ifPresent(dto::setDbRegion);
-        });
-
+        int page = 0;
+        int size = 100;
+        List<Region> existingRegions = new ArrayList<>();
+        Specification<Region> spec = (root, query, cb) -> cb.conjunction();
+        spec = spec.and(new GenericSpecification<>(new SearchCriteria("archived", "false", MatchType.EQUALS)));
+        Page<Region> regionPage = regionRepository.findAll(spec, PageRequest.of(page, size));
+        while(regionPage.hasNext()) {
+            existingRegions.addAll(regionPage.getContent());
+            regionPage = regionRepository.findAll(spec, PageRequest.of(++page, size));
+        }  
+        return existingRegions;
     }
 
-    public static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
-        ConcurrentHashMap<Object, Boolean> map = new ConcurrentHashMap<>();
-        return t -> map.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
+    @Override
+    @Transactional
+    public List<Region> saveAll(List<Region> regions) {
+        return regionRepository.saveAll(regions);
     }
 
     private final SubRegionRepository subRegionRepository;

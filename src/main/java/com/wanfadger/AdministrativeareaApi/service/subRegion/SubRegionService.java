@@ -6,6 +6,8 @@ import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.PaginatedResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
+import com.wanfadger.AdministrativeareaApi.dto.ExcelJsonDTO;
+import com.wanfadger.AdministrativeareaApi.entity.Region;
 import com.wanfadger.AdministrativeareaApi.entity.SubRegion;
 
 import java.util.List;
@@ -26,10 +28,9 @@ public interface SubRegionService {
 
     ResponseDTO<String> update(UpdateAdministrativeAreaDTO dto);
 
-    void upload(List<AdministrativeAreaExcelDTO> dtoList);
+    List<SubRegion> upload(List<ExcelJsonDTO> dtos , Map<String, Region> regionMap);
 
     ResponseDTO<String> delete(String code);
 
-    void saveAll(List<SubRegion> subRegions);
 
 }

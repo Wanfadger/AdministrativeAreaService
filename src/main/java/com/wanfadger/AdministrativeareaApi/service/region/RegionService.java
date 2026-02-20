@@ -5,10 +5,12 @@ import com.wanfadger.AdministrativeareaApi.dto.RegionDTO;
 import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.PaginatedResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
-import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
+import com.wanfadger.AdministrativeareaApi.entity.Region;
+import com.wanfadger.AdministrativeareaApi.dto.ExcelJsonDTO;
 
 import java.util.List;
 import java.util.Map;
+
 
 public interface RegionService {
     ResponseDTO<String> create(NewAdministrativeAreaDTO dto);
@@ -23,8 +25,11 @@ public interface RegionService {
 
     ResponseDTO<RegionDTO> findDetailsByCode(String code);
 
-    void upload(List<AdministrativeAreaExcelDTO> dtoList);
+
+    List<Region> saveAll(List<Region> regions);
 
     ResponseDTO<String> delete(String code);
+
+    List<Region> upload(List<ExcelJsonDTO> dtos);
 
 }

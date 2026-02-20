@@ -5,8 +5,9 @@ import com.wanfadger.AdministrativeareaApi.dto.ParishDTO;
 import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.PaginatedResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
-import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
+import com.wanfadger.AdministrativeareaApi.dto.ExcelJsonDTO;
 import com.wanfadger.AdministrativeareaApi.entity.Parish;
+import com.wanfadger.AdministrativeareaApi.entity.SubCounty;
 
 import java.util.List;
 import java.util.Map;
@@ -29,8 +30,10 @@ public interface ParishService {
 
     ResponseDTO<String> delete(String code);
 
-    void upload(List<AdministrativeAreaExcelDTO> dtoList);
+    List<Parish> upload(List<ExcelJsonDTO> dtos, Map<String, SubCounty> subCountyMap);
 
-    void saveAll(List<Parish> parishes);
+    List<Parish> findByNames(List<String> names);
+
+    List<Parish> saveAll(List<Parish> parishes);
 
 }

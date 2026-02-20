@@ -5,8 +5,9 @@ import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.PaginatedResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
-import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
+import com.wanfadger.AdministrativeareaApi.dto.ExcelJsonDTO;
 import com.wanfadger.AdministrativeareaApi.entity.County;
+import com.wanfadger.AdministrativeareaApi.entity.LocalGovernment;
 
 import java.util.List;
 import java.util.Map;
@@ -38,9 +39,11 @@ public interface CountyService {
 
     // ResponseDTO<List<CountyDTO>> search(String name, String code);
 
-    void upload(List<AdministrativeAreaExcelDTO> dtoList);
+    List<County> upload(List<ExcelJsonDTO> dtos, Map<String, LocalGovernment> localGovernmentMap);
 
-    void saveAll(List<County> counties);
+    List<County> findByNames(List<String> names);
+
+    List<County> saveAll(List<County> counties);
 
     PaginatedResponseDTO<CountyDTO> search(Map<String, String> queryMap);
 

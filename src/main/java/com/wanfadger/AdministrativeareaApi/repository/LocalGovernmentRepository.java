@@ -28,6 +28,9 @@ public interface LocalGovernmentRepository
 
     Optional<LocalGovernment> findByNameIgnoreCaseAndSubRegion_Code(String name, String code);
 
+    boolean existsByNameIgnoreCaseAndSubRegion_NameIgnoreCaseAndSubRegion_Region_NameIgnoreCase(String name,
+            String subRegionName, String regionName);
+
     Optional<LocalGovernment> findByCodeIgnoreCase(String code);
 
     Optional<LocalGovernment> findByCodeIgnoreCaseAndSubRegion_Code(String code, String parentCode);
@@ -37,5 +40,9 @@ public interface LocalGovernmentRepository
     boolean existsBySubRegion_Code(String subRegionCode);
 
     List<LocalGovernment> findByCodeIgnoreCaseIn(List<String> codes);
+
+    List<LocalGovernment> findByNameIgnoreCaseIn(List<String> names);
+
+    boolean existsByNameIgnoreCaseAndSubRegion_NameIgnoreCase(String name, String subRegionName);
 
 }

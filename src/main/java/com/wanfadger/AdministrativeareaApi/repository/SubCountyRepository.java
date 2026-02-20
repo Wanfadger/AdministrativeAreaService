@@ -45,4 +45,10 @@ public interface SubCountyRepository extends JpaRepository<SubCounty, Long>, Jpa
 
         List<SubCounty> findByCodeIgnoreCaseIn(List<String> codes);
 
+        List<SubCounty> findByNameIgnoreCaseIn(List<String> names);
+
+        boolean existsByNameIgnoreCaseAndCounty_NameIgnoreCaseAndLocalGovernment_NameIgnoreCaseAndLocalGovernment_SubRegion_NameIgnoreCaseAndSubRegion_Region_NameIgnoreCase(
+                        String name, String countyName, String localGovernmentName, String subRegionName,
+                        String regionName);
+
 }

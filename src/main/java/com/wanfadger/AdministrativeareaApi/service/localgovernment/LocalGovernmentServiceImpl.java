@@ -4,7 +4,7 @@ import com.wanfadger.AdministrativeareaApi.areaexceptions.AlreadyExistsException
 import com.wanfadger.AdministrativeareaApi.areaexceptions.InvalidException;
 import com.wanfadger.AdministrativeareaApi.areaexceptions.MissingDataException;
 import com.wanfadger.AdministrativeareaApi.areaexceptions.NotFoundException;
-import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
+import com.wanfadger.AdministrativeareaApi.dto.ExcelJsonDTO;
 import com.wanfadger.AdministrativeareaApi.dto.LocalGovernmentDTO;
 import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDTO;
 
@@ -311,60 +311,56 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
     @Override
     @Transactional
     @CacheEvict(value = { CacheValueKeyConfig.LOCAL_GOVERNMENTS }, allEntries = true)
-    public void upload(List<AdministrativeAreaExcelDTO> dtoList) {
-        // Step 1: Get all existing local governments from database
-        List<LocalGovernment> dbLocalGovernments = localGovernmentRepository.findAll();
+    public List<LocalGovernment> upload(List<ExcelJsonDTO> dtoList, Map<String, SubRegion> subRegionMap) {
+        // filter unique local governments in each sub region
+        List<LocalGovernment> uniqueLGs = dtoList.stream()
+                .filter(e -> e.getRegion() != null && e.getSubRegion() != null && e.getLocalGovernment() != null
+                        && !e.getRegion().isEmpty() && !e.getSubRegion().isEmpty() && !e.getLocalGovernment().isEmpty())
+                .filter(sharedService
+                        .distinctByKey(e -> e.getRegion() + ":" + e.getSubRegion() + ":" + e.getLocalGovernment()))
+                .filter(excel -> subRegionMap.containsKey(excel.getSubRegion()))
+                .filter(excel -> !localGovernmentRepository.existsByNameIgnoreCaseAndSubRegion_NameIgnoreCaseAndSubRegion_Region_NameIgnoreCase(
+                        excel.getLocalGovernment(), excel.getSubRegion(), excel.getRegion()))
+                .map(excel -> {
+                    SubRegion subRegion = subRegionMap.get(excel.getSubRegion());
+                    LocalGovernment localGovernment = LocalGovernment.builder()
+                            .name(excel.getLocalGovernment())
+                            .code(sharedService.generateCode(AdministrativeAreaType.LOCALGOVERNMENT))
+                            .subRegion(subRegion)
+                            .build();
+                    return localGovernment;
+                })
+                .toList();
 
-        // Step 2: Extract unique new local governments
-        Set<ULocalGovernment> newLocalGovernmentSet = dtoList.parallelStream()
-                .filter(dto -> dbLocalGovernments.stream().noneMatch(dbLocalGovernment -> {
-                    SubRegion subRegion = dto.getDbSubRegion();
-                    Region region = dto.getDbRegion();
-
-                    // Handling potential nulls
-                    if (subRegion == null && dbLocalGovernment.getSubRegion() == null)
-                        return dbLocalGovernment.getName().equalsIgnoreCase(dto.getLocalGovernment());
-                    if (subRegion == null || dbLocalGovernment.getSubRegion() == null)
-                        return false;
-
-                    return (dbLocalGovernment.getName().equalsIgnoreCase(dto.getLocalGovernment())
-                            && subRegion.getName().equalsIgnoreCase(dto.getSubRegion())
-                            && region.getName().equalsIgnoreCase(dto.getRegion()));
-                }))
-                .map(dto -> new ULocalGovernment(dto.getLocalGovernment(), dto.getDbSubRegion().getId()))
-                .collect(Collectors.toSet());
-
-        // Step 3: Save new and fetch updated list
-        List<LocalGovernment> dbLocalGovernments2;
-        if (newLocalGovernmentSet.size() > 0) {
-            List<LocalGovernment> newLocalGovernments = newLocalGovernmentSet.stream().map(uL -> {
-                LocalGovernment localGovernment = new LocalGovernment();
-                localGovernment.setCode(sharedService.generateCode(AdministrativeAreaType.LOCALGOVERNMENT));
-                localGovernment.setName(uL.getName());
-                localGovernment.setSubRegion(subRegionRepository.findById(uL.getId())
-                        .orElseThrow(() -> new NotFoundException("SubRegion not found")));
-                return localGovernment;
-            }).toList();
-            localGovernmentRepository.saveAll(newLocalGovernments);
-            dbLocalGovernments2 = localGovernmentRepository.findAll();
-        } else {
-            dbLocalGovernments2 = dbLocalGovernments;
+        if (!uniqueLGs.isEmpty()) {
+            localGovernmentRepository.saveAll(uniqueLGs);
         }
 
-        // Step 4: Update DTOs
-        dtoList.parallelStream().forEach(oldDto -> {
-            dbLocalGovernments2.stream()
-                    .filter(dbLocalGovernment -> {
-                        SubRegion subRegion = dbLocalGovernment.getSubRegion();
-                        Region region = subRegion.getRegion();
-                        return (dbLocalGovernment.getName().equalsIgnoreCase(oldDto.getLocalGovernment())
-                                && subRegion.getName().equalsIgnoreCase(oldDto.getSubRegion())
-                                && region.getName().equalsIgnoreCase(oldDto.getRegion()));
-                    })
-                    .findFirst()
-                    .ifPresent(oldDto::setDbLocalGovernment);
-        });
+        // search for existing local governments, join sub region
+        Specification<LocalGovernment> spec = (root, query, cb) -> {
+            if (query != null && Long.class != query.getResultType()) {
+                Fetch<LocalGovernment, SubRegion> subRegionFetch = root.fetch("subRegion", JoinType.LEFT);
+                subRegionFetch.fetch("region", JoinType.LEFT);
+            }
+            return cb.conjunction();
+        };
+        spec = spec.and(new GenericSpecification<>(new SearchCriteria("archived", "false", MatchType.EQUALS)));
 
+        int page = 0;
+        int size = 100;
+        List<LocalGovernment> existingLGs = new java.util.ArrayList<>();
+        Page<LocalGovernment> lgPage = localGovernmentRepository.findAll(spec, PageRequest.of(page, size));
+
+        while (lgPage.hasNext()) {
+            existingLGs.addAll(lgPage.getContent());
+            lgPage = localGovernmentRepository.findAll(spec, PageRequest.of(++page, size));
+        }
+        // add remaining elements
+        if (!lgPage.getContent().isEmpty()) {
+            existingLGs.addAll(lgPage.getContent());
+        }
+
+        return existingLGs;
     }
 
     @Override
@@ -373,21 +369,26 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
     }
 
     @Override
-    @Transactional
-    @CacheEvict(value = { CacheValueKeyConfig.LOCAL_GOVERNMENTS }, allEntries = true)
-    public void saveAll(List<LocalGovernment> localGovernments) {
-        localGovernmentRepository.saveAll(localGovernments);
+    public List<LocalGovernment> findByNames(List<String> names) {
+        return localGovernmentRepository.findByNameIgnoreCaseIn(names);
+    }
 
+    @Override
+    @Transactional
+    public List<LocalGovernment> saveAll(List<LocalGovernment> localGovernments) {
+        return localGovernmentRepository.saveAll(localGovernments);
     }
 
     private final CountyRepository countyRepository;
 
     @Override
     @Transactional
-    @CacheEvict(value = { CacheValueKeyConfig.LOCAL_GOVERNMENTS, CacheValueKeyConfig.LOCAL_GOVERNMENTS_FILTERED }, allEntries = true)
+    @CacheEvict(value = { CacheValueKeyConfig.LOCAL_GOVERNMENTS,
+            CacheValueKeyConfig.LOCAL_GOVERNMENTS_FILTERED }, allEntries = true)
     public ResponseDTO<String> delete(String code) {
         if (countyRepository.existsByLocalGovernment_Code(code)) {
-            throw new InvalidException("Local Government with code " + code + " cannot be deleted because it has counties");
+            throw new InvalidException(
+                    "Local Government with code " + code + " cannot be deleted because it has counties");
         }
         LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new NotFoundException("Local Government with code " + code + " not found"));

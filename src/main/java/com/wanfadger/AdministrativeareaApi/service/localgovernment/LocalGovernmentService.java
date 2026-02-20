@@ -5,8 +5,9 @@ import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.PaginatedResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
-import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
+import com.wanfadger.AdministrativeareaApi.dto.ExcelJsonDTO;
 import com.wanfadger.AdministrativeareaApi.entity.LocalGovernment;
+import com.wanfadger.AdministrativeareaApi.entity.SubRegion;
 
 import java.util.List;
 import java.util.Map;
@@ -33,8 +34,10 @@ public interface LocalGovernmentService {
 
     ResponseDTO<String> createAll(List<NewAdministrativeAreaDTO> dtos);
 
-    void upload(List<AdministrativeAreaExcelDTO> dtoList);
+    List<LocalGovernment> upload(List<ExcelJsonDTO> dtos, Map<String, SubRegion> subRegionMap);
 
-    void saveAll(List<LocalGovernment> localGovernments);
+    List<LocalGovernment> findByNames(List<String> names);
+
+    List<LocalGovernment> saveAll(List<LocalGovernment> localGovernments);
 
 }

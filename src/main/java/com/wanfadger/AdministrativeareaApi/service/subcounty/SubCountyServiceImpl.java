@@ -4,7 +4,7 @@ import com.wanfadger.AdministrativeareaApi.areaexceptions.AlreadyExistsException
 import com.wanfadger.AdministrativeareaApi.areaexceptions.InvalidException;
 import com.wanfadger.AdministrativeareaApi.areaexceptions.MissingDataException;
 import com.wanfadger.AdministrativeareaApi.areaexceptions.NotFoundException;
-import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
+import com.wanfadger.AdministrativeareaApi.dto.ExcelJsonDTO;
 import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.SubCountyDTO;
 
@@ -327,57 +327,64 @@ public class SubCountyServiceImpl implements SubCountyService {
     @Override
     @Transactional
     @CacheEvict(value = { CacheValueKeyConfig.SUB_COUNTIES }, allEntries = true)
-    public void upload(List<AdministrativeAreaExcelDTO> dtoList) {
-        List<SubCounty> dbSubCounties = subCountyRepository.findAll();
+    public List<SubCounty> upload(List<ExcelJsonDTO> dtoList, Map<String, County> countyMap) {
+        // filter unique sub counties in each county
+        List<SubCounty> uniqueSubCounties = dtoList.stream()
+                .filter(e -> e.getRegion() != null && e.getSubRegion() != null && e.getLocalGovernment() != null
+                        && e.getCounty() != null && e.getSubCounty() != null
+                        && !e.getRegion().isEmpty() && !e.getSubRegion().isEmpty() && !e.getLocalGovernment().isEmpty()
+                        && !e.getCounty().isEmpty() && !e.getSubCounty().isEmpty())
+                .filter(sharedService.distinctByKey(e -> e.getRegion() + ":" + e.getSubRegion() + ":"
+                        + e.getLocalGovernment() + ":" + e.getCounty() + ":" + e.getSubCounty()))
+                .filter(excel -> countyMap.containsKey(excel.getCounty()))
+                .filter(excel -> !subCountyRepository
+                        .existsByNameIgnoreCaseAndCounty_NameIgnoreCaseAndLocalGovernment_NameIgnoreCaseAndLocalGovernment_SubRegion_NameIgnoreCaseAndSubRegion_Region_NameIgnoreCase(
+                                excel.getSubCounty(), excel.getCounty(), excel.getLocalGovernment(),
+                                excel.getSubRegion(), excel.getRegion()))
+                .map(excel -> {
+                    County county = countyMap.get(excel.getCounty());
+                    SubCounty subCounty = SubCounty.builder()
+                            .name(excel.getSubCounty())
+                            .code(generateCode())
+                            .county(county)
+                            .build();
+                    return subCounty;
+                })
+                .toList();
 
-        Set<USubCounty> newSubCountySet = dtoList.parallelStream()
-                .filter(dto -> dbSubCounties.stream().parallel().noneMatch(dbSubCounty -> {
-                    County county = dbSubCounty.getCounty();
-                    LocalGovernment localGovernment = county.getLocalGovernment();
-                    SubRegion subRegion = localGovernment.getSubRegion();
-                    Region region = subRegion.getRegion();
-                    return (dbSubCounty.getName().equalsIgnoreCase(dto.getSubCounty())
-                            && county.getName().equalsIgnoreCase(dto.getCounty())
-                            && localGovernment.getName().equalsIgnoreCase(dto.getLocalGovernment())
-                            && subRegion.getName().equalsIgnoreCase(dto.getSubRegion())
-                            && region.getName().equalsIgnoreCase(dto.getRegion()));
-                }))
-                .map(dto -> new USubCounty(dto.getSubCounty(), dto.getDbCounty().getId()))
-                .collect(Collectors.toSet());
-
-        List<SubCounty> dbSubCounties2;
-        if (newSubCountySet.size() > 0) {
-            List<SubCounty> newSubCounties = newSubCountySet.stream().map(uSC -> {
-                SubCounty subCounty = new SubCounty();
-                subCounty.setCode(generateCode());
-                subCounty.setName(uSC.getName());
-                subCounty.setCounty(countyRepository.findById(uSC.getId())
-                        .orElseThrow(() -> new NotFoundException("County not found")));
-                return subCounty;
-            }).toList();
-            subCountyRepository.saveAll(newSubCounties);
-            dbSubCounties2 = subCountyRepository.findAll();
-        } else {
-            dbSubCounties2 = dbSubCounties;
+        if (!uniqueSubCounties.isEmpty()) {
+            subCountyRepository.saveAll(uniqueSubCounties);
         }
 
-        dtoList.parallelStream().forEach(oldDto -> {
-            dbSubCounties2.stream()
-                    .filter(dbSubCounty -> {
-                        County county = dbSubCounty.getCounty();
-                        LocalGovernment localGovernment = county.getLocalGovernment();
-                        SubRegion subRegion = localGovernment.getSubRegion();
-                        Region region = subRegion.getRegion();
-                        return (dbSubCounty.getName().equalsIgnoreCase(oldDto.getSubCounty())
-                                && county.getName().equalsIgnoreCase(oldDto.getCounty())
-                                && localGovernment.getName().equalsIgnoreCase(oldDto.getLocalGovernment())
-                                && subRegion.getName().equalsIgnoreCase(oldDto.getSubRegion())
-                                && region.getName().equalsIgnoreCase(oldDto.getRegion()));
-                    })
-                    .findFirst()
-                    .ifPresent(oldDto::setDbSubCounty);
-        });
+        // search for existing sub counties, join county
+        Specification<SubCounty> spec = (root, query, cb) -> {
+            if (query != null && Long.class != query.getResultType()) {
+                Fetch<SubCounty, County> countyFetch = root.fetch("county", JoinType.LEFT);
+                Fetch<County, LocalGovernment> localGovernmentFetch = countyFetch.fetch("localGovernment",
+                        JoinType.LEFT);
+                Fetch<LocalGovernment, SubRegion> subRegionFetch = localGovernmentFetch.fetch("subRegion",
+                        JoinType.LEFT);
+                subRegionFetch.fetch("region", JoinType.LEFT);
+            }
+            return cb.conjunction();
+        };
+        spec = spec.and(new GenericSpecification<>(new SearchCriteria("archived", "false", MatchType.EQUALS)));
 
+        int page = 0;
+        int size = 100;
+        List<SubCounty> existingSubCounties = new java.util.ArrayList<>();
+        Page<SubCounty> subCountyPage = subCountyRepository.findAll(spec, PageRequest.of(page, size));
+
+        while (subCountyPage.hasNext()) {
+            existingSubCounties.addAll(subCountyPage.getContent());
+            subCountyPage = subCountyRepository.findAll(spec, PageRequest.of(++page, size));
+        }
+        // add remaining elements
+        if (!subCountyPage.getContent().isEmpty()) {
+            existingSubCounties.addAll(subCountyPage.getContent());
+        }
+
+        return existingSubCounties;
     }
 
     @Override
@@ -405,11 +412,15 @@ public class SubCountyServiceImpl implements SubCountyService {
     // }
 
     @Override
-    @Transactional
-    @CacheEvict(value = { CacheValueKeyConfig.SUB_COUNTIES }, allEntries = true)
-    public void saveAll(List<SubCounty> subCounties) {
-        subCountyRepository.saveAll(subCounties);
 
+    public List<SubCounty> findByNames(List<String> names) {
+        return subCountyRepository.findByNameIgnoreCaseIn(names);
+    }
+
+    @Override
+    @Transactional
+    public List<SubCounty> saveAll(List<SubCounty> subCounties) {
+        return subCountyRepository.saveAll(subCounties);
     }
 
     private final ParishRepository parishRepository;

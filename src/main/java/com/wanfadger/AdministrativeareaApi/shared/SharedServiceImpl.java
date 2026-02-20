@@ -1,6 +1,9 @@
 package com.wanfadger.AdministrativeareaApi.shared;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.springframework.stereotype.Service;
 
@@ -42,6 +45,12 @@ public class SharedServiceImpl implements SharedService {
         return String.format(code + "%04d%02d%02d%02d%03d%04d", year, hour, minute, second,
                 millisecond,
                 randomSuffix);
+    }
+
+    @Override
+    public <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
+        ConcurrentHashMap<Object, Boolean> map = new ConcurrentHashMap<>();
+        return t -> map.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
     }
 
 }

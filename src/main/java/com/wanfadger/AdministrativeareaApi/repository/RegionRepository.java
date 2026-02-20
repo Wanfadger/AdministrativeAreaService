@@ -15,14 +15,12 @@ import java.util.List;
 public interface RegionRepository extends JpaRepository<Region, Long>, JpaSpecificationExecutor<Region> {
 
     Optional<Region> findByNameIgnoreCase(String name);
+
     boolean existsByNameIgnoreCase(String name);
 
     Optional<Region> findByCodeIgnoreCase(String code);
 
     List<Region> findByCodeIgnoreCaseIn(List<String> codes);
 
-    @Override
-    @NonNull
-    Page<Region> findAll(@NonNull Pageable pageable);
 
 }

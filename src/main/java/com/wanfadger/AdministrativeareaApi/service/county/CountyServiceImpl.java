@@ -4,7 +4,7 @@ import com.wanfadger.AdministrativeareaApi.areaexceptions.AlreadyExistsException
 import com.wanfadger.AdministrativeareaApi.areaexceptions.InvalidException;
 import com.wanfadger.AdministrativeareaApi.areaexceptions.MissingDataException;
 import com.wanfadger.AdministrativeareaApi.areaexceptions.NotFoundException;
-import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
+import com.wanfadger.AdministrativeareaApi.dto.ExcelJsonDTO;
 import com.wanfadger.AdministrativeareaApi.dto.CountyDTO;
 import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDTO;
 
@@ -327,52 +327,60 @@ public class CountyServiceImpl implements CountyService {
     @Override
     @Transactional
     @CacheEvict(value = { CacheValueKeyConfig.COUNTIES }, allEntries = true)
-    public void upload(List<AdministrativeAreaExcelDTO> dtoList) {
-        List<County> dbCounties = countyRepository.findAll();
+    public List<County> upload(List<ExcelJsonDTO> dtoList, Map<String, LocalGovernment> localGovernmentMap) {
+        // filter unique counties in each local government
+        List<County> uniqueCounties = dtoList.stream()
+                .filter(e -> e.getRegion() != null && e.getSubRegion() != null && e.getLocalGovernment() != null
+                        && e.getCounty() != null
+                        && !e.getRegion().isEmpty() && !e.getSubRegion().isEmpty() && !e.getLocalGovernment().isEmpty()
+                        && !e.getCounty().isEmpty())
+                .filter(sharedService.distinctByKey(e -> e.getRegion() + ":" + e.getSubRegion() + ":"
+                        + e.getLocalGovernment() + ":" + e.getCounty()))
+                .filter(excel -> localGovernmentMap.containsKey(excel.getLocalGovernment()))
+                .filter(excel -> !countyRepository.existsByNameIgnoreCaseAndLocalGovernment_NameIgnoreCaseAndLocalGovernment_SubRegion_NameIgnoreCaseAndSubRegion_Region_NameIgnoreCase(
+                        excel.getCounty(), excel.getLocalGovernment(), excel.getSubRegion(), excel.getRegion()))
+                .map(excel -> {
+                    LocalGovernment localGovernment = localGovernmentMap.get(excel.getLocalGovernment());
+                    County county = County.builder()
+                            .name(excel.getCounty())
+                            .code(generateCode())
+                            .localGovernment(localGovernment)
+                            .build();
+                    return county;
+                })
+                .toList();
 
-        Set<UCounty> newCountSet = dtoList.parallelStream()
-                .filter(dto -> dbCounties.stream().parallel().noneMatch(dbCounty -> {
-                    LocalGovernment localGovernment = dbCounty.getLocalGovernment();
-                    SubRegion subRegion = localGovernment.getSubRegion();
-                    Region region = subRegion.getRegion();
-                    return (dbCounty.getName().equalsIgnoreCase(dto.getCounty())
-                            && localGovernment.getName().equalsIgnoreCase(dto.getLocalGovernment())
-                            && subRegion.getName().equalsIgnoreCase(dto.getSubRegion())
-                            && region.getName().equalsIgnoreCase(dto.getRegion()));
-                })).map(dto -> new UCounty(dto.getCounty(), dto.getDbLocalGovernment().getId()))
-                .collect(Collectors.toSet());
-
-        List<County> dbCounties2;
-        if (newCountSet.size() > 0) {
-            List<County> newCounties = newCountSet.stream().map(UC -> {
-                County county = new County();
-                county.setCode(generateCode());
-                county.setName(UC.getName());
-                county.setLocalGovernment(localGovernmentRepository.findById(UC.getId())
-                        .orElseThrow(() -> new NotFoundException("LocalGovernment not found")));
-                return county;
-            }).toList();
-            countyRepository.saveAll(newCounties);
-            dbCounties2 = countyRepository.findAll();
-        } else {
-            dbCounties2 = dbCounties;
+        if (!uniqueCounties.isEmpty()) {
+            countyRepository.saveAll(uniqueCounties);
         }
 
-        dtoList.parallelStream().forEach(oldDto -> {
-            dbCounties2.stream()
-                    .filter(dbCounty -> {
-                        LocalGovernment localGovernment = dbCounty.getLocalGovernment();
-                        SubRegion subRegion = localGovernment.getSubRegion();
-                        Region region = subRegion.getRegion();
-                        return (dbCounty.getName().equalsIgnoreCase(oldDto.getCounty())
-                                && localGovernment.getName().equalsIgnoreCase(oldDto.getLocalGovernment())
-                                && subRegion.getName().equalsIgnoreCase(oldDto.getSubRegion())
-                                && region.getName().equalsIgnoreCase(oldDto.getRegion()));
-                    })
-                    .findFirst()
-                    .ifPresent(oldDto::setDbCounty);
-        });
+        // search for existing counties, join local government
+        Specification<County> spec = (root, query, cb) -> {
+            if (query != null && Long.class != query.getResultType()) {
+                Fetch<County, LocalGovernment> localGovernmentFetch = root.fetch("localGovernment", JoinType.LEFT);
+                Fetch<LocalGovernment, SubRegion> subRegionFetch = localGovernmentFetch.fetch("subRegion",
+                        JoinType.LEFT);
+                subRegionFetch.fetch("region", JoinType.LEFT);
+            }
+            return cb.conjunction();
+        };
+        spec = spec.and(new GenericSpecification<>(new SearchCriteria("archived", "false", MatchType.EQUALS)));
 
+        int page = 0;
+        int size = 100;
+        List<County> existingCounties = new java.util.ArrayList<>();
+        Page<County> countyPage = countyRepository.findAll(spec, PageRequest.of(page, size));
+
+        while (countyPage.hasNext()) {
+            existingCounties.addAll(countyPage.getContent());
+            countyPage = countyRepository.findAll(spec, PageRequest.of(++page, size));
+        }
+        // add remaining elements
+        if (!countyPage.getContent().isEmpty()) {
+            existingCounties.addAll(countyPage.getContent());
+        }
+
+        return existingCounties;
     }
 
     @Override
@@ -402,11 +410,14 @@ public class CountyServiceImpl implements CountyService {
     // }
 
     @Override
-    @Transactional
-    @CacheEvict(value = { CacheValueKeyConfig.COUNTIES }, allEntries = true)
-    public void saveAll(List<County> counties) {
-        countyRepository.saveAll(counties);
+    public List<County> findByNames(List<String> names) {
+        return countyRepository.findByNameIgnoreCaseIn(names);
+    }
 
+    @Override
+    @Transactional
+    public List<County> saveAll(List<County> counties) {
+        return countyRepository.saveAll(counties);
     }
 
     private final SubCountyRepository subCountyRepository;

@@ -25,9 +25,12 @@ public interface CountyRepository extends JpaRepository<County, Long>, JpaSpecif
     @NonNull
     Page<County> findAll(@NonNull Pageable pageable);
 
-    @EntityGraph(attributePaths = { "localGovernment.subRegion.region" }, type = EntityGraph.EntityGraphType.FETCH)
+    @EntityGraph(attributePaths = { "localGovernment", "localGovernment.subRegion",
+            "localGovernment.subRegion.region" }, type = EntityGraph.EntityGraphType.FETCH)
     @NonNull
     Optional<County> findByCodeIgnoreCase(@NonNull String code);
+
+    List<County> findByNameIgnoreCaseIn(List<String> names);
 
     Optional<County> findByNameIgnoreCaseAndLocalGovernment_Code(String name, String localGovernmentCode);
 
@@ -38,5 +41,8 @@ public interface CountyRepository extends JpaRepository<County, Long>, JpaSpecif
     boolean existsByLocalGovernment_Code(String localGovernmentCode);
 
     List<County> findByCodeIgnoreCaseIn(List<String> codes);
+
+    boolean existsByNameIgnoreCaseAndLocalGovernment_NameIgnoreCaseAndLocalGovernment_SubRegion_NameIgnoreCaseAndSubRegion_Region_NameIgnoreCase(
+            String name, String localGovernmentName, String subRegionName, String regionName);
 
 }

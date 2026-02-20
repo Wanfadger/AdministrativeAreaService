@@ -5,6 +5,7 @@ import com.wanfadger.AdministrativeareaApi.areaexceptions.InvalidException;
 import com.wanfadger.AdministrativeareaApi.areaexceptions.MissingDataException;
 import com.wanfadger.AdministrativeareaApi.areaexceptions.NotFoundException;
 import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
+import com.wanfadger.AdministrativeareaApi.dto.ExcelJsonDTO;
 import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDTO;
 
 import com.wanfadger.AdministrativeareaApi.dto.SubRegionDTO;
@@ -12,6 +13,7 @@ import com.wanfadger.AdministrativeareaApi.dto.UpdateAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.PaginatedResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.uniqueDtos.USubRegion;
+import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
 import com.wanfadger.AdministrativeareaApi.entity.Region;
 import com.wanfadger.AdministrativeareaApi.entity.SubRegion;
 import com.wanfadger.AdministrativeareaApi.repository.RegionRepository;
@@ -21,6 +23,7 @@ import com.wanfadger.AdministrativeareaApi.repository.LocalGovernmentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.wanfadger.AdministrativeareaApi.repository.specification.GenericSpecification;
+import com.wanfadger.AdministrativeareaApi.shared.SharedService;
 
 import jakarta.persistence.criteria.JoinType;
 
@@ -40,6 +43,7 @@ import com.wanfadger.AdministrativeareaApi.config.CacheValueKeyConfig;
 import jakarta.persistence.criteria.Fetch;
 import jakarta.persistence.criteria.JoinType;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -55,6 +59,7 @@ public class SubRegionServiceImpl implements SubRegionService {
     private final SubRegionRepository subRegionRepository;
     private final RegionRepository regionRepository;
     private final SubRegionMapperService subRegionMapperService;
+    private final SharedService sharedService;
 
     @Override
     @Transactional
@@ -308,62 +313,47 @@ public class SubRegionServiceImpl implements SubRegionService {
     @Override
     @Transactional
     @CacheEvict(value = { CacheValueKeyConfig.SUB_REGIONS }, allEntries = true)
-    public void upload(List<AdministrativeAreaExcelDTO> dtoList) {
-        // Step 1: Get all existing sub-regions from database
-        List<SubRegion> dbSubRegions = subRegionRepository.findAll();
+    public List<SubRegion> upload(List<ExcelJsonDTO> dtoList, Map<String, Region> regionMap) {
+        // filter unique sub regions in each region
+        List<SubRegion> uniqueSubRegions = dtoList.stream()
+                .filter(e -> e.getRegion() != null && e.getSubRegion() != null && !e.getRegion().isEmpty() && !e.getSubRegion().isEmpty())
+                .filter(sharedService.distinctByKey(e -> e.getRegion() + ":" + e.getSubRegion()))
+                .filter(excel -> regionMap.containsKey(excel.getRegion()))
+                .filter(excel -> !subRegionRepository.existsByNameIgnoreCaseAndRegion_NameIgnoreCase(excel.getSubRegion(), excel.getRegion()))
+                .map(excel -> {
+                    Region region = regionMap.get(excel.getRegion());
+                    SubRegion subRegion = SubRegion.builder()
+                            .name(excel.getSubRegion())
+                            .code(sharedService.generateCode(AdministrativeAreaType.SUBREGION))
+                            .region(region)
+                            .build();
+                    return subRegion;
+                })
+                .toList();
 
-        // Step 2: Extract unique new sub-regions (exclude existing ones)
-        Set<USubRegion> newSubRegionSet = dtoList.stream()
-                .filter(dto -> dbSubRegions.stream().noneMatch(dbSubRegion -> {
-                    Region region = dto.getDbRegion();
-                    if (region == null && dbSubRegion.getRegion() == null)
-                        return dbSubRegion.getName().equalsIgnoreCase(dto.getSubRegion());
-                    if (region == null || dbSubRegion.getRegion() == null)
-                        return false;
+        log.info("Unique sub regions: {}", uniqueSubRegions.size());
 
-                    return (dbSubRegion.getName().equalsIgnoreCase(dto.getSubRegion())
-                            && region.getName().equalsIgnoreCase(dto.getRegion()));
-                }))
-                .map(dto -> new USubRegion(dto.getSubRegion(), dto.getDbRegion().getId()))
-                .collect(Collectors.toSet());
+        // search for existing sub regions, join region
+         Specification<SubRegion> spec = (root, query, cb) -> {
+            if (query != null && Long.class != query.getResultType()) {
+                root.fetch("region", JoinType.LEFT); // Fetch Region to avoid n+1
+            }
+            return cb.conjunction();
+        };
+        spec = spec.and(new GenericSpecification<>(new SearchCriteria("archived", "false", MatchType.EQUALS)));
 
-        // Step 3: Save new sub-regions and fetch updated complete list
-        List<SubRegion> dbSubRegions2;
-        if (newSubRegionSet.size() > 0) {
-            List<SubRegion> newSubRegions = newSubRegionSet.stream().map(uSubRegion -> {
-                SubRegion subRegion = new SubRegion();
-                // subRegion.setCode(generateCode());
-                subRegion.setName(uSubRegion.getName());
-                subRegion.setRegion(regionRepository.findById(uSubRegion.getId())
-                        .orElseThrow(() -> new NotFoundException("Region not found")));
-                return subRegion;
-            }).toList();
-            subRegionRepository.saveAll(newSubRegions);
-            dbSubRegions2 = subRegionRepository.findAll(); // Fetch updated list
-        } else {
-            dbSubRegions2 = dbSubRegions; // No new sub-regions, use existing list
+        int page = 0;
+        int size = 100;
+        List<SubRegion> existingSubRegions = new ArrayList<>();
+        Page<SubRegion> subRegionsPage = subRegionRepository.findAll(spec , PageRequest.of(page, size));
+
+        
+        while(subRegionsPage.hasNext()) {
+            existingSubRegions.addAll(subRegionsPage.getContent());
+            subRegionsPage = subRegionRepository.findAll(spec , PageRequest.of(++page, size));
         }
 
-        // Step 4: Update DTOs with DB sub-region references
-        dtoList.parallelStream().forEach(oldDto -> {
-            dbSubRegions2.stream()
-                    .filter(dbSubRegion -> {
-                        Region region = dbSubRegion.getRegion();
-                        return (dbSubRegion.getName().equalsIgnoreCase(oldDto.getSubRegion())
-                                && region.getName().equalsIgnoreCase(oldDto.getRegion()));
-                    })
-                    .findFirst()
-                    .ifPresent(oldDto::setDbSubRegion);
-        });
-
-    }
-
-    @Override
-    @Transactional
-    @CacheEvict(value = { CacheValueKeyConfig.SUB_REGIONS }, allEntries = true)
-    public void saveAll(List<SubRegion> subRegions) {
-        subRegionRepository.saveAll(subRegions);
-
+        return existingSubRegions;
     }
 
     private final LocalGovernmentRepository localGovernmentRepository;

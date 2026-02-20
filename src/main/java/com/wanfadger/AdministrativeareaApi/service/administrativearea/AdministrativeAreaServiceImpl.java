@@ -20,6 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -162,16 +164,34 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
     }
 
     @Override
-    public ResponseDTO<String> upload(List<AdministrativeAreaExcelDTO> administrativeAreaExcelDtos) {
-        // Delegate upload to all services in hierarchical order
-        regionService.upload(administrativeAreaExcelDtos);
-        subRegionService.upload(administrativeAreaExcelDtos);
-        localGovernmentService.upload(administrativeAreaExcelDtos);
-        countyService.upload(administrativeAreaExcelDtos);
-        subCountyService.upload(administrativeAreaExcelDtos);
-        parishService.upload(administrativeAreaExcelDtos);
+    @org.springframework.transaction.annotation.Transactional
+    public ResponseDTO<String> excelJson(List<ExcelJsonDTO> excelJsonDtos) {
+        if (excelJsonDtos == null || excelJsonDtos.isEmpty()) {
+            return new ResponseDTO<>("No data to upload");
+        }
 
-        return new ResponseDTO<>("Upload processed");
+        try {
+            CompletableFuture
+                    .supplyAsync(() -> regionService.upload(excelJsonDtos).stream()
+                            .collect(Collectors.toMap(Region::getName, (r) -> r, (existing, replacement) -> existing)))
+                    .thenApplyAsync(regionMap -> subRegionService.upload(excelJsonDtos, regionMap).stream().collect(
+                            Collectors.toMap(SubRegion::getName, (r) -> r, (existing, replacement) -> existing)))
+                    .thenApplyAsync(subRegionMap -> localGovernmentService.upload(excelJsonDtos, subRegionMap).stream()
+                            .collect(Collectors.toMap(LocalGovernment::getName, (r) -> r,
+                                    (existing, replacement) -> existing)))
+                    .thenApplyAsync(lgMap -> countyService.upload(excelJsonDtos, lgMap).stream()
+                            .collect(Collectors.toMap(County::getName, (r) -> r, (existing, replacement) -> existing)))
+                    .thenApplyAsync(countyMap -> subCountyService.upload(excelJsonDtos, countyMap).stream().collect(
+                            Collectors.toMap(SubCounty::getName, (r) -> r, (existing, replacement) -> existing)))
+                    .thenApplyAsync(subCountyMap -> parishService.upload(excelJsonDtos, subCountyMap).stream()
+                            .collect(Collectors.toMap(Parish::getName, (r) -> r, (existing, replacement) -> existing)))
+                    .join(); // Wait for completion
+        } catch (Exception e) {
+            log.error("Error processing Excel upload", e);
+            throw new RuntimeException("Error processing Excel upload: " + e.getMessage(), e);
+        }
+
+        return new ResponseDTO<>("Upload processed successfully");
     }
 
     @Override
