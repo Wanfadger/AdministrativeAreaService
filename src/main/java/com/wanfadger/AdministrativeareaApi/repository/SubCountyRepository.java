@@ -1,12 +1,12 @@
 package com.wanfadger.AdministrativeareaApi.repository;
 
 import com.wanfadger.AdministrativeareaApi.entity.SubCounty;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.lang.NonNull;
-import org.springframework.data.jpa.repository.EntityGraph;
+
+import io.lettuce.core.dynamic.annotation.Param;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -14,26 +14,7 @@ import java.util.Optional;
 
 @Repository
 public interface SubCountyRepository extends JpaRepository<SubCounty, Long>, JpaSpecificationExecutor<SubCounty> {
-
-        @Override
-        @EntityGraph(attributePaths = {
-                        "county.localGovernment.subRegion.region" }, type = EntityGraph.EntityGraphType.FETCH)
-        @NonNull
-        List<SubCounty> findAll();
-
-        @Override
-        @EntityGraph(attributePaths = {
-                        "county.localGovernment.subRegion.region" }, type = EntityGraph.EntityGraphType.FETCH)
-        @NonNull
-        Page<SubCounty> findAll(@NonNull Pageable pageable);
-
         boolean existsByCodeIgnoreCase(String code);
-
-        @Override
-        @EntityGraph(attributePaths = {
-                        "county.localGovernment.subRegion.region" }, type = EntityGraph.EntityGraphType.FETCH)
-        @NonNull
-        Optional<SubCounty> findById(@NonNull Long id);
 
         Optional<SubCounty> findByCodeIgnoreCase(String code);
 
@@ -47,7 +28,7 @@ public interface SubCountyRepository extends JpaRepository<SubCounty, Long>, Jpa
 
         List<SubCounty> findByNameIgnoreCaseIn(List<String> names);
 
-        @org.springframework.data.jpa.repository.Query("SELECT CASE WHEN COUNT(sc) > 0 THEN true ELSE false END FROM SubCounty sc "
+        @Query("SELECT CASE WHEN COUNT(sc) > 0 THEN true ELSE false END FROM SubCounty sc "
                         +
                         "JOIN sc.county c " +
                         "JOIN c.localGovernment lg " +
@@ -58,10 +39,10 @@ public interface SubCountyRepository extends JpaRepository<SubCounty, Long>, Jpa
                         "AND LOWER(lg.name) = LOWER(:lgName) " +
                         "AND LOWER(sr.name) = LOWER(:subRegionName) " +
                         "AND LOWER(r.name) = LOWER(:regionName)")
-        boolean existsByDetails(@org.springframework.data.repository.query.Param("name") String name,
-                        @org.springframework.data.repository.query.Param("countyName") String countyName,
-                        @org.springframework.data.repository.query.Param("lgName") String lgName,
-                        @org.springframework.data.repository.query.Param("subRegionName") String subRegionName,
-                        @org.springframework.data.repository.query.Param("regionName") String regionName);
+        boolean existsByDetails(@Param("name") String name,
+                        @Param("countyName") String countyName,
+                        @Param("lgName") String lgName,
+                        @Param("subRegionName") String subRegionName,
+                        @Param("regionName") String regionName);
 
 }
