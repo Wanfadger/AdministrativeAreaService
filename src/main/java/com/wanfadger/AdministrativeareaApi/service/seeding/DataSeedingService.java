@@ -3,6 +3,7 @@ package com.wanfadger.AdministrativeareaApi.service.seeding;
 import com.github.javafaker.Faker;
 import com.wanfadger.AdministrativeareaApi.entity.*;
 import com.wanfadger.AdministrativeareaApi.repository.*;
+import com.wanfadger.AdministrativeareaApi.shared.SharedService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +27,7 @@ public class DataSeedingService implements CommandLineRunner {
     private final SubCountyRepository subCountyRepository;
     private final ParishRepository parishRepository;
 
+    private final SharedService sharedService;
     private final Faker faker = new Faker();
     private final Random random = new Random();
 
@@ -49,7 +51,7 @@ public class DataSeedingService implements CommandLineRunner {
             return;
         }
 
-        log.info("Starting high-volume data seeding ({} records per level)...", TARGET_COUNT);
+        log.info("Starting high-volume data seeding ({}} records per level)...", TARGET_COUNT);
 
         List<Region> regions = seedRegions();
         List<SubRegion> subRegions = seedSubRegions(regions);
@@ -67,7 +69,7 @@ public class DataSeedingService implements CommandLineRunner {
         for (int i = 0; i < TARGET_COUNT; i++) {
             Region region = Region.builder()
                     .name(faker.address().state() + " " + i + " " + faker.random().hex(4))
-                    .code("REG-" + i)
+                    .code(sharedService.generateCode(AdministrativeAreaType.REGION))
                     .areaType(AdministrativeAreaType.REGION)
                     .build();
             regions.add(region);
@@ -88,7 +90,7 @@ public class DataSeedingService implements CommandLineRunner {
         for (int i = 0; i < TARGET_COUNT; i++) {
             SubRegion subRegion = SubRegion.builder()
                     .name(faker.address().cityName() + " " + i + " " + faker.random().hex(4))
-                    .code("SRG-" + i)
+                    .code(sharedService.generateCode(AdministrativeAreaType.SUBREGION))
                     .areaType(AdministrativeAreaType.SUBREGION)
                     .region(regions.get(random.nextInt(regions.size())))
                     .build();
@@ -110,7 +112,7 @@ public class DataSeedingService implements CommandLineRunner {
         for (int i = 0; i < TARGET_COUNT; i++) {
             LocalGovernment lg = LocalGovernment.builder()
                     .name(faker.address().city() + " LG " + i + " " + faker.random().hex(4))
-                    .code("LGO-" + i)
+                    .code(sharedService.generateCode(AdministrativeAreaType.LOCALGOVERNMENT))
                     .areaType(AdministrativeAreaType.LOCALGOVERNMENT)
                     .subRegion(subRegions.get(random.nextInt(subRegions.size())))
                     .build();
@@ -132,7 +134,7 @@ public class DataSeedingService implements CommandLineRunner {
         for (int i = 0; i < TARGET_COUNT; i++) {
             County county = County.builder()
                     .name(faker.address().cityName() + " " + i + " " + faker.random().hex(4))
-                    .code("CNY-" + i)
+                    .code(sharedService.generateCode(AdministrativeAreaType.COUNTY))
                     .areaType(AdministrativeAreaType.COUNTY)
                     .localGovernment(lgs.get(random.nextInt(lgs.size())))
                     .build();
@@ -154,7 +156,7 @@ public class DataSeedingService implements CommandLineRunner {
         for (int i = 0; i < TARGET_COUNT; i++) {
             SubCounty sc = SubCounty.builder()
                     .name(faker.address().cityPrefix() + " SC " + i + " " + faker.random().hex(4))
-                    .code("SCN-" + i)
+                    .code(sharedService.generateCode(AdministrativeAreaType.SUBCOUNTY))
                     .areaType(AdministrativeAreaType.SUBCOUNTY)
                     .county(counties.get(random.nextInt(counties.size())))
                     .build();
@@ -176,10 +178,11 @@ public class DataSeedingService implements CommandLineRunner {
         for (int i = 0; i < TARGET_COUNT; i++) {
             Parish parish = Parish.builder()
                     .name(faker.address().streetName() + " Parish " + i + " " + faker.random().hex(4))
-                    .code("PAR-" + i)
+                    .code(sharedService.generateCode(AdministrativeAreaType.PARISH))
                     .areaType(AdministrativeAreaType.PARISH)
                     .subCounty(subCounties.get(random.nextInt(subCounties.size())))
                     .build();
+
             parishes.add(parish);
             if (parishes.size() >= BATCH_SIZE) {
                 parishRepository.saveAll(parishes);
