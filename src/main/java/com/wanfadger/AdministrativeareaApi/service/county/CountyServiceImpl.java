@@ -13,7 +13,7 @@ import com.wanfadger.AdministrativeareaApi.dto.reponses.PaginatedResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 import com.wanfadger.AdministrativeareaApi.entity.County;
 import com.wanfadger.AdministrativeareaApi.entity.LocalGovernment;
-import com.wanfadger.AdministrativeareaApi.entity.Region;
+
 import com.wanfadger.AdministrativeareaApi.entity.SubRegion;
 import com.wanfadger.AdministrativeareaApi.repository.CountyRepository;
 import com.wanfadger.AdministrativeareaApi.repository.LocalGovernmentRepository;

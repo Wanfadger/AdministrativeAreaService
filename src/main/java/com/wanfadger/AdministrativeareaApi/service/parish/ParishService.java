@@ -11,7 +11,6 @@ import com.wanfadger.AdministrativeareaApi.entity.SubCounty;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 public interface ParishService {
     ResponseDTO<String> create(NewAdministrativeAreaDTO dto);

@@ -4,7 +4,7 @@ import com.wanfadger.AdministrativeareaApi.areaexceptions.AlreadyExistsException
 import com.wanfadger.AdministrativeareaApi.areaexceptions.InvalidException;
 import com.wanfadger.AdministrativeareaApi.areaexceptions.MissingDataException;
 import com.wanfadger.AdministrativeareaApi.areaexceptions.NotFoundException;
-import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
+
 import com.wanfadger.AdministrativeareaApi.dto.ExcelJsonDTO;
 import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDTO;
 
@@ -47,7 +47,7 @@ import java.util.List;
 import java.util.Map;
 
 import java.util.Optional;
-import java.util.Set;
+
 import java.util.stream.Collectors;
 
 @Service
@@ -325,7 +325,8 @@ public class SubRegionServiceImpl implements SubRegionService {
                     Region region = regionMap.get(excel.getRegion() == null ? "" : excel.getRegion().toLowerCase());
                     SubRegion subRegion = SubRegion.builder()
                             .name(excel.getSubRegion())
-                            .code(sharedService.generateUniqueCode(AdministrativeAreaType.SUBREGION, code -> subRegionRepository.existsByCodeIgnoreCase(code)))
+                            .code(sharedService.generateUniqueCode(AdministrativeAreaType.SUBREGION,
+                                    code -> subRegionRepository.existsByCodeIgnoreCase(code)))
                             .region(region)
                             .build();
                     return subRegion;

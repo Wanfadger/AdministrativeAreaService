@@ -15,7 +15,7 @@ import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 import com.wanfadger.AdministrativeareaApi.entity.County;
 import com.wanfadger.AdministrativeareaApi.entity.LocalGovernment;
 import com.wanfadger.AdministrativeareaApi.entity.Parish;
-import com.wanfadger.AdministrativeareaApi.entity.Region;
+
 import com.wanfadger.AdministrativeareaApi.entity.SubCounty;
 import com.wanfadger.AdministrativeareaApi.entity.SubRegion;
 import com.wanfadger.AdministrativeareaApi.repository.ParishRepository;
@@ -43,7 +43,7 @@ import jakarta.persistence.criteria.JoinType;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+
 import java.util.stream.Collectors;
 
 @Service
@@ -333,7 +333,8 @@ public class ParishServiceImpl implements ParishService {
                     SubCounty subCounty = subCountyMap.get(key);
                     Parish parish = Parish.builder()
                             .name(excel.getParish())
-                            .code(sharedService.generateUniqueCode(AdministrativeAreaType.PARISH, code -> parishRepository.existsByCodeIgnoreCase(code)))
+                            .code(sharedService.generateUniqueCode(AdministrativeAreaType.PARISH,
+                                    code -> parishRepository.existsByCodeIgnoreCase(code)))
                             .subCounty(subCounty)
                             .build();
                     return parish;

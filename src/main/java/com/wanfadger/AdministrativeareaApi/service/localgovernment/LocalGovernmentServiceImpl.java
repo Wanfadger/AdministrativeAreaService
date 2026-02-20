@@ -13,7 +13,7 @@ import com.wanfadger.AdministrativeareaApi.dto.reponses.PaginatedResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
 import com.wanfadger.AdministrativeareaApi.entity.LocalGovernment;
-import com.wanfadger.AdministrativeareaApi.entity.Region;
+
 import com.wanfadger.AdministrativeareaApi.entity.SubRegion;
 import com.wanfadger.AdministrativeareaApi.repository.LocalGovernmentRepository;
 import com.wanfadger.AdministrativeareaApi.repository.SubRegionRepository;
@@ -327,7 +327,8 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
                     SubRegion subRegion = subRegionMap.get(key);
                     LocalGovernment localGovernment = LocalGovernment.builder()
                             .name(excel.getLocalGovernment())
-                            .code(sharedService.generateUniqueCode(AdministrativeAreaType.LOCALGOVERNMENT, code -> localGovernmentRepository.existsByCodeIgnoreCase(code)))
+                            .code(sharedService.generateUniqueCode(AdministrativeAreaType.LOCALGOVERNMENT,
+                                    code -> localGovernmentRepository.existsByCodeIgnoreCase(code)))
                             .subRegion(subRegion)
                             .build();
                     return localGovernment;

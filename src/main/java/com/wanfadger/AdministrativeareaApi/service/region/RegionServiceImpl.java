@@ -4,7 +4,7 @@ import com.wanfadger.AdministrativeareaApi.areaexceptions.AlreadyExistsException
 import com.wanfadger.AdministrativeareaApi.areaexceptions.InvalidException;
 import com.wanfadger.AdministrativeareaApi.areaexceptions.MissingDataException;
 import com.wanfadger.AdministrativeareaApi.areaexceptions.NotFoundException;
-import com.wanfadger.AdministrativeareaApi.dto.AdministrativeAreaExcelDTO;
+
 import com.wanfadger.AdministrativeareaApi.dto.ExcelJsonDTO;
 import com.wanfadger.AdministrativeareaApi.dto.NewAdministrativeAreaDTO;
 import com.wanfadger.AdministrativeareaApi.dto.RegionDTO;
@@ -21,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.wanfadger.AdministrativeareaApi.repository.specification.GenericSpecification;
 import com.wanfadger.AdministrativeareaApi.shared.SharedService;
-import com.wanfadger.AdministrativeareaApi.shared.SharedServiceImpl;
+
 import com.wanfadger.AdministrativeareaApi.enums.MatchType;
 import com.wanfadger.AdministrativeareaApi.dto.SearchCriteria;
 import org.springframework.cache.annotation.CacheEvict;
@@ -40,9 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.function.Predicate;
 
 @Service
 @RequiredArgsConstructor
@@ -208,12 +205,13 @@ public class RegionServiceImpl implements RegionService {
                 .distinct()
                 .filter(r -> !regionRepository.existsByNameIgnoreCase(r))
                 .toList();
-                
+
         List<Region> regions = regionNames.stream()
                 .map(name -> {
                     Region region = Region.builder()
                             .name(name)
-                            .code(sharedService.generateUniqueCode(AdministrativeAreaType.REGION, code -> regionRepository.existsByCodeIgnoreCase(code)))
+                            .code(sharedService.generateUniqueCode(AdministrativeAreaType.REGION,
+                                    code -> regionRepository.existsByCodeIgnoreCase(code)))
                             .areaType(AdministrativeAreaType.REGION)
                             .description(name)
                             .build();
@@ -231,10 +229,10 @@ public class RegionServiceImpl implements RegionService {
         Specification<Region> spec = (root, query, cb) -> cb.conjunction();
         spec = spec.and(new GenericSpecification<>(new SearchCriteria("archived", "false", MatchType.EQUALS)));
         Page<Region> regionPage = regionRepository.findAll(spec, PageRequest.of(page, size));
-        while(regionPage.hasNext()) {
+        while (regionPage.hasNext()) {
             existingRegions.addAll(regionPage.getContent());
             regionPage = regionRepository.findAll(spec, PageRequest.of(++page, size));
-        }  
+        }
         return existingRegions;
     }
 
