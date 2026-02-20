@@ -16,42 +16,40 @@ import java.util.Optional;
 @Repository
 public interface SubRegionRepository extends JpaRepository<SubRegion, Long>, JpaSpecificationExecutor<SubRegion> {
 
-    Optional<SubRegion> findByNameIgnoreCase(String name);
+        Optional<SubRegion> findByNameIgnoreCase(String name);
 
-    Optional<SubRegion> findByNameIgnoreCaseAndRegion_Code(String name, String regionCode);
+        Optional<SubRegion> findByCodeIgnoreCaseAndRegion_Code(String code, String regionCode);
 
-    Optional<SubRegion> findByCodeIgnoreCaseAndRegion_Code(String code, String regionCode);
+        boolean existsByNameIgnoreCaseAndRegion_Code(String name, String regionCode);
 
-    boolean existsByNameIgnoreCaseAndRegion_Code(String name, String regionCode);
+        boolean existsByNameIgnoreCaseAndRegion_NameIgnoreCase(String subRegionName, String regionName);
 
-    boolean existsByNameIgnoreCaseAndRegion_NameIgnoreCase(String subRegionName, String regionName);
+        boolean existsByRegion_Code(String regionCode);
 
-    boolean existsByRegion_Code(String regionCode);
+        boolean existsByCodeIgnoreCase(String code);
 
-    boolean existsByCodeIgnoreCase(String code);
+        @Override
+        @EntityGraph(attributePaths = { "region" }, type = EntityGraph.EntityGraphType.FETCH)
+        @NonNull
+        List<SubRegion> findAll();
 
-    @Override
-    @EntityGraph(attributePaths = { "region" }, type = EntityGraph.EntityGraphType.FETCH)
-    @NonNull
-    List<SubRegion> findAll();
+        @Override
+        @EntityGraph(attributePaths = { "region" }, type = EntityGraph.EntityGraphType.FETCH)
+        @NonNull
+        Page<SubRegion> findAll(@NonNull Pageable pageable);
 
-    @Override
-    @EntityGraph(attributePaths = { "region" }, type = EntityGraph.EntityGraphType.FETCH)
-    @NonNull
-    Page<SubRegion> findAll(@NonNull Pageable pageable);
+        @EntityGraph(attributePaths = { "region" }, type = EntityGraph.EntityGraphType.FETCH)
+        Optional<SubRegion> findByCodeIgnoreCase(String code);
 
-    @EntityGraph(attributePaths = { "region" }, type = EntityGraph.EntityGraphType.FETCH)
-    Optional<SubRegion> findByCodeIgnoreCase(String code);
+        List<SubRegion> findByCodeIgnoreCaseIn(List<String> codes);
 
-    List<SubRegion> findByCodeIgnoreCaseIn(List<String> codes);
+        List<SubRegion> findByNameIgnoreCaseIn(List<String> names);
 
-    List<SubRegion> findByNameIgnoreCaseIn(List<String> names);
-
-    @org.springframework.data.jpa.repository.Query("SELECT CASE WHEN COUNT(sr) > 0 THEN true ELSE false END FROM SubRegion sr "
-            + "JOIN sr.region r "
-            + "WHERE LOWER(sr.name) = LOWER(:name) "
-            + "AND LOWER(r.name) = LOWER(:regionName)")
-    boolean existsByDetails(@org.springframework.data.repository.query.Param("name") String name,
-            @org.springframework.data.repository.query.Param("regionName") String regionName);
+        @org.springframework.data.jpa.repository.Query("SELECT CASE WHEN COUNT(sr) > 0 THEN true ELSE false END FROM SubRegion sr "
+                        + "JOIN sr.region r "
+                        + "WHERE LOWER(sr.name) = LOWER(:name) "
+                        + "AND LOWER(r.name) = LOWER(:regionName)")
+        boolean existsByDetails(@org.springframework.data.repository.query.Param("name") String name,
+                        @org.springframework.data.repository.query.Param("regionName") String regionName);
 
 }
