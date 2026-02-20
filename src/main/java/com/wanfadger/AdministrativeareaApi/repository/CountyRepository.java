@@ -1,6 +1,9 @@
 package com.wanfadger.AdministrativeareaApi.repository;
 
 import com.wanfadger.AdministrativeareaApi.entity.County;
+
+import io.lettuce.core.dynamic.annotation.Param;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
@@ -8,6 +11,7 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,18 +19,6 @@ import java.util.Optional;
 @Repository
 public interface CountyRepository extends JpaRepository<County, Long>, JpaSpecificationExecutor<County> {
 
-        @Override
-        @EntityGraph(attributePaths = { "localGovernment.subRegion.region" }, type = EntityGraph.EntityGraphType.FETCH)
-        @NonNull
-        List<County> findAll();
-
-        @Override
-        @EntityGraph(attributePaths = { "localGovernment.subRegion.region" }, type = EntityGraph.EntityGraphType.FETCH)
-        @NonNull
-        Page<County> findAll(@NonNull Pageable pageable);
-
-        @EntityGraph(attributePaths = { "localGovernment", "localGovernment.subRegion",
-                        "localGovernment.subRegion.region" }, type = EntityGraph.EntityGraphType.FETCH)
         @NonNull
         Optional<County> findByCodeIgnoreCase(@NonNull String code);
 
@@ -42,7 +34,7 @@ public interface CountyRepository extends JpaRepository<County, Long>, JpaSpecif
 
         List<County> findByCodeIgnoreCaseIn(List<String> codes);
 
-        @org.springframework.data.jpa.repository.Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM County c "
+        @Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM County c "
                         +
                         "JOIN c.localGovernment lg " +
                         "JOIN lg.subRegion sr " +
@@ -51,9 +43,9 @@ public interface CountyRepository extends JpaRepository<County, Long>, JpaSpecif
                         "AND LOWER(lg.name) = LOWER(:lgName) " +
                         "AND LOWER(sr.name) = LOWER(:subRegionName) " +
                         "AND LOWER(r.name) = LOWER(:regionName)")
-        boolean existsByDetails(@org.springframework.data.repository.query.Param("name") String name,
-                        @org.springframework.data.repository.query.Param("lgName") String lgName,
-                        @org.springframework.data.repository.query.Param("subRegionName") String subRegionName,
-                        @org.springframework.data.repository.query.Param("regionName") String regionName);
+        boolean existsByDetails(@Param("name") String name,
+                        @Param("lgName") String lgName,
+                        @Param("subRegionName") String subRegionName,
+                        @Param("regionName") String regionName);
 
 }
