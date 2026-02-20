@@ -350,7 +350,7 @@ public class SubCountyServiceImpl implements SubCountyService {
                     County county = countyMap.get(key);
                     SubCounty subCounty = SubCounty.builder()
                             .name(excel.getSubCounty())
-                            .code(generateCode())
+                            .code(sharedService.generateUniqueCode(AdministrativeAreaType.SUBCOUNTY , code -> subCountyRepository.existsByCodeIgnoreCase(code)))
                             .county(county)
                             .build();
                     return subCounty;

@@ -334,7 +334,7 @@ public class ParishServiceImpl implements ParishService {
                     SubCounty subCounty = subCountyMap.get(key);
                     Parish parish = Parish.builder()
                             .name(excel.getParish())
-                            .code(generateCode())
+                            .code(sharedService.generateUniqueCode(AdministrativeAreaType.PARISH, code -> parishRepository.existsByCodeIgnoreCase(code)))
                             .subCounty(subCounty)
                             .build();
                     return parish;

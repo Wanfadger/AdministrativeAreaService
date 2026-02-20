@@ -346,7 +346,7 @@ public class CountyServiceImpl implements CountyService {
                     LocalGovernment localGovernment = localGovernmentMap.get(key);
                     County county = County.builder()
                             .name(excel.getCounty())
-                            .code(generateCode())
+                            .code(sharedService.generateUniqueCode(AdministrativeAreaType.COUNTY, code -> countyRepository.existsByCodeIgnoreCase(code)))
                             .localGovernment(localGovernment)
                             .build();
                     return county;
@@ -443,7 +443,5 @@ public class CountyServiceImpl implements CountyService {
         return new ResponseDTO<>("SUCCESS", "County deleted successfully");
     }
 
-    private String generateCode() {
-        return sharedService.generateCode(AdministrativeAreaType.COUNTY);
-    }
+  
 }

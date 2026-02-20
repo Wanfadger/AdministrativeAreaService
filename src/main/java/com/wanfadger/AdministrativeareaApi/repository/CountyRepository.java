@@ -40,6 +40,8 @@ public interface CountyRepository extends JpaRepository<County, Long>, JpaSpecif
 
     boolean existsByLocalGovernment_Code(String localGovernmentCode);
 
+    boolean existsByCodeIgnoreCase(String code);
+
     List<County> findByCodeIgnoreCaseIn(List<String> codes);
 
     @org.springframework.data.jpa.repository.Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM County c "

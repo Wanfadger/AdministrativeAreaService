@@ -328,7 +328,7 @@ public class LocalGovernmentServiceImpl implements LocalGovernmentService {
                     SubRegion subRegion = subRegionMap.get(key);
                     LocalGovernment localGovernment = LocalGovernment.builder()
                             .name(excel.getLocalGovernment())
-                            .code(sharedService.generateCode(AdministrativeAreaType.LOCALGOVERNMENT))
+                            .code(sharedService.generateUniqueCode(AdministrativeAreaType.LOCALGOVERNMENT, code -> localGovernmentRepository.existsByCodeIgnoreCase(code)))
                             .subRegion(subRegion)
                             .build();
                     return localGovernment;

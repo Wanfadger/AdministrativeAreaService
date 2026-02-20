@@ -22,5 +22,7 @@ public interface RegionRepository extends JpaRepository<Region, Long>, JpaSpecif
 
     List<Region> findByCodeIgnoreCaseIn(List<String> codes);
 
+    boolean existsByCodeIgnoreCase(String code);
+
 
 }

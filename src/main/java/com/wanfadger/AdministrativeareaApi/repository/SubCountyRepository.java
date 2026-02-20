@@ -27,6 +27,8 @@ public interface SubCountyRepository extends JpaRepository<SubCounty, Long>, Jpa
         @NonNull
         Page<SubCounty> findAll(@NonNull Pageable pageable);
 
+        boolean existsByCodeIgnoreCase(String code);
+
         @Override
         @EntityGraph(attributePaths = {
                         "county.localGovernment.subRegion.region" }, type = EntityGraph.EntityGraphType.FETCH)

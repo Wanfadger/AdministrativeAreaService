@@ -21,6 +21,8 @@ public interface LocalGovernmentRepository
     @NonNull
     List<LocalGovernment> findAll();
 
+    boolean existsByCodeIgnoreCase(String code);
+
     @Override
     @EntityGraph(attributePaths = { "subRegion.region" }, type = EntityGraph.EntityGraphType.FETCH)
     @NonNull

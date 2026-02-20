@@ -21,6 +21,8 @@ public interface ParishRepository extends JpaRepository<Parish, Long>, JpaSpecif
         @NonNull
         List<Parish> findAll();
 
+        boolean existsByCodeIgnoreCase(String code);
+
         @Override
         @EntityGraph(attributePaths = {
                         "subCounty.county.localGovernment.subRegion.region" }, type = EntityGraph.EntityGraphType.FETCH)

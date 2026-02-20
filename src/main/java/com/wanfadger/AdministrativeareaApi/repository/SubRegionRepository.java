@@ -28,6 +28,8 @@ public interface SubRegionRepository extends JpaRepository<SubRegion, Long>, Jpa
 
     boolean existsByRegion_Code(String regionCode);
 
+    boolean existsByCodeIgnoreCase(String code);
+
     @Override
     @EntityGraph(attributePaths = { "region" }, type = EntityGraph.EntityGraphType.FETCH)
     @NonNull

@@ -326,7 +326,7 @@ public class SubRegionServiceImpl implements SubRegionService {
                     Region region = regionMap.get(excel.getRegion() == null ? "" : excel.getRegion().toLowerCase());
                     SubRegion subRegion = SubRegion.builder()
                             .name(excel.getSubRegion())
-                            .code(sharedService.generateCode(AdministrativeAreaType.SUBREGION))
+                            .code(sharedService.generateUniqueCode(AdministrativeAreaType.SUBREGION, code -> subRegionRepository.existsByCodeIgnoreCase(code)))
                             .region(region)
                             .build();
                     return subRegion;

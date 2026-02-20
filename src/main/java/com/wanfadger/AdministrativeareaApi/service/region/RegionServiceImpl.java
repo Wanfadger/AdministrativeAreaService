@@ -213,7 +213,7 @@ public class RegionServiceImpl implements RegionService {
                 .map(name -> {
                     Region region = Region.builder()
                             .name(name)
-                            .code(sharedService.generateCode(AdministrativeAreaType.REGION))
+                            .code(sharedService.generateUniqueCode(AdministrativeAreaType.REGION, code -> regionRepository.existsByCodeIgnoreCase(code)))
                             .areaType(AdministrativeAreaType.REGION)
                             .description(name)
                             .build();
