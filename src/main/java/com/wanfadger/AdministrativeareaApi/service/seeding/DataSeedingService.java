@@ -32,6 +32,37 @@ public class DataSeedingService implements CommandLineRunner {
     private final Faker faker = new Faker();
     private final Random random = new Random();
 
+    private static final String[] UGANDA_PLACES = {
+            "Kampala", "Entebbe", "Jinja", "Mbarara", "Gulu", "Lira", "Mbale", "Arua", "Fort Portal",
+            "Masaka", "Hoima", "Soroti", "Mukono", "Kasese", "Kabale", "Tororo", "Iganga", "Rukungiri",
+            "Bushenyi", "Ntungamo", "Kitgum", "Moroto", "Kapchorwa", "Ibanda", "Lugazi", "Wakiso",
+            "Mityana", "Mubende", "Masindi", "Kumi", "Nebbi", "Apac", "Kiboga", "Kamuli", "Pallisa"
+    };
+
+    private String randomUgandaPlace() {
+        return UGANDA_PLACES[random.nextInt(UGANDA_PLACES.length)];
+    }
+
+    private double randomUgandaLatitude() {
+        return -1.5 + (4.2 - (-1.5)) * random.nextDouble();
+    }
+
+    private double randomUgandaLongitude() {
+        return 29.5 + (35.0 - 29.5) * random.nextDouble();
+    }
+
+    private double randomLatitudeNear(Double parentLat) {
+        if (parentLat == null)
+            return randomUgandaLatitude();
+        return parentLat + (random.nextDouble() - 0.5) * 0.1; // roughly 5.5km variance
+    }
+
+    private double randomLongitudeNear(Double parentLon) {
+        if (parentLon == null)
+            return randomUgandaLongitude();
+        return parentLon + (random.nextDouble() - 0.5) * 0.1;
+    }
+
     @Value("${app.seed.test-data:false}")
     private boolean seedTestData;
 
@@ -69,11 +100,15 @@ public class DataSeedingService implements CommandLineRunner {
         log.info("Seeding Regions...");
         List<Region> regions = new ArrayList<>();
         for (int i = 0; i < TARGET_COUNT; i++) {
+            double lat = randomUgandaLatitude();
+            double lon = randomUgandaLongitude();
             Region region = Region.builder()
-                    .name(faker.address().state() + " " + i + " " + faker.random().hex(4))
+                    .name(randomUgandaPlace() + " Region " + i + " " + faker.random().hex(4))
                     .code(sharedService.generateUniqueCode(AdministrativeAreaType.REGION,
                             code -> regionRepository.findByCodeIgnoreCase(code).isPresent()))
                     .areaType(AdministrativeAreaType.REGION)
+                    .latitude(lat)
+                    .longitude(lon)
                     .build();
             regions.add(region);
             if (regions.size() >= BATCH_SIZE) {
@@ -91,12 +126,15 @@ public class DataSeedingService implements CommandLineRunner {
         log.info("Seeding SubRegions...");
         List<SubRegion> subRegions = new ArrayList<>();
         for (int i = 0; i < TARGET_COUNT; i++) {
+            Region parent = regions.get(random.nextInt(regions.size()));
             SubRegion subRegion = SubRegion.builder()
-                    .name(faker.address().cityName() + " " + i + " " + faker.random().hex(4))
+                    .name(randomUgandaPlace() + " SubRegion " + i + " " + faker.random().hex(4))
                     .code(sharedService.generateUniqueCode(AdministrativeAreaType.SUBREGION,
                             code -> subRegionRepository.findByCodeIgnoreCase(code).isPresent()))
                     .areaType(AdministrativeAreaType.SUBREGION)
-                    .region(regions.get(random.nextInt(regions.size())))
+                    .region(parent)
+                    .latitude(randomLatitudeNear(parent.getLatitude()))
+                    .longitude(randomLongitudeNear(parent.getLongitude()))
                     .build();
             subRegions.add(subRegion);
             if (subRegions.size() >= BATCH_SIZE) {
@@ -114,12 +152,15 @@ public class DataSeedingService implements CommandLineRunner {
         log.info("Seeding LocalGovernments...");
         List<LocalGovernment> lgs = new ArrayList<>();
         for (int i = 0; i < TARGET_COUNT; i++) {
+            SubRegion parent = subRegions.get(random.nextInt(subRegions.size()));
             LocalGovernment lg = LocalGovernment.builder()
-                    .name(faker.address().city() + " LG " + i + " " + faker.random().hex(4))
+                    .name(randomUgandaPlace() + " LG " + i + " " + faker.random().hex(4))
                     .code(sharedService.generateUniqueCode(AdministrativeAreaType.LOCALGOVERNMENT,
                             code -> localGovernmentRepository.findByCodeIgnoreCase(code).isPresent()))
                     .areaType(AdministrativeAreaType.LOCALGOVERNMENT)
-                    .subRegion(subRegions.get(random.nextInt(subRegions.size())))
+                    .subRegion(parent)
+                    .latitude(randomLatitudeNear(parent.getLatitude()))
+                    .longitude(randomLongitudeNear(parent.getLongitude()))
                     .build();
             lgs.add(lg);
             if (lgs.size() >= BATCH_SIZE) {
@@ -137,12 +178,15 @@ public class DataSeedingService implements CommandLineRunner {
         log.info("Seeding Counties...");
         List<County> counties = new ArrayList<>();
         for (int i = 0; i < TARGET_COUNT; i++) {
+            LocalGovernment parent = lgs.get(random.nextInt(lgs.size()));
             County county = County.builder()
-                    .name(faker.address().cityName() + " " + i + " " + faker.random().hex(4))
+                    .name(randomUgandaPlace() + " County " + i + " " + faker.random().hex(4))
                     .code(sharedService.generateUniqueCode(AdministrativeAreaType.COUNTY,
                             code -> countyRepository.findByCodeIgnoreCase(code).isPresent()))
                     .areaType(AdministrativeAreaType.COUNTY)
-                    .localGovernment(lgs.get(random.nextInt(lgs.size())))
+                    .localGovernment(parent)
+                    .latitude(randomLatitudeNear(parent.getLatitude()))
+                    .longitude(randomLongitudeNear(parent.getLongitude()))
                     .build();
             counties.add(county);
             if (counties.size() >= BATCH_SIZE) {
@@ -160,12 +204,15 @@ public class DataSeedingService implements CommandLineRunner {
         log.info("Seeding SubCounties...");
         List<SubCounty> subCounties = new ArrayList<>();
         for (int i = 0; i < TARGET_COUNT; i++) {
+            County parent = counties.get(random.nextInt(counties.size()));
             SubCounty sc = SubCounty.builder()
-                    .name(faker.address().cityPrefix() + " SC " + i + " " + faker.random().hex(4))
+                    .name(randomUgandaPlace() + " SC " + i + " " + faker.random().hex(4))
                     .code(sharedService.generateUniqueCode(AdministrativeAreaType.SUBCOUNTY,
                             code -> subCountyRepository.findByCodeIgnoreCase(code).isPresent()))
                     .areaType(AdministrativeAreaType.SUBCOUNTY)
-                    .county(counties.get(random.nextInt(counties.size())))
+                    .county(parent)
+                    .latitude(randomLatitudeNear(parent.getLatitude()))
+                    .longitude(randomLongitudeNear(parent.getLongitude()))
                     .build();
             subCounties.add(sc);
             if (subCounties.size() >= BATCH_SIZE) {
@@ -183,12 +230,15 @@ public class DataSeedingService implements CommandLineRunner {
         log.info("Seeding Parishes...");
         List<Parish> parishes = new ArrayList<>();
         for (int i = 0; i < TARGET_COUNT; i++) {
+            SubCounty parent = subCounties.get(random.nextInt(subCounties.size()));
             Parish parish = Parish.builder()
-                    .name(faker.address().streetName() + " Parish " + i + " " + faker.random().hex(4))
+                    .name(randomUgandaPlace() + " Parish " + i + " " + faker.random().hex(4))
                     .code(sharedService.generateUniqueCode(AdministrativeAreaType.PARISH,
                             code -> parishRepository.findByCodeIgnoreCase(code).isPresent()))
                     .areaType(AdministrativeAreaType.PARISH)
-                    .subCounty(subCounties.get(random.nextInt(subCounties.size())))
+                    .subCounty(parent)
+                    .latitude(randomLatitudeNear(parent.getLatitude()))
+                    .longitude(randomLongitudeNear(parent.getLongitude()))
                     .build();
 
             parishes.add(parish);
