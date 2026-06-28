@@ -1,5 +1,7 @@
 package com.wanfadger.AdministrativeareaApi.entity;
 
+import org.hibernate.annotations.SQLRestriction;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,8 +23,10 @@ import java.util.List;
 @Entity
 @Table(indexes = {
     @Index(name = "idx_region_code", columnList = "code"),
-    @Index(name = "idx_region_name", columnList = "name")
+    @Index(name = "idx_region_name", columnList = "name"),
+    @Index(name = "idx_region_archived", columnList = "archived")
 })
+@SQLRestriction("archived = false")
 public class Region extends BaseEntity {
 
     @Column(unique = true , nullable = false)

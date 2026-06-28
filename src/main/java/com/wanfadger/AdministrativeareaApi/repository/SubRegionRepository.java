@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -12,7 +13,7 @@ import java.util.Optional;
 
 
 @Repository
-public interface SubRegionRepository extends JpaRepository<SubRegion, String> {
+public interface SubRegionRepository extends JpaRepository<SubRegion, String>, JpaSpecificationExecutor<SubRegion> {
 
     Optional<SubRegion> findByNameIgnoreCase(String name);
 

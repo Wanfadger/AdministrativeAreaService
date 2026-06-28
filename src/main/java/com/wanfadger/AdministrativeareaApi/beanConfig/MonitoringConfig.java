@@ -1,5 +1,6 @@
 package com.wanfadger.AdministrativeareaApi.beanConfig;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.cache.CacheManager;
@@ -48,8 +49,15 @@ public class MonitoringConfig {
      * Redis health indicator
      */
     @Bean
-    public HealthIndicator redisHealthIndicator(RedisConnectionFactory redisConnectionFactory) {
+    public HealthIndicator redisHealthIndicator(ObjectProvider<RedisConnectionFactory> redisConnectionFactoryProvider) {
         return () -> {
+            RedisConnectionFactory redisConnectionFactory = redisConnectionFactoryProvider.getIfAvailable();
+            if (redisConnectionFactory == null) {
+                return Health.up()
+                        .withDetail("cache", "Redis")
+                        .withDetail("status", "Not configured")
+                        .build();
+            }
             try {
                 redisConnectionFactory.getConnection().ping();
                 return Health.up()

@@ -36,5 +36,5 @@ public class PaginatedResponseDTO<T> extends ResponseDTO<List<T>> {
 
     public PaginatedResponseDTO(List<T> data) {
         super(data);
-    }
+    }    
 } 

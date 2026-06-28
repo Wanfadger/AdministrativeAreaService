@@ -1,5 +1,7 @@
 package com.wanfadger.AdministrativeareaApi.entity;
 
+import org.hibernate.annotations.SQLRestriction;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,8 +18,10 @@ import java.util.List;
 @Entity
 @Table(indexes = {
     @Index(name = "idx_subregion_code", columnList = "code"),
-    @Index(name = "idx_subregion_name", columnList = "name")
+    @Index(name = "idx_subregion_name", columnList = "name"),
+    @Index(name = "idx_subregion_archived", columnList = "archived")
 })
+@SQLRestriction("archived = false")
 public class SubRegion extends BaseEntity {
 
     @Column(unique = true , nullable = false)

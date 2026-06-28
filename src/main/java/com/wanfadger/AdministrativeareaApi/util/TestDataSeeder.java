@@ -1,12 +1,12 @@
 package com.wanfadger.AdministrativeareaApi.util;
 
 import com.wanfadger.AdministrativeareaApi.entity.*;
-import com.wanfadger.AdministrativeareaApi.service.county.DbCountyService;
-import com.wanfadger.AdministrativeareaApi.service.localgovernment.DbLocalGovernmentService;
-import com.wanfadger.AdministrativeareaApi.service.parish.DbParishService;
-import com.wanfadger.AdministrativeareaApi.service.region.DbRegionService;
-import com.wanfadger.AdministrativeareaApi.service.subcounty.DbSubCountyService;
-import com.wanfadger.AdministrativeareaApi.service.subRegion.DbSubRegionService;
+import com.wanfadger.AdministrativeareaApi.repository.CountyRepository;
+import com.wanfadger.AdministrativeareaApi.repository.LocalGovernmentRepository;
+import com.wanfadger.AdministrativeareaApi.repository.ParishRepository;
+import com.wanfadger.AdministrativeareaApi.repository.RegionRepository;
+import com.wanfadger.AdministrativeareaApi.repository.SubCountyRepository;
+import com.wanfadger.AdministrativeareaApi.repository.SubRegionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,111 +39,84 @@ import java.util.List;
 @Slf4j
 public class TestDataSeeder {
 
-    private final DbRegionService dbRegionService;
-    private final DbSubRegionService dbSubRegionService;
-    private final DbLocalGovernmentService dbLocalGovernmentService;
-    private final DbCountyService dbCountyService;
-    private final DbSubCountyService dbSubCountyService;
-    private final DbParishService dbParishService;
+    private final RegionRepository regionRepository;
+    private final SubRegionRepository subRegionRepository;
+    private final LocalGovernmentRepository localGovernmentRepository;
+    private final CountyRepository countyRepository;
+    private final SubCountyRepository subCountyRepository;
+    private final ParishRepository parishRepository;
 
     @Value("${app.seed.test-data:false}")
     private boolean seedTestData;
-
-    @Value("${app.seed.clear-existing:false}")
-    private boolean clearExisting;
 
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void seedTestData() {
         if (!seedTestData) {
-            log.info("Test data seeding is disabled. Set app.seed.test-data=true to enable.");
+            log.info("Test data seeding is disabled. Set app.seed.test-data=true (env APP-SEED-TEST-DATA) to enable.");
             return;
         }
 
-        log.info("Starting test data seeding...");
+        log.info("Starting test data seeding (per-level — each level is seeded only if its table is empty)...");
 
         try {
-            // Check if complete data already exists
-            boolean hasRegions = !dbRegionService.dbList().isEmpty();
-            boolean hasSubRegions = !dbSubRegionService.dbList().isEmpty();
-            boolean hasLocalGovernments = !dbLocalGovernmentService.dbList().isEmpty();
-            boolean hasCounties = !dbCountyService.dbList().isEmpty();
-            boolean hasSubCounties = !dbSubCountyService.dbList().isEmpty();
-            boolean hasParishes = !dbParishService.dbList().isEmpty();
-            
-            boolean hasCompleteData = hasRegions && hasSubRegions && hasLocalGovernments && 
-                                     hasCounties && hasSubCounties && hasParishes;
-            
-            if (hasCompleteData && !clearExisting) {
-                log.info("Complete test data already exists. Skipping seed. Set app.seed.clear-existing=true to clear and reseed.");
-                return;
-            }
-            
-            if (hasRegions && !clearExisting) {
-                log.info("Partial data exists. Will seed missing levels only.");
-            }
-            
-            if (clearExisting) {
-                log.warn("app.seed.clear-existing=true is set. This will add new data but may create duplicates if data already exists.");
-            }
+            // Seed each level ONLY if its own table is empty. A populated table is left
+            // untouched (no duplication, no synthetic rows grafted onto real/restored data);
+            // its existing rows are loaded so emptier child levels can still be derived.
+            List<Region> regions = regionRepository.count() == 0
+                    ? seedRegions()
+                    : skip("Regions", regionRepository.findAll());
 
-            // Seed hierarchical data
-            List<Region> regions = seedRegions();
-            if (regions.isEmpty()) {
-                log.error("No regions found after seeding. Cannot proceed with hierarchical seeding.");
-                return;
-            }
-            log.info("Seeded {} regions, proceeding with sub-regions...", regions.size());
-            
-            List<SubRegion> subRegions = seedSubRegions(regions);
-            if (subRegions.isEmpty()) {
-                log.warn("No sub-regions were seeded. Check for errors above.");
-            } else {
-                log.info("Seeded {} sub-regions, proceeding with local governments...", subRegions.size());
-            }
-            
-            List<LocalGovernment> localGovernments = seedLocalGovernments(subRegions);
-            if (localGovernments.isEmpty()) {
-                log.warn("No local governments were seeded. Check for errors above.");
-            } else {
-                log.info("Seeded {} local governments, proceeding with counties...", localGovernments.size());
-            }
-            
-            List<County> counties = seedCounties(localGovernments);
-            if (counties.isEmpty()) {
-                log.warn("No counties were seeded. Check for errors above.");
-            } else {
-                log.info("Seeded {} counties, proceeding with sub-counties...", counties.size());
-            }
-            
-            List<SubCounty> subCounties = seedSubCounties(counties);
-            if (subCounties.isEmpty()) {
-                log.warn("No sub-counties were seeded. Check for errors above.");
-            } else {
-                log.info("Seeded {} sub-counties, proceeding with parishes...", subCounties.size());
-            }
-            
-            List<Parish> parishes = seedParishes(subCounties);
-            if (parishes.isEmpty()) {
-                log.warn("No parishes were seeded. Check for errors above.");
-            } else {
-                log.info("Seeded {} parishes.", parishes.size());
-            }
+            List<SubRegion> subRegions = subRegionRepository.count() == 0
+                    ? seedSubRegions(regions)
+                    : skip("Sub-Regions", subRegionRepository.findAll().stream()
+                            .filter(sr -> sr.getRegion() != null).toList());
 
-            log.info("Test data seeding completed successfully:");
+            List<LocalGovernment> localGovernments = localGovernmentRepository.count() == 0
+                    ? seedLocalGovernments(subRegions)
+                    : skip("Local Governments", localGovernmentRepository.findAll().stream()
+                            .filter(lg -> lg.getSubRegion() != null).toList());
+
+            List<County> counties = countyRepository.count() == 0
+                    ? seedCounties(localGovernments)
+                    : skip("Counties", countyRepository.findAll().stream()
+                            .filter(c -> c.getLocalGovernment() != null).toList());
+
+            List<SubCounty> subCounties = subCountyRepository.count() == 0
+                    ? seedSubCounties(counties)
+                    : skip("Sub-Counties", subCountyRepository.findAll().stream()
+                            .filter(sc -> sc.getCounty() != null).toList());
+
+            List<Parish> parishes = parishRepository.count() == 0
+                    ? seedParishes(subCounties)
+                    : skip("Parishes", parishRepository.findAll().stream()
+                            .filter(p -> p.getSubCounty() != null).toList());
+
+            log.info("Test data seeding completed:");
             log.info("  - {} Regions", regions.size());
             log.info("  - {} Sub-Regions", subRegions.size());
             log.info("  - {} Local Governments", localGovernments.size());
             log.info("  - {} Counties", counties.size());
             log.info("  - {} Sub-Counties", subCounties.size());
             log.info("  - {} Parishes", parishes.size());
-            log.info("Total: {} administrative areas", 
-                    regions.size() + subRegions.size() + localGovernments.size() + 
+            log.info("Total: {} administrative areas",
+                    regions.size() + subRegions.size() + localGovernments.size() +
                     counties.size() + subCounties.size() + parishes.size());
 
         } catch (Exception e) {
             log.error("Error seeding test data: {}", e.getMessage(), e);
         }
+    }
+
+    /** Log that a non-empty level is being left as-is, and return its existing rows. */
+    private <T> List<T> skip(String level, List<T> existing) {
+        log.info("{} table is not empty ({} rows) — skipping seed for this level.", level, existing.size());
+        return existing;
+    }
+
+    /** Null-safe coordinate accessor — parent areas created via the API may have null lat/long. */
+    private double coord(Double value) {
+        return value != null ? value : 0.0;
     }
 
     private List<Region> seedRegions() {
@@ -163,7 +136,7 @@ public class TestDataSeeder {
         Double[] longitudes = {32.5825, 32.5000, 33.2041, 30.2667, 30.6667};
 
         for (int i = 0; i < regionNames.length; i++) {
-            if (dbRegionService.dbByName(regionNames[i]).isEmpty()) {
+            if (regionRepository.findByNameIgnoreCase(regionNames[i]).isEmpty()) {
                 Region region = new Region();
                 region.setCode(regionCodes[i]);
                 region.setName(regionNames[i]);
@@ -179,13 +152,13 @@ public class TestDataSeeder {
 
         if (!regions.isEmpty()) {
             log.info("Saving {} new regions to database...", regions.size());
-            dbRegionService.dbNew(regions);
+            regionRepository.saveAll(regions);
             log.info("Successfully saved {} regions", regions.size());
         } else {
             log.info("No new regions to save (all already exist)");
         }
 
-        List<Region> allRegions = dbRegionService.dbList();
+        List<Region> allRegions = regionRepository.findAll();
         log.info("Total regions in database: {}", allRegions.size());
         return allRegions;
     }
@@ -206,14 +179,14 @@ public class TestDataSeeder {
                 String name = region.getName() + " Sub-Region " + i;
                 String code = "SR" + String.format("%03d", subRegionIndex);
 
-                if (dbSubRegionService.dbByName_RegionCode(name, region.getCode()).isEmpty()) {
+                if (subRegionRepository.findByNameIgnoreCaseAndRegion_Code(name, region.getCode()).isEmpty()) {
                     SubRegion subRegion = new SubRegion();
                     subRegion.setCode(code);
                     subRegion.setName(name);
                     subRegion.setDescription("Test " + name + " - maintains hierarchical reference to " + region.getName());
                     subRegion.setRegion(region);
-                    subRegion.setLatitude(region.getLatitude() + (i * 0.1));
-                    subRegion.setLongitude(region.getLongitude() + (i * 0.1));
+                    subRegion.setLatitude(coord(region.getLatitude()) + (i * 0.1));
+                    subRegion.setLongitude(coord(region.getLongitude()) + (i * 0.1));
                     subRegions.add(subRegion);
                     log.debug("Prepared sub-region: {} ({}) for region {}", name, code, region.getCode());
                 } else {
@@ -225,13 +198,13 @@ public class TestDataSeeder {
 
         if (!subRegions.isEmpty()) {
             log.info("Saving {} new sub-regions to database...", subRegions.size());
-            dbSubRegionService.dbNew(subRegions);
+            subRegionRepository.saveAll(subRegions);
             log.info("Successfully saved {} sub-regions", subRegions.size());
         } else {
             log.info("No new sub-regions to save (all already exist)");
         }
 
-        List<SubRegion> allSubRegions = dbSubRegionService.dbList().stream().filter(sr -> sr.getRegion() != null).toList();
+        List<SubRegion> allSubRegions = subRegionRepository.findAll().stream().filter(sr -> sr.getRegion() != null).toList();
         log.info("Total sub-regions in database: {}", allSubRegions.size());
         return allSubRegions;
     }
@@ -252,14 +225,14 @@ public class TestDataSeeder {
                 String name = subRegion.getName() + " Local Government " + i;
                 String code = "LG" + String.format("%03d", lgIndex);
 
-                if (dbLocalGovernmentService.dbByName_SubRegionCode(name, subRegion.getCode()).isEmpty()) {
+                if (localGovernmentRepository.findByNameIgnoreCaseAndSubRegion_Code(name, subRegion.getCode()).isEmpty()) {
                     LocalGovernment localGovernment = new LocalGovernment();
                     localGovernment.setCode(code);
                     localGovernment.setName(name);
                     localGovernment.setDescription("Test " + name + " - maintains hierarchical reference to " + subRegion.getName());
                     localGovernment.setSubRegion(subRegion);
-                    localGovernment.setLatitude(subRegion.getLatitude() + (i * 0.05));
-                    localGovernment.setLongitude(subRegion.getLongitude() + (i * 0.05));
+                    localGovernment.setLatitude(coord(subRegion.getLatitude()) + (i * 0.05));
+                    localGovernment.setLongitude(coord(subRegion.getLongitude()) + (i * 0.05));
                     localGovernments.add(localGovernment);
                     log.debug("Prepared local government: {} ({}) for sub-region {}", name, code, subRegion.getCode());
                 } else {
@@ -271,13 +244,13 @@ public class TestDataSeeder {
 
         if (!localGovernments.isEmpty()) {
             log.info("Saving {} new local governments to database...", localGovernments.size());
-            dbLocalGovernmentService.dbNew(localGovernments);
+            localGovernmentRepository.saveAll(localGovernments);
             log.info("Successfully saved {} local governments", localGovernments.size());
         } else {
             log.info("No new local governments to save (all already exist)");
         }
 
-        List<LocalGovernment> allLocalGovernments = dbLocalGovernmentService.dbList().stream().filter(lg -> lg.getSubRegion() != null).toList();
+        List<LocalGovernment> allLocalGovernments = localGovernmentRepository.findAll().stream().filter(lg -> lg.getSubRegion() != null).toList();
         log.info("Total local governments in database: {}", allLocalGovernments.size());
         return allLocalGovernments;
     }
@@ -298,14 +271,14 @@ public class TestDataSeeder {
                 String name = localGovernment.getName() + " County " + i;
                 String code = "CT" + String.format("%03d", countyIndex);
 
-                if (dbCountyService.dbByName_LocalGovernment_Code(name, localGovernment.getCode()).isEmpty()) {
+                if (countyRepository.findByNameIgnoreCaseAndLocalGovernment_Code(name, localGovernment.getCode()).isEmpty()) {
                     County county = new County();
                     county.setCode(code);
                     county.setName(name);
                     county.setDescription("Test " + name + " - maintains hierarchical reference to " + localGovernment.getName());
                     county.setLocalGovernment(localGovernment);
-                    county.setLatitude(localGovernment.getLatitude() + (i * 0.02));
-                    county.setLongitude(localGovernment.getLongitude() + (i * 0.02));
+                    county.setLatitude(coord(localGovernment.getLatitude()) + (i * 0.02));
+                    county.setLongitude(coord(localGovernment.getLongitude()) + (i * 0.02));
                     counties.add(county);
                     log.debug("Prepared county: {} ({}) for local government {}", name, code, localGovernment.getCode());
                 } else {
@@ -317,13 +290,13 @@ public class TestDataSeeder {
 
         if (!counties.isEmpty()) {
             log.info("Saving {} new counties to database...", counties.size());
-            dbCountyService.dbNew(counties);
+            countyRepository.saveAll(counties);
             log.info("Successfully saved {} counties", counties.size());
         } else {
             log.info("No new counties to save (all already exist)");
         }
 
-        List<County> allCounties = dbCountyService.dbList().stream().filter(c -> c.getLocalGovernment() != null).toList();
+        List<County> allCounties = countyRepository.findAll().stream().filter(c -> c.getLocalGovernment() != null).toList();
         log.info("Total counties in database: {}", allCounties.size());
         return allCounties;
     }
@@ -344,14 +317,14 @@ public class TestDataSeeder {
                 String name = county.getName() + " Sub-County " + i;
                 String code = "SC" + String.format("%03d", subCountyIndex);
 
-                if (dbSubCountyService.dbByName_CountyCode(name, county.getCode()).isEmpty()) {
+                if (subCountyRepository.findByNameIgnoreCaseAndCounty_Id(name, county.getCode()).isEmpty()) {
                     SubCounty subCounty = new SubCounty();
                     subCounty.setCode(code);
                     subCounty.setName(name);
                     subCounty.setDescription("Test " + name + " - maintains hierarchical reference to " + county.getName());
                     subCounty.setCounty(county);
-                    subCounty.setLatitude(county.getLatitude() + (i * 0.01));
-                    subCounty.setLongitude(county.getLongitude() + (i * 0.01));
+                    subCounty.setLatitude(coord(county.getLatitude()) + (i * 0.01));
+                    subCounty.setLongitude(coord(county.getLongitude()) + (i * 0.01));
                     subCounties.add(subCounty);
                     log.debug("Prepared sub-county: {} ({}) for county {}", name, code, county.getCode());
                 } else {
@@ -363,13 +336,13 @@ public class TestDataSeeder {
 
         if (!subCounties.isEmpty()) {
             log.info("Saving {} new sub-counties to database...", subCounties.size());
-            dbSubCountyService.dbNew(subCounties);
+            subCountyRepository.saveAll(subCounties);
             log.info("Successfully saved {} sub-counties", subCounties.size());
         } else {
             log.info("No new sub-counties to save (all already exist)");
         }
 
-        List<SubCounty> allSubCounties = dbSubCountyService.dbList().stream().filter(sc -> sc.getCounty() != null).toList();
+        List<SubCounty> allSubCounties = subCountyRepository.findAll().stream().filter(sc -> sc.getCounty() != null).toList();
         log.info("Total sub-counties in database: {}", allSubCounties.size());
         return allSubCounties;
     }
@@ -390,14 +363,14 @@ public class TestDataSeeder {
                 String name = subCounty.getName() + " Parish " + i;
                 String code = "PR" + String.format("%03d", parishIndex);
 
-                if (dbParishService.dbByName_SubCountyCode(name, subCounty.getCode()).isEmpty()) {
+                if (parishRepository.findByNameIgnoreCaseAndSubCounty_Code(name, subCounty.getCode()).isEmpty()) {
                     Parish parish = new Parish();
                     parish.setCode(code);
                     parish.setName(name);
                     parish.setDescription("Test " + name + " - maintains hierarchical reference to " + subCounty.getName());
                     parish.setSubCounty(subCounty);
-                    parish.setLatitude(subCounty.getLatitude() + (i * 0.005));
-                    parish.setLongitude(subCounty.getLongitude() + (i * 0.005));
+                    parish.setLatitude(coord(subCounty.getLatitude()) + (i * 0.005));
+                    parish.setLongitude(coord(subCounty.getLongitude()) + (i * 0.005));
                     parishes.add(parish);
                     log.debug("Prepared parish: {} ({}) for sub-county {}", name, code, subCounty.getCode());
                 } else {
@@ -409,13 +382,13 @@ public class TestDataSeeder {
 
         if (!parishes.isEmpty()) {
             log.info("Saving {} new parishes to database...", parishes.size());
-            dbParishService.dbNew(parishes);
+            parishRepository.saveAll(parishes);
             log.info("Successfully saved {} parishes", parishes.size());
         } else {
             log.info("No new parishes to save (all already exist)");
         }
 
-        List<Parish> allParishes = dbParishService.dbList().stream().filter(p -> p.getSubCounty() != null).toList();
+        List<Parish> allParishes = parishRepository.findAll().stream().filter(p -> p.getSubCounty() != null).toList();
         log.info("Total parishes in database: {}", allParishes.size());
         return allParishes;
     }

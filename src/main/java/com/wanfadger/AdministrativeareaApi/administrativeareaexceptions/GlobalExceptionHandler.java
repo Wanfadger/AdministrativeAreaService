@@ -1,6 +1,5 @@
 package com.wanfadger.AdministrativeareaApi.administrativeareaexceptions;
 
-import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -33,12 +32,10 @@ public class GlobalExceptionHandler  {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST , exception.getMessage());
     }
 
-    @ExceptionHandler({ExpiredJwtException.class})
-    public ProblemDetail handleExpiredJwtException(ExpiredJwtException exception) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED , exception.getMessage());
+    @ExceptionHandler({InvalidException.class})
+    public ProblemDetail handleInvalidException(InvalidException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST , exception.getMessage());
     }
-
-
 
     @ExceptionHandler({HttpClientErrorException.Forbidden.class})
     public ProblemDetail handleForbiddenException(HttpClientErrorException.Forbidden exception) {

@@ -22,7 +22,14 @@ public enum AdministrativeAreaType {
     }
 
     public static Optional<AdministrativeAreaType> fromStr(String administrativeAreaTypeStr) {
-        return Arrays.stream(AdministrativeAreaType.values()).filter(type -> type.administrativeAreaType.equalsIgnoreCase(administrativeAreaTypeStr)).findFirst();
+        if (administrativeAreaTypeStr == null) {
+            return Optional.empty();
+        }
+        // Accept both the display value ("SUB REGION") and the enum constant name ("SUBREGION").
+        return Arrays.stream(AdministrativeAreaType.values())
+                .filter(type -> type.administrativeAreaType.equalsIgnoreCase(administrativeAreaTypeStr)
+                        || type.name().equalsIgnoreCase(administrativeAreaTypeStr))
+                .findFirst();
     }
 
 
