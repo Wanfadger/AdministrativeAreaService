@@ -1,5 +1,9 @@
 package com.wanfadger.AdministrativeareaApi.service.administrativearea;
 
+import com.wanfadger.AdministrativeareaApi.administrativeareaexceptions.AlreadyExistsException;
+import com.wanfadger.AdministrativeareaApi.administrativeareaexceptions.InvalidException;
+import com.wanfadger.AdministrativeareaApi.administrativeareaexceptions.MissingDataException;
+import com.wanfadger.AdministrativeareaApi.administrativeareaexceptions.NotFoundException;
 import com.wanfadger.AdministrativeareaApi.dto.*;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.AdministrativeAreaResponseDto;
 import com.wanfadger.AdministrativeareaApi.dto.uniqueDtos.*;
@@ -10,12 +14,9 @@ import com.wanfadger.AdministrativeareaApi.service.parish.DbParishService;
 import com.wanfadger.AdministrativeareaApi.service.region.DbRegionService;
 import com.wanfadger.AdministrativeareaApi.service.subRegion.DbSubRegionService;
 import com.wanfadger.AdministrativeareaApi.service.subcounty.DbSubCountyService;
-import com.wanfadger.AdministrativeareaApi.shared.administrativeareaexceptions.AlreadyExistsException;
-import com.wanfadger.AdministrativeareaApi.shared.administrativeareaexceptions.InvalidException;
-import com.wanfadger.AdministrativeareaApi.shared.administrativeareaexceptions.MissingDataException;
-import com.wanfadger.AdministrativeareaApi.shared.administrativeareaexceptions.NotFoundException;
-import com.wanfadger.AdministrativeareaApi.shared.util.CacheKeys;
-import com.wanfadger.AdministrativeareaApi.shared.util.CacheHelperService;
+import com.wanfadger.AdministrativeareaApi.util.CacheHelperService;
+import com.wanfadger.AdministrativeareaApi.util.CacheKeys;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
