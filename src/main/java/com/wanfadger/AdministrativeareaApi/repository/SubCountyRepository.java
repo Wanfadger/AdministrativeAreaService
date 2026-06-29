@@ -19,6 +19,8 @@ public interface SubCountyRepository extends JpaRepository<SubCounty, String>, J
 
     Optional<SubCounty> findByNameIgnoreCaseAndCounty_Id(String name , String countyId);
 
+    Optional<SubCounty> findByNameIgnoreCaseAndCounty_Code(String name , String countyCode);
+
     @EntityGraph(attributePaths = {"county.localGovernment.subRegion.region"} , type = EntityGraph.EntityGraphType.FETCH)
     List<SubCounty> findAllByCounty_Code(String countyCode);
 

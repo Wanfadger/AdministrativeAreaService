@@ -429,6 +429,10 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 if (nullEmpty(dto.getPartOfCode())) throw new MissingDataException("Missing PartOfCode");
                 Region region = regionRepository.findByCodeIgnoreCase(dto.getPartOfCode()).orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
                 SubRegion subRegion = subRegionRepository.findByCodeIgnoreCase(code).orElseThrow(() -> new NotFoundException("Administrative Area NotFound"));
+                String subRegionName = notNullEmpty(dto.getName()) ? dto.getName() : subRegion.getName();
+                subRegionRepository.findByNameIgnoreCaseAndRegion_Code(subRegionName, dto.getPartOfCode())
+                        .filter(found -> !found.getCode().equalsIgnoreCase(code))
+                        .ifPresent(x -> { throw new AlreadyExistsException("Sub region already exists in the region"); });
                 if (notNullEmpty(dto.getName())) subRegion.setName(dto.getName());
                 if (notNullEmpty(dto.getLatitude())) subRegion.setLatitude(Double.valueOf(dto.getLatitude()));
                 if (notNullEmpty(dto.getLongitude())) subRegion.setLongitude(Double.valueOf(dto.getLongitude()));
@@ -441,6 +445,10 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 if (nullEmpty(dto.getPartOfCode())) throw new MissingDataException("Missing PartOfCode");
                 SubRegion subRegion = subRegionRepository.findByCodeIgnoreCase(dto.getPartOfCode()).orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
                 LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(code).orElseThrow(() -> new NotFoundException("Administrative Area NotFound"));
+                String localGovernmentName = notNullEmpty(dto.getName()) ? dto.getName() : localGovernment.getName();
+                localGovernmentRepository.findByNameIgnoreCaseAndSubRegion_Code(localGovernmentName, dto.getPartOfCode())
+                        .filter(found -> !found.getCode().equalsIgnoreCase(code))
+                        .ifPresent(x -> { throw new AlreadyExistsException("Local Government already exists in the sub region"); });
                 if (notNullEmpty(dto.getName())) localGovernment.setName(dto.getName());
                 if (notNullEmpty(dto.getLatitude())) localGovernment.setLatitude(Double.valueOf(dto.getLatitude()));
                 if (notNullEmpty(dto.getLongitude())) localGovernment.setLongitude(Double.valueOf(dto.getLongitude()));
@@ -453,6 +461,10 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 if (nullEmpty(dto.getPartOfCode())) throw new MissingDataException("Missing PartOfCode");
                 LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(dto.getPartOfCode()).orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
                 County county = countyRepository.findByCodeIgnoreCase(code).orElseThrow(() -> new NotFoundException("Administrative Area NotFound"));
+                String countyName = notNullEmpty(dto.getName()) ? dto.getName() : county.getName();
+                countyRepository.findByNameIgnoreCaseAndLocalGovernment_Code(countyName, dto.getPartOfCode())
+                        .filter(found -> !found.getCode().equalsIgnoreCase(code))
+                        .ifPresent(x -> { throw new AlreadyExistsException("County already exists in the local government"); });
                 if (notNullEmpty(dto.getName())) county.setName(dto.getName());
                 if (notNullEmpty(dto.getLatitude())) county.setLatitude(Double.valueOf(dto.getLatitude()));
                 if (notNullEmpty(dto.getLongitude())) county.setLongitude(Double.valueOf(dto.getLongitude()));
@@ -465,6 +477,10 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 if (nullEmpty(dto.getPartOfCode())) throw new MissingDataException("Missing PartOfCode");
                 County county = countyRepository.findByCodeIgnoreCase(dto.getPartOfCode()).orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
                 SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(code).orElseThrow(() -> new NotFoundException("Administrative Area NotFound"));
+                String subCountyName = notNullEmpty(dto.getName()) ? dto.getName() : subCounty.getName();
+                subCountyRepository.findByNameIgnoreCaseAndCounty_Code(subCountyName, dto.getPartOfCode())
+                        .filter(found -> !found.getCode().equalsIgnoreCase(code))
+                        .ifPresent(x -> { throw new AlreadyExistsException("Sub County already exists in the county"); });
                 if (notNullEmpty(dto.getName())) subCounty.setName(dto.getName());
                 if (notNullEmpty(dto.getLatitude())) subCounty.setLatitude(Double.valueOf(dto.getLatitude()));
                 if (notNullEmpty(dto.getLongitude())) subCounty.setLongitude(Double.valueOf(dto.getLongitude()));
@@ -477,6 +493,10 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 if (nullEmpty(dto.getPartOfCode())) throw new MissingDataException("Missing PartOfCode");
                 SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(dto.getPartOfCode()).orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
                 Parish parish = parishRepository.findByCodeIgnoreCase(code).orElseThrow(() -> new NotFoundException("Administrative Area NotFound"));
+                String parishName = notNullEmpty(dto.getName()) ? dto.getName() : parish.getName();
+                parishRepository.findByNameIgnoreCaseAndSubCounty_Code(parishName, dto.getPartOfCode())
+                        .filter(found -> !found.getCode().equalsIgnoreCase(code))
+                        .ifPresent(x -> { throw new AlreadyExistsException("Parish already exists in the sub county"); });
                 if (notNullEmpty(dto.getName())) parish.setName(dto.getName());
                 if (notNullEmpty(dto.getLatitude())) parish.setLatitude(Double.valueOf(dto.getLatitude()));
                 if (notNullEmpty(dto.getLongitude())) parish.setLongitude(Double.valueOf(dto.getLongitude()));
