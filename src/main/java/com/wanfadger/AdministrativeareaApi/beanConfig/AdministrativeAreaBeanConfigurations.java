@@ -31,10 +31,9 @@ public class AdministrativeAreaBeanConfigurations {
     }
 
     /**
-     * Redis caching beans, mirroring the URRMS Core multi-tier model: a primary default
-     * manager plus explicit-TTL managers selectable per cache region, a short-lived
-     * {@code searchCacheManager} for paginated search results, and a {@code searchKeyGenerator}
-     * that produces stable keys from the request query-map.
+     * Redis caching beans: a single primary {@link RedisCacheManager} (30-minute TTL) backing
+     * both read regions — the paginated search and the full-detail getOne — plus a
+     * {@code searchKeyGenerator} that produces stable keys from the request query-map.
      *
      * <p>The connection factory is Spring Boot's auto-configured {@code LettuceConnectionFactory}
      * (Spring's default Redis client), driven by {@code spring.data.redis.*} properties incl.
@@ -77,54 +76,25 @@ public class AdministrativeAreaBeanConfigurations {
             return redisTemplate;
         }
 
-        /** Primary manager — 1 hour default TTL for per-key entity reads. */
+        /**
+         * Single cache manager backing both read regions — the paginated {@code search} and the
+         * full-detail {@code getOne}. A 30-minute TTL keeps cached pages fresh; every write
+         * ({@code create}/{@code update}/{@code delete}) evicts the regions immediately.
+         */
         @Bean
         @Primary
         public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-            return RedisCacheManager.builder(connectionFactory)
-                    .cacheDefaults(cacheConfig(Duration.ofHours(1)))
-                    .build();
-        }
-
-        @Bean("hourCacheManager")
-        public RedisCacheManager hourCacheManager(RedisConnectionFactory connectionFactory) {
-            return RedisCacheManager.builder(connectionFactory)
-                    .cacheDefaults(cacheConfig(Duration.ofHours(1)))
-                    .build();
-        }
-
-        @Bean("_24HourCacheManager")
-        public RedisCacheManager _24HourCacheManager(RedisConnectionFactory connectionFactory) {
-            return RedisCacheManager.builder(connectionFactory)
-                    .cacheDefaults(cacheConfig(Duration.ofHours(24)))
-                    .build();
-        }
-
-        @Bean("weekCacheManager")
-        public RedisCacheManager weekCacheManager(RedisConnectionFactory connectionFactory) {
-            return RedisCacheManager.builder(connectionFactory)
-                    .cacheDefaults(cacheConfig(Duration.ofDays(7)))
-                    .build();
-        }
-
-        @Bean("monthCacheManager")
-        public RedisCacheManager monthCacheManager(RedisConnectionFactory connectionFactory) {
-            return RedisCacheManager.builder(connectionFactory)
-                    .cacheDefaults(cacheConfig(Duration.ofDays(30)))
-                    .build();
-        }
-
-        /** Short-TTL manager for paginated search results — pages churn as data changes. */
-        @Bean("searchCacheManager")
-        public RedisCacheManager searchCacheManager(RedisConnectionFactory connectionFactory) {
             return RedisCacheManager.builder(connectionFactory)
                     .cacheDefaults(cacheConfig(Duration.ofMinutes(30)))
                     .build();
         }
 
         /**
-         * Stable cache key for {@code Map<String,String> queryMap} search params: sorts the
-         * entries so identical filters always resolve to the same key regardless of order.
+         * Stable cache key for {@code Map<String,String> queryMap} search params: drops blank
+         * values (so {@code partOf=} the client sends empty doesn't fork the key or hurt the hit
+         * rate), sorts the entries so identical filters always resolve to the same key regardless
+         * of order, and wraps them in braces — {@code {size:1000, type:COUNTY}} — so the param
+         * object stays readable in a Redis browser even when many filters are present.
          */
         @Bean
         public KeyGenerator searchKeyGenerator() {
@@ -135,10 +105,11 @@ public class AdministrativeAreaBeanConfigurations {
                 Object param = params[0];
                 if (param instanceof Map<?, ?> map) {
                     return map.entrySet().stream()
+                            .filter(e -> e.getValue() != null && !String.valueOf(e.getValue()).isBlank())
                             .sorted(Map.Entry.comparingByKey((a, b) ->
                                     String.valueOf(a).compareTo(String.valueOf(b))))
                             .map(e -> e.getKey() + ":" + e.getValue())
-                            .collect(Collectors.joining(","));
+                            .collect(Collectors.joining(", ", "{", "}"));
                 }
                 return "SimpleKey " + Arrays.deepToString(params);
             };

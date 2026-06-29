@@ -42,20 +42,23 @@ public class SwaggerConfig {
                                 .description("Production Server")));
     }
 
-    /** Business API group — the versioned administrative-area endpoints. */
+    /**
+     * Business API group — the versioned administrative-area endpoints. Named "0-…" so it sorts
+     * first and is the definition shown by default when Swagger UI loads.
+     */
     @Bean
     public GroupedOpenApi businessApi() {
         return GroupedOpenApi.builder()
-                .group("1-AdministrativeArea-API")
+                .group("0-AdministrativeArea-API")
                 .pathsToMatch("/api/v1/**")
                 .build();
     }
 
-    /** Monitoring group — Spring Boot Actuator endpoints. */
+    /** Monitoring group — Spring Boot Actuator endpoints (requires springdoc.show-actuator=true). */
     @Bean
     public GroupedOpenApi monitoringApi() {
         return GroupedOpenApi.builder()
-                .group("0-Monitoring")
+                .group("1-Monitoring")
                 .pathsToMatch("/actuator/**")
                 .build();
     }

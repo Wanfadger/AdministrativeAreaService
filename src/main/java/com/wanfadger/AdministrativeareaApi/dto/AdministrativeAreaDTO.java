@@ -10,7 +10,13 @@ import java.io.Serializable;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Schema(description = "Complete administrative area data with location coordinates")
+@Schema(
+        description = "Administrative area with location coordinates. Reads return the concrete "
+                + "per-level subtype, which also carries its full parent hierarchy: a SubRegionDTO "
+                + "embeds its region, a ParishDTO embeds subCounty → county → localGovernment → "
+                + "subRegion → region, and so on.",
+        subTypes = {RegionDTO.class, SubRegionDTO.class, LocalGovernmentDTO.class,
+                CountyDTO.class, SubCountyDTO.class, ParishDTO.class})
 public class AdministrativeAreaDTO implements Serializable {
     @Schema(description = "Unique code of the administrative area", example = "001")
     private String code;

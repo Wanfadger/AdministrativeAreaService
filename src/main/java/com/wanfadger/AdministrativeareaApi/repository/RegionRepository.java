@@ -1,8 +1,6 @@
 package com.wanfadger.AdministrativeareaApi.repository;
 
 import com.wanfadger.AdministrativeareaApi.entity.Region;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
@@ -15,8 +13,5 @@ public interface RegionRepository extends JpaRepository<Region, String>, JpaSpec
 
     Optional<Region> findByNameIgnoreCase(String name);
     Optional<Region> findByCodeIgnoreCase(String code);
-
-    @Override
-    Page<Region> findAll(Pageable pageable);
 
 }

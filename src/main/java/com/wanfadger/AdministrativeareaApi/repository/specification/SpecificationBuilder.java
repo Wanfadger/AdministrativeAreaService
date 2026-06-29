@@ -1,5 +1,7 @@
 package com.wanfadger.AdministrativeareaApi.repository.specification;
 
+import jakarta.persistence.criteria.Fetch;
+import jakarta.persistence.criteria.JoinType;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.Map;
@@ -71,6 +73,30 @@ public final class SpecificationBuilder {
     /** Single-criterion convenience for composing explicit predicates in services. */
     public static <T> Specification<T> where(String field, Object value, MatchType matchType) {
         return new GenericSpecification<>(new SearchCriteria(field, value, matchType));
+    }
+
+    /**
+     * Eagerly LEFT-JOIN-FETCH a chain of to-one associations so the whole graph loads in a single
+     * query instead of triggering N+1 lazy loads during result mapping. E.g.
+     * {@code fetch("subCounty","county","localGovernment","subRegion","region")} on a Parish search.
+     *
+     * <p>The fetch is applied to the data query only — never the {@code count(*)} query, where a
+     * fetch join is illegal — by inspecting {@code query.getResultType()}. Returns an AND-neutral
+     * (always-true) predicate so callers can unconditionally {@code .and(fetch(...))}. Safe to use
+     * with pagination because every link is to-one (no in-memory paging).
+     */
+    public static <T> Specification<T> fetch(String... pathChain) {
+        return (root, query, cb) -> {
+            Class<?> resultType = query == null ? null : query.getResultType();
+            boolean isCountQuery = resultType == Long.class || resultType == long.class;
+            if (!isCountQuery && pathChain != null && pathChain.length > 0) {
+                Fetch<?, ?> fetch = root.fetch(pathChain[0], JoinType.LEFT);
+                for (int i = 1; i < pathChain.length; i++) {
+                    fetch = fetch.fetch(pathChain[i], JoinType.LEFT);
+                }
+            }
+            return cb.conjunction();
+        };
     }
 
     /**
