@@ -1,6 +1,5 @@
 package com.wanfadger.AdministrativeareaApi.golden;
 
-import com.wanfadger.AdministrativeareaApi.TestCacheConfig;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +48,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(TestCacheConfig.class)
 @TestPropertySource(properties = {
         "spring.datasource.url=jdbc:h2:mem:brokendb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE"
 })
