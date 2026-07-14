@@ -37,6 +37,14 @@
 			<artifactId>spring-boot-starter-data-redis</artifactId>
 		</dependency>
 
+		<!-- Per-IP rate limiting. bucket4j-core only: no distributed backend, so each pod
+		     enforces its own limit (documented in RateLimitFilter). -->
+		<dependency>
+			<groupId>com.bucket4j</groupId>
+			<artifactId>bucket4j_jdk17-core</artifactId>
+			<version>8.14.0</version>
+		</dependency>
+
 		<!-- Cache L1: in-heap, per pod. Version managed by the Boot parent. -->
 		<dependency>
 			<groupId>com.github.ben-manes.caffeine</groupId>

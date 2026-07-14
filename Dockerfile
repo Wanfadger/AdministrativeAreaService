@@ -40,6 +40,6 @@ EXPOSE 8084
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
 
 HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=10 \
-  CMD wget -qO- http://localhost:8084/actuator/health/readiness || exit 1
+  CMD wget -qO- http://localhost:9084/actuator/health/readiness || exit 1
 
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher"]

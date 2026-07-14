@@ -43,9 +43,10 @@ import java.util.Map;
  * <p>Errors are RFC-7807 {@link ProblemDetail} responses: {@code 400} (missing/invalid input),
  * {@code 404} (area not found), {@code 409} (duplicate name under the same parent).
  */
+// No @CrossOrigin. It was a bare one — i.e. allow-all — which let any page on the internet drive this
+// API, writes included, from a visitor's browser. The policy now lives in WebConfig as an allowlist.
 @RestController
 @RequiredArgsConstructor
-@CrossOrigin
 @RequestMapping("/api/v1/administrative-areas")
 @Tag(name = "Administrative Areas", description = "Manage the Ugandan administrative-area hierarchy (Region › Sub-Region › Local Government › County › Sub-County › Parish)")
 public class AdministrativeAreaController {
