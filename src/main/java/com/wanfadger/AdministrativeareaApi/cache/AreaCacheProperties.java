@@ -81,4 +81,36 @@ public class AreaCacheProperties {
      * single-instance deployment (and is what the test profile runs).
      */
     private boolean l2Enabled = true;
+
+    /** Pre-loading the cache at startup, before the pod is allowed to take traffic. */
+    private Warmup warmup = new Warmup();
+
+    @Getter
+    @Setter
+    public static class Warmup {
+
+        /**
+         * Off by default in tests (see {@code application-test.properties}) — a warmup that queries
+         * the database on every context start would slow the suite for no benefit.
+         */
+        private boolean enabled = true;
+
+        /**
+         * Rows the map view requests per level. Must match what the client actually sends, or the
+         * warmed entry has a different cache key and is never read — see {@code CacheWarmupRunner}.
+         */
+        private int mapSize = 2000;
+
+        /** Rows the explorer tree requests for its root level. */
+        private int treeSize = 1000;
+
+        /** Rows the explorer's level table requests for its first page. */
+        private int tableSize = 25;
+
+        /**
+         * Skip the six 2,000-row map pulls. They are the bulk of the warmup's cost and the bulk of
+         * its value; turn them off if startup time matters more than the first map render.
+         */
+        private boolean includeMapPulls = true;
+    }
 }

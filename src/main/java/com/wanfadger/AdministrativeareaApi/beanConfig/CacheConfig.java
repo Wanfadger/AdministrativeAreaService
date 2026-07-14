@@ -2,6 +2,7 @@ package com.wanfadger.AdministrativeareaApi.beanConfig;
 
 import com.wanfadger.AdministrativeareaApi.cache.AreaCacheProperties;
 import com.wanfadger.AdministrativeareaApi.cache.CacheInvalidationBroadcaster;
+import com.wanfadger.AdministrativeareaApi.cache.CacheInvalidationSubscriber;
 import com.wanfadger.AdministrativeareaApi.cache.CacheValueSerializer;
 import com.wanfadger.AdministrativeareaApi.cache.RedisCacheInvalidationBroadcaster;
 import com.wanfadger.AdministrativeareaApi.cache.TwoLevelCache;
@@ -222,15 +223,29 @@ public class CacheConfig implements CachingConfigurer {
      * removing one of the small number of carrier threads that serve every request in the app.
      * {@link SimpleAsyncTaskExecutor} without virtual threads enabled gives a dedicated platform thread,
      * which is exactly the right shape for a thread that is going to sit in a blocking read forever.
+     *
+     * <p><b>{@code autoStartup = false} is not an optimisation.</b> This container starts with the
+     * context and throws if its first SUBSCRIBE fails, which aborts the context — so leaving it on
+     * meant a Redis outage at boot stopped the application from starting <i>at all</i>, destroying the
+     * one property this whole cache was designed to have. {@link CacheInvalidationSubscriber} starts it
+     * after the app is already serving, and retries in the background if Redis is not there yet.
      */
     @Bean(destroyMethod = "destroy")
     @Profile("!test")
     public RedisMessageListenerContainer cacheInvalidationListenerContainer(
             RedisConnectionFactory connectionFactory, CacheInvalidationBroadcaster broadcaster) {
 
-        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+        // isAutoStartup() is the SmartLifecycle hook Spring consults to decide whether to start this
+        // with the context; the container exposes no setter for it, so it is overridden here.
+        RedisMessageListenerContainer container = new RedisMessageListenerContainer() {
+            @Override
+            public boolean isAutoStartup() {
+                return false;   // started by CacheInvalidationSubscriber, tolerantly
+            }
+        };
         container.setConnectionFactory(connectionFactory);
         container.setTaskExecutor(new SimpleAsyncTaskExecutor("redis-cache-invalidation-"));
+        container.setRecoveryInterval(5_000);   // reconnect if the connection drops later
 
         if (broadcaster instanceof MessageListener listener) {
             container.addMessageListener(listener,
