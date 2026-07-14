@@ -22,9 +22,11 @@ import java.util.List;
     @Index(name = "idx_localgovernment_archived", columnList = "archived")
 })
 @SQLRestriction("archived = false")
-public class LocalGovernment extends BaseEntity {
+public class LocalGovernment extends BaseEntity implements NamedArea {
 
-    @Column(unique = true , nullable = false)
+    // NOT globally unique — unique only WITHIN a sub-region. See the note on SubRegion.name.
+    // Enforced by uk_localgovernment_name_in_subregion (migration V3).
+    @Column(nullable = false)
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY , targetEntity = SubRegion.class )

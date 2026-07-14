@@ -27,7 +27,7 @@ import java.util.List;
     @Index(name = "idx_region_archived", columnList = "archived")
 })
 @SQLRestriction("archived = false")
-public class Region extends BaseEntity {
+public class Region extends BaseEntity implements NamedArea {
 
     @Column(unique = true , nullable = false)
     private String name;

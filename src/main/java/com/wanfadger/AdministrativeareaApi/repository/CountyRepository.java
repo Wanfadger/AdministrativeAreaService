@@ -1,31 +1,20 @@
 package com.wanfadger.AdministrativeareaApi.repository;
 
 import com.wanfadger.AdministrativeareaApi.entity.County;
-import lombok.NonNull;
 import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 
-
 @Repository
-public interface CountyRepository extends JpaRepository<County, String>, JpaSpecificationExecutor<County> {
+public interface CountyRepository extends AreaRepository<County> {
 
     @Override
-    @EntityGraph(attributePaths = {"localGovernment.subRegion.region"} , type = EntityGraph.EntityGraphType.FETCH)
-    @NonNull
-    List<County> findAll();
+    @EntityGraph(attributePaths = {"localGovernment.subRegion.region"}, type = EntityGraph.EntityGraphType.FETCH)
+    Optional<County> findByCodeIgnoreCase(String code);
 
-    @EntityGraph(attributePaths = {"localGovernment.subRegion.region"} , type = EntityGraph.EntityGraphType.FETCH)
-    @NonNull
-    Optional<County> findByCodeIgnoreCase(@NonNull String code);
+    Optional<County> findByNameIgnoreCaseAndLocalGovernment_Code(String name, String localGovernmentCode);
 
-    Optional<County> findByNameIgnoreCaseAndLocalGovernment_Code(String name , String localGovernmentCode);
-
-    @EntityGraph(attributePaths = {"localGovernment.subRegion.region"} , type = EntityGraph.EntityGraphType.FETCH)
-    List<County> findAllByLocalGovernment_Code(String localGovernmentCode);
-
+    /** Child check when deleting a local government. */
+    boolean existsByLocalGovernment_Code(String localGovernmentCode);
 }

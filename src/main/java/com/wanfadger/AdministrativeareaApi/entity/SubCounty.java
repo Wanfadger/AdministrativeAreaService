@@ -22,7 +22,7 @@ import java.util.List;
     @Index(name = "idx_subcounty_archived", columnList = "archived")
 })
 @SQLRestriction("archived = false")
-public class SubCounty extends BaseEntity {
+public class SubCounty extends BaseEntity implements NamedArea {
 
     @Column(nullable = false)
     private String name;

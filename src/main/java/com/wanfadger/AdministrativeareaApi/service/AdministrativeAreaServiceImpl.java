@@ -175,7 +175,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
                 }
                 County county = countyRepository.findByCodeIgnoreCase(dto.getPartOfCode())
                         .orElseThrow(() -> new InvalidException("Invalid PartOfCode"));
-                if (subCountyRepository.findByNameIgnoreCaseAndCounty_Id(dto.getName(), dto.getPartOfCode()).isPresent()) {
+                if (subCountyRepository.findByNameIgnoreCaseAndCounty_Code(dto.getName(), dto.getPartOfCode()).isPresent()) {
                     throw new AlreadyExistsException("Sub County Already Exists in the county");
                 }
                 SubCounty subCounty = convertDtoSubCounty(dto, administrativeAreaType);
@@ -525,35 +525,35 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         switch (administrativeAreaType) {
             case REGION -> {
                 Region region = regionRepository.findByCodeIgnoreCase(code).orElseThrow(() -> new NotFoundException("Region not found"));
-                if (!subRegionRepository.findAllByRegion_Code(code).isEmpty()) {
+                if (subRegionRepository.existsByRegion_Code(code)) {
                     throw new InvalidException("Cannot delete a region that still has sub-regions");
                 }
                 regionRepository.delete(region);
             }
             case SUBREGION -> {
                 SubRegion subRegion = subRegionRepository.findByCodeIgnoreCase(code).orElseThrow(() -> new NotFoundException("SubRegion not found"));
-                if (!localGovernmentRepository.findAllBySubRegion_Code(code).isEmpty()) {
+                if (localGovernmentRepository.existsBySubRegion_Code(code)) {
                     throw new InvalidException("Cannot delete a sub-region that still has local governments");
                 }
                 subRegionRepository.delete(subRegion);
             }
             case LOCALGOVERNMENT -> {
                 LocalGovernment localGovernment = localGovernmentRepository.findByCodeIgnoreCase(code).orElseThrow(() -> new NotFoundException("LocalGovernment not found"));
-                if (!countyRepository.findAllByLocalGovernment_Code(code).isEmpty()) {
+                if (countyRepository.existsByLocalGovernment_Code(code)) {
                     throw new InvalidException("Cannot delete a local government that still has counties");
                 }
                 localGovernmentRepository.delete(localGovernment);
             }
             case COUNTY -> {
                 County county = countyRepository.findByCodeIgnoreCase(code).orElseThrow(() -> new NotFoundException("County not found"));
-                if (!subCountyRepository.findAllByCounty_Code(code).isEmpty()) {
+                if (subCountyRepository.existsByCounty_Code(code)) {
                     throw new InvalidException("Cannot delete a county that still has sub-counties");
                 }
                 countyRepository.delete(county);
             }
             case SUBCOUNTY -> {
                 SubCounty subCounty = subCountyRepository.findByCodeIgnoreCase(code).orElseThrow(() -> new NotFoundException("SubCounty not found"));
-                if (!parishRepository.findAllBySubCounty_Code(code).isEmpty()) {
+                if (parishRepository.existsBySubCounty_Code(code)) {
                     throw new InvalidException("Cannot delete a sub-county that still has parishes");
                 }
                 subCountyRepository.delete(subCounty);

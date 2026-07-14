@@ -20,7 +20,7 @@ import lombok.Setter;
     @Index(name = "idx_parish_archived", columnList = "archived")
 })
 @SQLRestriction("archived = false")
-public class Parish extends BaseEntity {
+public class Parish extends BaseEntity implements NamedArea {
 
     @Column(nullable = false)
     private String name;
