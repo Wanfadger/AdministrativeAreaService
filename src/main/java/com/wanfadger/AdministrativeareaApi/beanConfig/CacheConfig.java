@@ -1,10 +1,12 @@
 package com.wanfadger.AdministrativeareaApi.beanConfig;
 
 import com.wanfadger.AdministrativeareaApi.cache.AreaCacheProperties;
+import com.wanfadger.AdministrativeareaApi.cache.CacheInvalidationBroadcaster;
 import com.wanfadger.AdministrativeareaApi.cache.CacheValueSerializer;
+import com.wanfadger.AdministrativeareaApi.cache.RedisCacheInvalidationBroadcaster;
+import com.wanfadger.AdministrativeareaApi.cache.TwoLevelCache;
 import com.wanfadger.AdministrativeareaApi.cache.TwoLevelCacheManager;
 import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
-import com.wanfadger.AdministrativeareaApi.cache.TwoLevelCache;
 import io.lettuce.core.ClientOptions;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
@@ -18,11 +20,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.data.redis.cache.BatchStrategies;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.cache.RedisCacheWriter;
+import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.listener.ChannelTopic;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
@@ -183,6 +190,53 @@ public class CacheConfig implements CachingConfigurer {
                         .fromSerializer(new StringRedisSerializer()))
                 .serializeValuesWith(RedisSerializationContext.SerializationPair
                         .fromSerializer(CacheValueSerializer.create()));
+    }
+
+    // ------------------------------------------------------------------- cross-pod L1 invalidation
+
+    /**
+     * Publishes this pod's evictions and applies the other pods'. See
+     * {@link RedisCacheInvalidationBroadcaster}.
+     *
+     * <p>Falls back to {@link CacheInvalidationBroadcaster#NOOP} when there is no Redis. That is not a
+     * degraded mode: with a single instance there is no other L1 in existence to invalidate.
+     */
+    @Bean
+    public CacheInvalidationBroadcaster cacheInvalidationBroadcaster(
+            ObjectProvider<StringRedisTemplate> redis, TwoLevelCacheManager cacheManager) {
+
+        StringRedisTemplate template = redis.getIfAvailable();
+        if (template == null) {
+            log.info("No Redis: cross-pod cache invalidation disabled (L1 is bounded by its TTL alone)");
+            return CacheInvalidationBroadcaster.NOOP;
+        }
+        return new RedisCacheInvalidationBroadcaster(template, cacheManager);
+    }
+
+    /**
+     * Subscribes to the invalidation channel.
+     *
+     * <p>The task executor is set explicitly, and it must be a <b>platform</b>-thread one. Subscribing
+     * to a Redis channel is a call that blocks for the lifetime of the application — it is not a task
+     * that completes. Running that on a virtual thread would pin its carrier permanently, quietly
+     * removing one of the small number of carrier threads that serve every request in the app.
+     * {@link SimpleAsyncTaskExecutor} without virtual threads enabled gives a dedicated platform thread,
+     * which is exactly the right shape for a thread that is going to sit in a blocking read forever.
+     */
+    @Bean(destroyMethod = "destroy")
+    @Profile("!test")
+    public RedisMessageListenerContainer cacheInvalidationListenerContainer(
+            RedisConnectionFactory connectionFactory, CacheInvalidationBroadcaster broadcaster) {
+
+        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+        container.setConnectionFactory(connectionFactory);
+        container.setTaskExecutor(new SimpleAsyncTaskExecutor("redis-cache-invalidation-"));
+
+        if (broadcaster instanceof MessageListener listener) {
+            container.addMessageListener(listener,
+                    new ChannelTopic(RedisCacheInvalidationBroadcaster.CHANNEL));
+        }
+        return container;
     }
 
     @Bean

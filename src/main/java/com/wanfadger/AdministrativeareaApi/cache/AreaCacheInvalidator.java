@@ -40,6 +40,12 @@ public class AreaCacheInvalidator {
     private final TwoLevelCacheManager cacheManager;
 
     /**
+     * {@link CacheInvalidationBroadcaster#NOOP} on a single instance and under the test profile —
+     * with one pod there is no other L1 to invalidate, so there is nothing to announce.
+     */
+    private final CacheInvalidationBroadcaster broadcaster;
+
+    /**
      * Schedule eviction of {@code type} and everything below it, to run once the current transaction
      * commits. Called once per write operation — a bulk create of 500 parishes registers one
      * synchronisation, not 500.
@@ -61,6 +67,11 @@ public class AreaCacheInvalidator {
     private void evictNow(AdministrativeAreaType type) {
         List<TwoLevelCache> affected = cacheManager.cascadeFrom(type);
         affected.forEach(TwoLevelCache::clear);
+
+        // Evict first, announce second. The other pods clear their L1 on this message and will
+        // immediately re-read; if L2 had not been cleared yet, they would re-cache the stale value
+        // straight back out of Redis and the invalidation would have achieved nothing.
+        broadcaster.broadcast(type);
 
         if (log.isDebugEnabled()) {
             log.debug("Write to {} evicted {} of {} regions: {}",

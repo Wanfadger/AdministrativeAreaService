@@ -43,11 +43,10 @@
 			<artifactId>caffeine</artifactId>
 		</dependency>
 
-		<!-- Connection pooling for the default Lettuce client -->
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-pool2</artifactId>
-		</dependency>
+		<!-- NOTE: commons-pool2 deliberately absent. It only exists to pool Lettuce connections, and
+		     Lettuce is thread-safe and multiplexes every command over a single connection — so a pool
+		     buys lock contention and no throughput. Pools matter for blocking commands; a cache issues
+		     none. Adding it back silently re-enables spring.data.redis.lettuce.pool.*. -->
 
 		<dependency>
 			<groupId>org.postgresql</groupId>
