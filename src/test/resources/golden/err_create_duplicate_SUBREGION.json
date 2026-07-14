@@ -1,0 +1,10 @@
+{
+  "httpStatus": 409,
+  "body": {
+    "instance": "\/api\/v1\/administrative-areas",
+    "detail": "Sub region Already Exists in the region",
+    "type": "about:blank",
+    "title": "Conflict",
+    "status": 409
+  }
+}

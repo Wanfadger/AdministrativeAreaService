@@ -1,0 +1,10 @@
+{
+  "httpStatus": 400,
+  "body": {
+    "instance": "\/api\/v1\/administrative-areas\/{{REGION:Golden Region}}",
+    "detail": "Cannot delete a region that still has sub-regions",
+    "type": "about:blank",
+    "title": "Bad Request",
+    "status": 400
+  }
+}

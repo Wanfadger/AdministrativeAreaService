@@ -1,0 +1,13 @@
+{
+  "httpStatus": 200,
+  "body": {
+    "data": {
+      "code": "{{REGION:Golden Region}}",
+      "latitude": "1.5",
+      "name": "Golden Region",
+      "longitude": "32.5"
+    },
+    "message": "success",
+    "status": true
+  }
+}

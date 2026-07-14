@@ -1,0 +1,10 @@
+{
+  "httpStatus": 400,
+  "body": {
+    "instance": "\/api\/v1\/administrative-areas\/search",
+    "detail": "Missing required parameter 'type'",
+    "type": "about:blank",
+    "title": "Bad Request",
+    "status": 400
+  }
+}

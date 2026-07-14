@@ -1,0 +1,10 @@
+{
+  "httpStatus": 400,
+  "body": {
+    "instance": "\/api\/v1\/administrative-areas\/{{LOCALGOVERNMENT:Golden LocalGovernment}}",
+    "detail": "Cannot delete a local government that still has counties",
+    "type": "about:blank",
+    "title": "Bad Request",
+    "status": 400
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "httpStatus": 200,
+  "body": {
+    "data": {
+      "code": "{{SUBCOUNTY:Golden SubCounty}}",
+      "latitude": "",
+      "name": "Golden SubCounty",
+      "county": {
+        "code": "{{COUNTY:Golden County}}",
+        "latitude": "",
+        "name": "Golden County",
+        "localGovernment": {
+          "code": "{{LOCALGOVERNMENT:Golden LocalGovernment}}",
+          "subRegion": {
+            "code": "{{SUBREGION:Golden SubRegion}}",
+            "latitude": "",
+            "name": "Golden SubRegion",
+            "region": {
+              "code": "{{REGION:Golden Region}}",
+              "latitude": "1.5",
+              "name": "Golden Region",
+              "longitude": "32.5"
+            },
+            "longitude": ""
+          },
+          "latitude": "",
+          "name": "Golden LocalGovernment",
+          "longitude": ""
+        },
+        "longitude": ""
+      },
+      "longitude": ""
+    },
+    "message": "success",
+    "status": true
+  }
+}

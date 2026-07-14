@@ -1,0 +1,10 @@
+{
+  "httpStatus": 409,
+  "body": {
+    "instance": "\/api\/v1\/administrative-areas",
+    "detail": "Local Government Already Exists in the sub region",
+    "type": "about:blank",
+    "title": "Conflict",
+    "status": 409
+  }
+}

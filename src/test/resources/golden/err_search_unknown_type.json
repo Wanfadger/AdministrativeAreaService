@@ -1,0 +1,10 @@
+{
+  "httpStatus": 400,
+  "body": {
+    "instance": "\/api\/v1\/administrative-areas\/search",
+    "detail": "Invalid value 'PROVINCE' for 'type'. Allowed types (case-insensitive): REGION, SUBREGION, LOCALGOVERNMENT, COUNTY, SUBCOUNTY, PARISH.",
+    "type": "about:blank",
+    "title": "Bad Request",
+    "status": 400
+  }
+}

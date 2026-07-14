@@ -1,0 +1,51 @@
+{
+  "httpStatus": 200,
+  "body": {
+    "data": [
+      {
+        "code": "{{PARISH:Golden Parish}}",
+        "latitude": "0.3476",
+        "name": "Golden Parish",
+        "subCounty": {
+          "code": "{{SUBCOUNTY:Golden SubCounty}}",
+          "latitude": "",
+          "name": "Golden SubCounty",
+          "county": {
+            "code": "{{COUNTY:Golden County}}",
+            "latitude": "",
+            "name": "Golden County",
+            "localGovernment": {
+              "code": "{{LOCALGOVERNMENT:Golden LocalGovernment}}",
+              "subRegion": {
+                "code": "{{SUBREGION:Golden SubRegion}}",
+                "latitude": "",
+                "name": "Golden SubRegion",
+                "region": {
+                  "code": "{{REGION:Golden Region}}",
+                  "latitude": "1.5",
+                  "name": "Golden Region",
+                  "longitude": "32.5"
+                },
+                "longitude": ""
+              },
+              "latitude": "",
+              "name": "Golden LocalGovernment",
+              "longitude": ""
+            },
+            "longitude": ""
+          },
+          "longitude": ""
+        },
+        "longitude": "32.5825"
+      }
+    ],
+    "size": 1,
+    "totalPages": 2,
+    "hasPrevious": true,
+    "hasNext": false,
+    "page": 2,
+    "message": "Administrative areas fetched successfully",
+    "status": true,
+    "totalElements": 2
+  }
+}

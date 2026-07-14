@@ -1,0 +1,10 @@
+{
+  "httpStatus": 404,
+  "body": {
+    "instance": "\/api\/v1\/administrative-areas\/no-such-code",
+    "detail": "Parish not found",
+    "type": "about:blank",
+    "title": "Not Found",
+    "status": 404
+  }
+}
