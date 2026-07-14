@@ -1,21 +1,19 @@
 package com.wanfadger.AdministrativeareaApi;
 
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
-import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
-import org.springframework.boot.test.context.TestConfiguration;
-
-import java.util.Arrays;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
- * Test-profile cache wiring: provides a single in-memory {@link ConcurrentMapCacheManager} as the
- * primary {@link CacheManager} (matching production's single manager) plus the
- * {@code searchKeyGenerator}, so caching works in tests without Redis. The real cache beans are
- * {@code @Profile("!test")}.
+ * Test-profile cache wiring: an in-memory {@link ConcurrentMapCacheManager} standing in for Redis,
+ * whose beans are {@code @Profile("!test")}.
+ *
+ * <p>The {@code searchKeyGenerator} is deliberately NOT redefined here. It used to be copy-pasted
+ * from the production config, so tests exercised a *different* key generator than production — and
+ * any drift between the two would be a cache-correctness bug that tests could never catch. It now
+ * lives on the un-profiled outer {@code CacheConfig} class and is shared by both.
  */
 @TestConfiguration
 public class TestCacheConfig {
@@ -24,24 +22,5 @@ public class TestCacheConfig {
     @Primary
     public CacheManager cacheManager() {
         return new ConcurrentMapCacheManager();
-    }
-
-    @Bean
-    public KeyGenerator searchKeyGenerator() {
-        return (target, method, params) -> {
-            if (params.length == 0) {
-                return "SimpleKey []";
-            }
-            Object param = params[0];
-            if (param instanceof Map<?, ?> map) {
-                return map.entrySet().stream()
-                        .filter(e -> e.getValue() != null && !String.valueOf(e.getValue()).isBlank())
-                        .sorted(Map.Entry.comparingByKey((a, b) ->
-                                String.valueOf(a).compareTo(String.valueOf(b))))
-                        .map(e -> e.getKey() + ":" + e.getValue())
-                        .collect(Collectors.joining(", ", "{", "}"));
-            }
-            return "SimpleKey " + Arrays.deepToString(params);
-        };
     }
 }
