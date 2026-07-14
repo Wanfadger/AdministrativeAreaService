@@ -129,6 +129,10 @@ services:
       #   CORS_ORIGINS=http://localhost:4200,https://console.internal.example.com
       CORS_ORIGINS: ${CORS_ORIGINS:-}
 
+      # Serves BOTH /swagger-ui.html and /v3/api-docs. Set false to withdraw the API's documentation
+      # entirely; hiding the console's link (DOCS_URL below) does not, on its own, do that.
+      API_DOCS_ENABLED: ${API_DOCS_ENABLED:-true}
+
       RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
       RATE_LIMIT_CAPACITY: ${RATE_LIMIT_CAPACITY:-300}
       # True only because nginx sits in front and overwrites X-Forwarded-For. Exposed directly to
@@ -167,13 +171,31 @@ services:
     image: administrative-area-ui:local
     container_name: aa-ui
     <<: [*restart, *logging]
+    environment:
+      # A compiled Angular bundle has no environment variables, so these are written into config.js by
+      # the container's entrypoint on start (docker/20-app-config.sh in the frontend). One image, every
+      # environment — nothing here requires a rebuild.
+
+      # Origin of the API as the BROWSER must reach it. Empty is correct and is the default: nginx in
+      # this container reverse-proxies /api/ to the API, so the console is same-origin and needs no CORS
+      # grant. Set this only if the API is served from a different host, and then add this console's
+      # origin to CORS_ORIGINS above.
+      API_URL: ${UI_API_URL:-}
+
+      # Target of the header's "API Docs" link. Defaults to the same-origin Swagger UI, proxied by
+      # nginx. Note the `-` rather than `:-`: setting UI_DOCS_URL= in .env passes an empty value
+      # through, which removes the link. Pair that with API_DOCS_ENABLED=false to actually withdraw
+      # the docs rather than merely unlink them.
+      DOCS_URL: ${UI_DOCS_URL-/swagger-ui.html}
     ports:
       - "${UI_PORT:-4200}:80"
     depends_on:
       api:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      # 127.0.0.1, not localhost: inside the container `localhost` resolves to ::1 first and nginx's
+      # `listen 80` binds IPv4 only, so this check was refused while the console served fine.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/"]
       interval: 15s
       timeout: 5s
       retries: 5
