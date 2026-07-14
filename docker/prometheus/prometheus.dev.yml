@@ -1,0 +1,26 @@
+# Prometheus scrape config for the DEV stack (docker-compose.dev.yml), where the API runs on the host
+# rather than in the compose network.
+#
+# The production config scrapes `api:9084` — a container name, resolved by Docker's DNS. That name does
+# not exist here, and a container cannot reach the host's ports through `localhost` either (inside a
+# container, localhost is the container). host.docker.internal is the host as seen from inside, and it
+# only resolves because docker-compose.dev.yml maps it to the host gateway.
+#
+# Port 9084 is the API's MANAGEMENT port, not 8084. Actuator is deliberately on its own port so metrics,
+# env and heap details are never served on the public API port — the same split holds in dev.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: administrative-area-api
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["host.docker.internal:9084"]
+        labels:
+          application: AdministrativeAreaApi
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]

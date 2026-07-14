@@ -1,0 +1,146 @@
+# Development stack — INFRASTRUCTURE ONLY.
+#
+# For the loop where you run the backend and the console on your host (IDE debugger, hot reload) and
+# want nothing but Postgres and Redis in Docker. There is deliberately no `api` or `ui` service here,
+# so you cannot start a second copy of either and spend an afternoon debugging the wrong one.
+#
+#   docker compose -f docker-compose.dev.yml up -d                     postgres + redis
+#   docker compose -f docker-compose.dev.yml --profile observability up -d    + prometheus + grafana
+#
+# Then, on the host — no configuration needed, the dev1 defaults already point at the ports below:
+#
+#   cd AdministrativeareaApi     && mvn spring-boot:run     # API     -> http://localhost:8084
+#   cd AdministrativeArea-Frontend && npm start             # console -> http://localhost:4200
+#
+# ---------------------------------------------------------------------------------------------
+# It shares the SAME project name and volumes as docker-compose.yml, on purpose: the database you
+# restored is already in `administrative-area_pgdata` and this file attaches to it rather than
+# handing you an empty one. Two consequences worth knowing:
+#
+#   - Compose will warn about "orphan containers" (aa-api, aa-ui) if the full stack is still up.
+#     That is the warning working. STOP THEM FIRST, or the containerised API will hold :8084 and
+#     the containerised console will hold :4200, and your host processes will fail to bind:
+#         docker compose stop api ui
+#
+#   - `-f docker-compose.dev.yml down` stops postgres and redis for the full stack too. It is the
+#     same postgres.
+# ---------------------------------------------------------------------------------------------
+#
+# Credentials come from the same .env as the production compose file. See .env.example.
+
+name: administrative-area
+
+x-restart: &restart
+  restart: unless-stopped
+
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: aa-postgres
+    <<: [*restart, *logging]
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    ports:
+      # 5437, matching the dev1 default (spring.datasource.url) so a host-run API needs no DB_URL.
+      - "${POSTGRES_PORT:-5437}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backups:/backups:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} -q"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks: [area-net]
+
+  redis:
+    image: redis/redis-stack:7.2.0-v11
+    container_name: aa-redis
+    <<: [*restart, *logging]
+    environment:
+      # No maxmemory cap here, unlike production. In dev the L2 cache holds a few thousand keys and an
+      # LRU ceiling would only mask a leak you would rather see.
+      REDIS_ARGS: "--appendonly yes"
+    ports:
+      # 8101, matching the dev1 default (spring.data.redis.port).
+      - "${REDIS_PORT:-8101}:6379"
+      # RedisInsight — browse the L2 cache at http://localhost:8001. Useful for watching keys appear
+      # under aa_item_* / aa_search_* and vanish on a write.
+      - "${REDIS_INSIGHT_PORT:-8001}:8001"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks: [area-net]
+
+  # ---------------------------------------------------------------- observability (optional)
+  #
+  # The only part of this file that is genuinely different from the production stack. There, Prometheus
+  # scrapes `api:9084` over the compose network. Here the API is on your HOST, which has no name inside
+  # the network — hence host.docker.internal, mapped to the host gateway below, and a separate scrape
+  # config. Grafana and its provisioned dashboard are unchanged.
+
+  prometheus:
+    profiles: [observability]
+    image: prom/prometheus:v2.54.1
+    container_name: aa-prometheus-dev
+    <<: [*restart, *logging]
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.dev.yml:/etc/prometheus/prometheus.yml:ro
+    extra_hosts:
+      # Lets the container reach a process listening on the host. Native on Docker Desktop; on Linux
+      # this line is what creates the name.
+      - "host.docker.internal:host-gateway"
+    networks: [area-net]
+
+  grafana:
+    profiles: [observability]
+    image: grafana/grafana:11.2.0
+    container_name: aa-grafana-dev
+    <<: [*restart, *logging]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      # Straight into the dashboard, no login, no navigating. It is a dev box.
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    networks: [area-net]
+
+volumes:
+  # Same names, same project => the same volumes the full stack uses. Your restored data is here.
+  pgdata:
+  redisdata:
+
+networks:
+  area-net:
+    driver: bridge

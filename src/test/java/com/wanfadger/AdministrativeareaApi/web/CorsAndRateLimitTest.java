@@ -26,7 +26,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "app.cors.allowed-origins=https://console.example.com",
         "app.rate-limit.enabled=true",
         "app.rate-limit.capacity=5",
-        "app.rate-limit.refill-period=1m"
+        "app.rate-limit.refill-period=1m",
+        // Simulates running behind a trusted proxy, which is what lets these tests tell clients apart by
+        // X-Forwarded-For. It is NOT the default — see RateLimitTrustsPeerAddressByDefaultTest for why
+        // the default is off and what it protects against.
+        "app.rate-limit.trust-forwarded-for=true"
 })
 class CorsAndRateLimitTest {
 

@@ -135,9 +135,20 @@ services:
 
       RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
       RATE_LIMIT_CAPACITY: ${RATE_LIMIT_CAPACITY:-300}
-      # True only because nginx sits in front and overwrites X-Forwarded-For. Exposed directly to
-      # callers, that header is client-supplied and any caller could rotate it to evade the limit.
-      RATE_LIMIT_TRUST_FORWARDED_FOR: ${RATE_LIMIT_TRUST_FORWARDED_FOR:-true}
+
+      # FALSE, and read the next paragraph before changing it.
+      #
+      # Trusting X-Forwarded-For is only sound when the proxy is the ONLY way in. It is not here: the
+      # api service publishes 8084 to the host so other services can call it directly, which means a
+      # caller can reach the API without passing nginx, set X-Forwarded-For themselves, rotate it per
+      # request and never be limited at all. Trusting the header would make the limiter decorative
+      # against precisely the caller it exists to stop.
+      #
+      # The cost of `false` is that every request arriving through nginx carries nginx's address, so
+      # the console's users share one bucket. Acceptable — the console is a handful of operators, while
+      # the integrating services each get their own. Turn this on only after removing `ports:` from
+      # this service so the proxy really is the sole path in.
+      RATE_LIMIT_TRUST_FORWARDED_FOR: ${RATE_LIMIT_TRUST_FORWARDED_FOR:-false}
 
       JAVA_OPTS: >-
         -XX:MaxRAMPercentage=75

@@ -44,10 +44,16 @@ public class RateLimitProperties {
     /**
      * Trust {@code X-Forwarded-For} for the client's address.
      *
-     * <p><b>Only enable this behind a proxy you control</b> (the compose stack's nginx does set it).
-     * Exposed directly to the internet it is worse than useless: the header is client-supplied, so any
-     * caller can rotate it per request and evade the limit entirely — while the real, unspoofable peer
-     * address is ignored.
+     * <p><b>Defaults to false, and the default is the safe one.</b> Enable it only where a proxy you
+     * control is the <i>only</i> way to reach the API. Reachable directly — as it is whenever the API's
+     * port is published alongside the proxy — trusting this header is worse than useless: it is
+     * client-supplied, so a caller rotates it per request and is never limited, while the real,
+     * unspoofable peer address is the one thing being ignored. The defence becomes decorative against
+     * precisely the caller it exists to stop.
+     *
+     * <p>A wrong value here fails silently in the dangerous direction: everything still returns 200 and
+     * nothing anywhere reports that the limiter has been bypassed. So it defaults to off, and a
+     * deployment that wants it must say so.
      */
-    private boolean trustForwardedFor = true;
+    private boolean trustForwardedFor = false;
 }
