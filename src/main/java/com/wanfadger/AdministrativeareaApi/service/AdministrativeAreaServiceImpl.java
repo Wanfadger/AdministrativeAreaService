@@ -39,6 +39,7 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
 
     private final AreaHandlerRegistry registry;
     private final AreaQueryFactory queryFactory;
+    private final NewAreaValidator newAreaValidator;
 
     private static AdministrativeAreaType requireType(Map<String, String> queryMap) {
         return AdministrativeAreaType.fromStr(queryMap.get("type"))
@@ -64,6 +65,10 @@ public class AdministrativeAreaServiceImpl implements AdministrativeAreaService 
         if (dtos == null || dtos.isEmpty()) {
             throw new MissingDataException("Request body must contain at least one administrative area");
         }
+        // Validated here, not via @Valid on the controller: @Valid on a List body validates the
+        // ArrayList itself (which has no constraints), so every element would sail through.
+        newAreaValidator.validateForCreate(dtos);
+
         AreaHandler<?, ?> handler = registry.get(type);
         List<String> codes = dtos.stream().map(handler::create).toList();
         return new ResponseDTO<>(codes, "successfully created " + codes.size() + " administrative area(s)");

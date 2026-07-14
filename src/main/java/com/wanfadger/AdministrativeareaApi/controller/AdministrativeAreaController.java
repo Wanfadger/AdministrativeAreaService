@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -96,7 +97,9 @@ public class AdministrativeAreaController {
             @PathVariable String code,
             @Parameter(description = "Administrative area type", required = true)
             @RequestParam AdministrativeAreaType type,
-            @RequestBody NewAdministrativeAreaDTO dto) {
+            // Default group ONLY. The OnCreate group carries @NotBlank on name, which must not fire
+            // here — an update is partial, and renaming is optional.
+            @Validated @RequestBody NewAdministrativeAreaDTO dto) {
         return administrativeAreaService.updateOne(params(type, "code", code), dto);
     }
 
