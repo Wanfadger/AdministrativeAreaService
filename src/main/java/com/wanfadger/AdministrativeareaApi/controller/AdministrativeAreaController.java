@@ -6,6 +6,7 @@ import com.wanfadger.AdministrativeareaApi.dto.reponses.PaginatedResponseDTO;
 import com.wanfadger.AdministrativeareaApi.dto.reponses.ResponseDTO;
 import com.wanfadger.AdministrativeareaApi.entity.AdministrativeAreaType;
 import com.wanfadger.AdministrativeareaApi.service.AdministrativeAreaService;
+import com.wanfadger.AdministrativeareaApi.service.query.AreaQueryFactory;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -46,6 +47,7 @@ import java.util.Map;
 public class AdministrativeAreaController {
 
     private final AdministrativeAreaService administrativeAreaService;
+    private final AreaQueryFactory queryFactory;
 
     /** Build the service query-map from the typed parameters (null/blank values skipped). */
     private Map<String, String> params(AdministrativeAreaType type, String... keyValues) {
@@ -98,15 +100,15 @@ public class AdministrativeAreaController {
         return administrativeAreaService.updateOne(params(type, "code", code), dto);
     }
 
-    @Operation(summary = "Paginated search (full hierarchy)",
-            description = "Returns matching areas of the given type, each with its full parent "
-                    + "hierarchy. Default page size is 1000 and default sort is by name (ascending), "
-                    + "so the higher levels return as a single page. Advanced users may also append "
-                    + "field:operator=value query params (operators: EQUALS, NOT_EQUALS, CONTAINS, "
-                    + "NOT_CONTAINS, GT, LT, GTE, LTE, IN), e.g. &name:CONTAINS=ka.")
+    @Operation(summary = "Paginated search",
+            description = "Returns matching areas of the given type. By default each item carries its "
+                    + "full parent hierarchy; pass view=flat for just the parent's code, which is "
+                    + "roughly a tenth of the payload. Default page size is 50, max 5000. Advanced "
+                    + "users may append field:operator=value query params (operators: EQUALS, "
+                    + "NOT_EQUALS, CONTAINS, NOT_CONTAINS, GT, LT, GTE, LTE, IN), e.g. &name:CONTAINS=ka.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Paginated results; each item carries its full parent hierarchy."),
-            @ApiResponse(responseCode = "400", description = "Missing or unsupported 'type'.",
+            @ApiResponse(responseCode = "200", description = "Paginated results."),
+            @ApiResponse(responseCode = "400", description = "Missing/unsupported 'type', or an unknown 'sortBy' field.",
                     content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     @GetMapping(value = "/search", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -121,17 +123,24 @@ public class AdministrativeAreaController {
                     + "Optional — omit for an unfiltered search of the type.")
             @RequestParam(required = false) String partOf,
             @Parameter(description = "Page number (1-based)")
-            @RequestParam(required = false, defaultValue = "1") Integer page,
-            @Parameter(description = "Page size (default 1000)")
-            @RequestParam(required = false, defaultValue = "1000") Integer size,
-            @Parameter(description = "Field to sort by (default: name)")
+            @RequestParam(required = false) Integer page,
+            @Parameter(description = "Page size (default 50, clamped to 5000)")
+            @RequestParam(required = false) Integer size,
+            @Parameter(description = "Field to sort by (default: name). One of: code, createdDateTime, "
+                    + "description, latitude, longitude, name, updatedDateTime.")
             @RequestParam(required = false) String sortBy,
             @Parameter(description = "Sort direction: asc | desc (default: asc)")
             @RequestParam(required = false) String sortDirection,
+            @Parameter(description = "Response shape: omit for the full nested ancestry (default), "
+                    + "or 'flat' for just the parent's code.")
+            @RequestParam(required = false) String view,
             // Captures everything (incl. advanced field:operator filters); hidden from Swagger.
             @Parameter(hidden = true) @RequestParam Map<String, String> allParams) {
-        allParams.put("type", type.name());
-        return administrativeAreaService.search(allParams);
+
+        // Canonicalise BEFORE the service, so the cache key is built from a whitelist rather than
+        // from raw request params — otherwise any client could mint unbounded cache entries with a
+        // junk param, each holding a full result page.
+        return administrativeAreaService.search(queryFactory.canonicalise(type, allParams));
     }
 
     @Operation(summary = "Get an administrative area by code (full hierarchy)",

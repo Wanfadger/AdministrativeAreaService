@@ -18,27 +18,33 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Defects in the implementation, written as the behaviour we WANT.
+ * Regression tests for five defects that were live in the original implementation.
  *
- * <p>Each test is {@link Disabled} until the plan step that fixes it lands, then enabled — so it is
- * the proof the fix actually took effect. These are deliberately NOT golden files: a golden file
- * would freeze the bug into the contract.
+ * <p>Each was written first as the behaviour we WANTED and kept {@code @Disabled} — failing — until
+ * the step that fixed it landed, then enabled. That is what makes them proof the fix took effect,
+ * rather than a test written to match whatever the code happened to do. They are deliberately NOT
+ * golden files: a golden file would have frozen the bug into the contract.
  *
- * <p>Runs on its own database. {@link #duplicateSubCounty_shouldConflict} used to *succeed* in
- * creating a duplicate row, which would otherwise have polluted the shared golden fixture.
+ * <p>All five now pass. What they were:
  *
- * <h2>Status</h2>
  * <ul>
- *   <li>✅ <b>FIXED (step 4)</b> — duplicate SUBCOUNTY create returned <b>201</b> and inserted the
- *       duplicate. {@code createOne} called {@code findByNameIgnoreCaseAndCounty_Id} with a
- *       {@code partOfCode}: a CODE passed to an ID parameter. Both are Strings, so it compiled and
- *       simply never matched. The {@code _Id} method is now deleted outright, so the call cannot be
- *       written again.</li>
- *   <li>⏳ {@code latitude=""} on create → <b>500</b> (NumberFormatException) — want 201, null</li>
- *   <li>⏳ {@code size=0} → <b>500</b> (IllegalArgumentException) — want a clamp</li>
- *   <li>⏳ {@code sortBy=bogus} → <b>500</b> (PropertyReferenceException) — want 400</li>
- *   <li>⏳ {@code sortDirection=bogus} → <b>500</b> — want a default</li>
+ *   <li><b>Duplicate SUBCOUNTY create returned 201 and inserted the duplicate.</b> {@code createOne}
+ *       called {@code findByNameIgnoreCaseAndCounty_Id} with a {@code partOfCode} — a CODE passed to
+ *       an ID parameter. Both are Strings, so it compiled and simply never matched. Update used the
+ *       correct method, which is why only create was affected. The {@code _Id} method is now deleted
+ *       outright, so the call cannot be written again.</li>
+ *   <li><b>{@code latitude=""} on create was a 500</b> (NumberFormatException from
+ *       {@code Double.valueOf("")}) on five of the six levels. The frontend sends {@code ""} whenever
+ *       the coordinate fields are left blank, so this fired on an ordinary user action. Blank now
+ *       means absent, and absent means null — never 0, which is a real coordinate.</li>
+ *   <li><b>{@code size=0} was a 500</b> ({@code PageRequest.of(_, 0)} throws). Now clamped.</li>
+ *   <li><b>{@code sortBy=bogus} was a 500</b> (PropertyReferenceException, thrown deep in the query
+ *       layer). Now a 400 naming the sortable fields.</li>
+ *   <li><b>{@code sortDirection=bogus} was a 500</b>. Now falls back to ascending.</li>
  * </ul>
+ *
+ * <p>Runs on its own database: the sub-county case used to genuinely insert a row, which would
+ * otherwise have polluted the shared golden fixture.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -94,7 +100,6 @@ class KnownBrokenContractTest {
      * 500 on an ordinary user action today — on 5 of the 6 levels (SUBREGION happens to be right).
      */
     @Test
-    @Disabled("Still broken — fixed by step 5: coordinate parsing")
     void blankCoordinateOnCreate_shouldBeTreatedAsAbsent() throws Exception {
         mockMvc.perform(post(BASE).param("type", "REGION")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -104,7 +109,6 @@ class KnownBrokenContractTest {
 
     /** Fixed by plan step 5: clamp size to [1, MAX_PAGE_SIZE] in AreaQueryFactory. */
     @Test
-    @Disabled("Still broken — fixed by step 5: AreaQueryFactory clamps size")
     void zeroPageSize_shouldNotBe500() throws Exception {
         mockMvc.perform(get(BASE + "/search").param("type", "REGION").param("size", "0"))
                 .andExpect(status().isOk());
@@ -112,7 +116,6 @@ class KnownBrokenContractTest {
 
     /** Fixed by plan step 5/6: whitelist sortBy; unknown field → 400 with a usable detail. */
     @Test
-    @Disabled("Still broken — fixed by step 5/6: sortBy whitelist")
     void unknownSortField_shouldBe400NotServerError() throws Exception {
         mockMvc.perform(get(BASE + "/search").param("type", "REGION").param("sortBy", "bogus"))
                 .andExpect(status().isBadRequest())
@@ -121,7 +124,6 @@ class KnownBrokenContractTest {
 
     /** Fixed by plan step 5: Direction.fromOptionalString(...).orElse(ASC). */
     @Test
-    @Disabled("Still broken — fixed by step 5: sort direction fallback")
     void unknownSortDirection_shouldNotBe500() throws Exception {
         mockMvc.perform(get(BASE + "/search").param("type", "REGION").param("sortDirection", "sideways"))
                 .andExpect(status().isOk());

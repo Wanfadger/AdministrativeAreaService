@@ -4,7 +4,7 @@
     "data": [
       {
         "code": "{{SUBREGION:Golden SubRegion}}",
-        "latitude": "",
+        "latitude": null,
         "name": "Golden SubRegion",
         "region": {
           "code": "{{REGION:Golden Region}}",
@@ -12,10 +12,10 @@
           "name": "Golden Region",
           "longitude": "32.5"
         },
-        "longitude": ""
+        "longitude": null
       }
     ],
-    "size": 1000,
+    "size": 50,
     "totalPages": 1,
     "hasPrevious": false,
     "hasNext": false,

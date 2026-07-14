@@ -4,21 +4,21 @@
     "data": [
       {
         "code": "{{PARISH:Another Parish}}",
-        "latitude": "",
+        "latitude": null,
         "name": "Another Parish",
         "subCounty": {
           "code": "{{SUBCOUNTY:Golden SubCounty}}",
-          "latitude": "",
+          "latitude": null,
           "name": "Golden SubCounty",
           "county": {
             "code": "{{COUNTY:Golden County}}",
-            "latitude": "",
+            "latitude": null,
             "name": "Golden County",
             "localGovernment": {
               "code": "{{LOCALGOVERNMENT:Golden LocalGovernment}}",
               "subRegion": {
                 "code": "{{SUBREGION:Golden SubRegion}}",
-                "latitude": "",
+                "latitude": null,
                 "name": "Golden SubRegion",
                 "region": {
                   "code": "{{REGION:Golden Region}}",
@@ -26,17 +26,17 @@
                   "name": "Golden Region",
                   "longitude": "32.5"
                 },
-                "longitude": ""
+                "longitude": null
               },
-              "latitude": "",
+              "latitude": null,
               "name": "Golden LocalGovernment",
-              "longitude": ""
+              "longitude": null
             },
-            "longitude": ""
+            "longitude": null
           },
-          "longitude": ""
+          "longitude": null
         },
-        "longitude": ""
+        "longitude": null
       },
       {
         "code": "{{PARISH:Golden Parish}}",
@@ -44,17 +44,17 @@
         "name": "Golden Parish",
         "subCounty": {
           "code": "{{SUBCOUNTY:Golden SubCounty}}",
-          "latitude": "",
+          "latitude": null,
           "name": "Golden SubCounty",
           "county": {
             "code": "{{COUNTY:Golden County}}",
-            "latitude": "",
+            "latitude": null,
             "name": "Golden County",
             "localGovernment": {
               "code": "{{LOCALGOVERNMENT:Golden LocalGovernment}}",
               "subRegion": {
                 "code": "{{SUBREGION:Golden SubRegion}}",
-                "latitude": "",
+                "latitude": null,
                 "name": "Golden SubRegion",
                 "region": {
                   "code": "{{REGION:Golden Region}}",
@@ -62,20 +62,20 @@
                   "name": "Golden Region",
                   "longitude": "32.5"
                 },
-                "longitude": ""
+                "longitude": null
               },
-              "latitude": "",
+              "latitude": null,
               "name": "Golden LocalGovernment",
-              "longitude": ""
+              "longitude": null
             },
-            "longitude": ""
+            "longitude": null
           },
-          "longitude": ""
+          "longitude": null
         },
         "longitude": "32.5825"
       }
     ],
-    "size": 1000,
+    "size": 50,
     "totalPages": 1,
     "hasPrevious": false,
     "hasNext": false,
