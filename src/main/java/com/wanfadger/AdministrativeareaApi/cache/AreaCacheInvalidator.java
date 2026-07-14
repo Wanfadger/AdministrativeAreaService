@@ -45,6 +45,9 @@ public class AreaCacheInvalidator {
      */
     private final CacheInvalidationBroadcaster broadcaster;
 
+    /** Drives the ETags. Bumped in lockstep with the eviction, and for the same cascade. */
+    private final AreaVersionRegistry versions;
+
     /**
      * Schedule eviction of {@code type} and everything below it, to run once the current transaction
      * commits. Called once per write operation — a bulk create of 500 parishes registers one
@@ -67,6 +70,11 @@ public class AreaCacheInvalidator {
     private void evictNow(AdministrativeAreaType type) {
         List<TwoLevelCache> affected = cacheManager.cascadeFrom(type);
         affected.forEach(TwoLevelCache::clear);
+
+        // Bump BEFORE announcing, for the same reason the eviction comes first: the moment other pods
+        // hear about this write they will start answering conditional requests again, and they must
+        // not still be validating against the old version.
+        versions.bump(type);
 
         // Evict first, announce second. The other pods clear their L1 on this message and will
         // immediately re-read; if L2 had not been cleared yet, they would re-cache the stale value
