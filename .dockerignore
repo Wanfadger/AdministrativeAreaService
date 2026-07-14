@@ -1,0 +1,16 @@
+target/
+.git/
+.idea/
+.vscode/
+.claude/
+benchmarks/
+backups/
+docker/
+.env
+.env.example
+*.md
+Dockerfile
+docker-compose.yml
+.mvn/
+mvnw
+mvnw.cmd

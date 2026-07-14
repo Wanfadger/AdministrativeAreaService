@@ -34,3 +34,13 @@ build/
 
 ### benchmark ###
 benchmarks/
+
+### local env / secrets ###
+.env
+
+### database dumps ###
+backups/*
+!backups/README.md
+
+### working artifact: pristine schema captured pre-migration, source for Flyway V1 ###
+.schema-snapshot/

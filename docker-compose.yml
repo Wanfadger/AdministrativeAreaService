@@ -1,54 +1,207 @@
-version: "3.1"
+# AdministrativeArea stack.
+#
+# Profiles keep the default bring-up to infrastructure ONLY, so you can restore a
+# database dump without the API starting against it. Flyway now owns the schema
+# (ddl-auto=validate), so the app refuses to start on drift rather than silently
+# ALTERing a freshly restored database.
+#
+#   docker compose up -d                              postgres + redis
+#   docker compose --profile app up -d                + api + ui
+#   docker compose --profile observability up -d      + prometheus + grafana
+#   docker compose --profile app --profile observability up -d       everything
+#
+# Restore a dump (custom format):
+#   docker compose exec postgres pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+#       --clean --if-exists --no-owner --no-privileges /backups/<your-dump>
+# Restore a plain .sql:
+#   docker compose exec -T postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" < ./backups/<your-dump>.sql
+#
+# Credentials live in .env (gitignored). See .env.example.
+
+name: administrative-area
+
+x-restart: &restart
+  restart: unless-stopped
+
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
 
 services:
 
-  db:
-    image: postgres
-    restart: always
+  # ---------------------------------------------------------------- infrastructure
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: aa-postgres
+    <<: [*restart, *logging]
     environment:
-      POSTGRES_PASSWORD: qwertyuftdytrsdev
-      POSTGRES_USER: siip-db-user-dev
-      POSTGRES_DB: areadevdb
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # Speeds up restores and is safe for a dev box: fsync off trades crash-durability
+      # for throughput. Remove for anything resembling production.
+      POSTGRES_INITDB_ARGS: "--data-checksums"
     ports:
-      - "5437:5432"
+      - "${POSTGRES_PORT:-5437}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Your dump files, readable from inside the container for pg_restore/psql.
+      - ./backups:/backups:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} -q"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks: [area-net]
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1g
 
   redis:
-    image: redis/redis-stack:latest
-    restart: always
-    ports:
-      - "8101:6379"      # Redis port
-      - "8001:8001"      # Redis Insight port
-    # volumes:
-    #   - redis-data:/data
+    image: redis/redis-stack:7.2.0-v11
+    container_name: aa-redis
+    <<: [*restart, *logging]
     environment:
-      - REDIS_ARGS=--appendonly yes
+      # AOF for durability + an LRU ceiling so the L2 cache can never OOM the container.
+      # allkeys-lru is correct here: every key in this instance is a disposable cache entry.
+      REDIS_ARGS: >-
+        --appendonly yes
+        --maxmemory ${REDIS_MAXMEMORY:-1gb}
+        --maxmemory-policy allkeys-lru
+    ports:
+      - "${REDIS_PORT:-8101}:6379"
+      - "${REDIS_INSIGHT_PORT:-8001}:8001"   # RedisInsight UI
+    volumes:
+      - redisdata:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    networks: [area-net]
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1536m   # must exceed REDIS_MAXMEMORY (1gb) + AOF/RDB overhead
 
-  # api:
-  #   image: wanfadger/siip-api:v0.0.1
-  #   ports:
-  #     - "8083:8082"
-  #   environment:
-  #      DB-URL: jdbc:postgresql://db:5432/siipdb
-  #      DB-USERNAME: siip-db-user
-  #      DB-PASSWORD: qwertyuftdytrs
-  #      APP-PROFILE: prod
-  #      LoadSchoolPermissions: false
-  #      LoadManagementPermissions: false
-  #      LoadDefaultProfile: false
+  # ---------------------------------------------------------------- application
 
-  #   depends_on:
-  #     - db
+  api:
+    profiles: [app]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: administrative-area-api:local
+    container_name: aa-api
+    <<: [*restart, *logging]
+    environment:
+      # Spring's SystemEnvironmentPropertySource maps DB_URL -> ${DB-URL}, etc.
+      APP_PORT: 8084
+      APP_PROFILE: ${APP_PROFILE:-dev1}
+      DDL_AUTO: ${DDL_AUTO:-validate}
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JAVA_OPTS: >-
+        -XX:MaxRAMPercentage=75
+        -XX:+UseZGC
+        -XX:+ExitOnOutOfMemoryError
+    ports:
+      - "${API_PORT:-8084}:8084"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8084/actuator/health/readiness"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks: [area-net]
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1g
 
-  # ui:
-  #   image: wanfadger/siip-ui:v0.0.1
-  #   ports:
-  #     - "4200:4200"
+  ui:
+    profiles: [app]
+    build:
+      context: ../AdministrativeArea-Frontend
+      dockerfile: Dockerfile
+    image: administrative-area-ui:local
+    container_name: aa-ui
+    <<: [*restart, *logging]
+    ports:
+      - "${UI_PORT:-4200}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks: [area-net]
 
-# volumes:
-#   redis-data:
-#   redis-insight-data:
+  # ---------------------------------------------------------------- observability
+
+  prometheus:
+    profiles: [observability]
+    image: prom/prometheus:v2.54.1
+    container_name: aa-prometheus
+    <<: [*restart, *logging]
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheusdata:/prometheus
+    networks: [area-net]
+
+  grafana:
+    profiles: [observability]
+    image: grafana/grafana:11.2.0
+    container_name: aa-grafana
+    <<: [*restart, *logging]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafanadata:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks: [area-net]
+
+volumes:
+  pgdata:
+  redisdata:
+  prometheusdata:
+  grafanadata:
+
+networks:
+  area-net:
+    driver: bridge
