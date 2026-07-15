@@ -100,7 +100,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: administrative-area-api:local
+    # `docker compose build` produces this tag; `up` runs it. Override API_IMAGE to run a specific
+    # build instead — e.g. a dated tag you pushed to a registry (see DEPLOYMENT.md):
+    #   API_IMAGE=registry.example.com/administrative-area-api:2026-07-15
+    image: ${API_IMAGE:-administrative-area-api:local}
     container_name: aa-api
     <<: [*restart, *logging]
     environment:
@@ -179,7 +182,8 @@ services:
     build:
       context: ../AdministrativeArea-Frontend
       dockerfile: Dockerfile
-    image: administrative-area-ui:local
+    # Override UI_IMAGE to run a specific pushed build instead of the local one (see DEPLOYMENT.md).
+    image: ${UI_IMAGE:-administrative-area-ui:local}
     container_name: aa-ui
     <<: [*restart, *logging]
     environment:
