@@ -67,6 +67,37 @@ public class AreaCacheInvalidator {
         }
     }
 
+    /**
+     * Evict <b>every</b> region across the whole cluster, immediately. For operational use — a bad
+     * deploy, a manual database edit, a suspected poisoned entry — not the write path, which uses the
+     * scoped {@link #invalidate(AdministrativeAreaType)} above.
+     *
+     * <p>Does the three things a correct cluster-wide eviction must do, and that the built-in
+     * {@code /actuator/caches} endpoint does not:
+     * <ol>
+     *   <li>clears L1 <b>and</b> L2 on this pod, for all twelve regions;</li>
+     *   <li>bumps every version, so ETags move — otherwise a client holding an old {@code If-None-Match}
+     *       gets a {@code 304} against freshly-loaded data and never sees the change, which is worse
+     *       than a stale cache because nothing will expire it;</li>
+     *   <li>broadcasts, so the other pods drop their in-heap copies too instead of serving them for up
+     *       to the L1 TTL.</li>
+     * </ol>
+     *
+     * <p>Runs synchronously and outside any transaction: an operator issuing this wants it to have
+     * happened when the call returns, not on some later commit.
+     */
+    public void invalidateAll() {
+        cacheManager.allCaches().forEach(TwoLevelCache::clear);
+
+        // The root's cascade IS every level (selfAndDescendants of the first ordinal = all types), so a
+        // root bump moves every version and a root broadcast clears every other pod's entire L1.
+        AdministrativeAreaType root = AdministrativeAreaType.values()[0];
+        versions.bump(root);
+        broadcaster.broadcast(root);
+
+        log.info("Evicted ALL {} cache regions cluster-wide on operator request", cacheManager.getCacheNames().size());
+    }
+
     private void evictNow(AdministrativeAreaType type) {
         List<TwoLevelCache> affected = cacheManager.cascadeFrom(type);
         affected.forEach(TwoLevelCache::clear);
