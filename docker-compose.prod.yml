@@ -1,0 +1,165 @@
+# Administrative Area — production stack, self-contained.
+#
+# One file, all values inlined (no .env). Pulls pre-built images from Docker Hub
+# (wanfadger/administrative-area-*) and runs Postgres + Redis + API + the console. The deployment
+# team needs only this file. See PROD-DEPLOY.md.
+#
+# The one variable is the image tag:
+#   IMAGE_TAG=2026-07-15 docker compose -f docker-compose.prod.yml up -d      # defaults to latest
+#
+# Observability (Prometheus/Grafana) is intentionally omitted here — it needs mounted config and would
+# break the single-file property. Use the dev docker-compose.yml --profile observability for that.
+
+name: administrative-area-prod
+
+x-restart: &restart
+  restart: unless-stopped
+
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: aa-postgres
+    <<: [*restart, *logging]
+    environment:
+      POSTGRES_DB: areadevdb
+      # The role the restored dump's objects are owned by — keep it unless you restore with --no-owner.
+      POSTGRES_USER: siip-db-user-dev
+      # SET THIS before deploying, to the same value as the API's DB_PASSWORD below. It is the password
+      # Postgres initialises the role with on first start; it does not need to match the source dump.
+      POSTGRES_PASSWORD: __SET_A_STRONG_PASSWORD__
+    ports:
+      - "5437:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} -q"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks: [area-net]
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1g
+
+  redis:
+    image: redis/redis-stack:7.2.0-v11
+    container_name: aa-redis
+    <<: [*restart, *logging]
+    environment:
+      # AOF for durability + an LRU ceiling so the L2 cache can never OOM the container. Every key here
+      # is a disposable cache entry, so allkeys-lru is correct.
+      REDIS_ARGS: >-
+        --appendonly yes
+        --maxmemory 1gb
+        --maxmemory-policy allkeys-lru
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks: [area-net]
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1536m   # must exceed maxmemory (1gb) + AOF/RDB overhead
+
+  api:
+    image: wanfadger/administrative-area-api:${IMAGE_TAG:-latest}
+    container_name: aa-api
+    <<: [*restart, *logging]
+    environment:
+      APP_PORT: 8084
+      APP_PROFILE: dev1
+      DDL_AUTO: validate                 # Flyway owns the schema; never 'update'
+      DB_URL: jdbc:postgresql://postgres:5432/areadevdb
+      DB_USERNAME: siip-db-user-dev
+      DB_PASSWORD: __SET_A_STRONG_PASSWORD__   # same value as POSTGRES_PASSWORD above
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      # Actuator's own port — NOT published below. Health, metrics, heap and the cache-eviction
+      # endpoint are operational surface, reachable inside area-net only.
+      MANAGEMENT_PORT: 9084
+
+      # Empty = same-origin. The console is served by nginx (ui service), which proxies /api/ to this
+      # container, so CORS never applies to it. Add an origin only for a browser app served elsewhere.
+      CORS_ORIGINS: ""
+
+      # FALSE because 8084 is published, so a caller can reach the API without passing nginx and could
+      # forge X-Forwarded-For. Only set true after removing this service's published port.
+      RATE_LIMIT_ENABLED: "true"
+      RATE_LIMIT_CAPACITY: "300"
+      RATE_LIMIT_TRUST_FORWARDED_FOR: "false"
+
+      # Set false to withdraw Swagger UI and /v3/api-docs in production.
+      API_DOCS_ENABLED: "true"
+
+      JAVA_OPTS: >-
+        -XX:MaxRAMPercentage=75
+        -XX:+UseZGC
+        -XX:+ExitOnOutOfMemoryError
+    ports:
+      - "8084:8084"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9084/actuator/health/readiness"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks: [area-net]
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1g
+
+  ui:
+    image: wanfadger/administrative-area-ui:${IMAGE_TAG:-latest}
+    container_name: aa-ui
+    <<: [*restart, *logging]
+    environment:
+      # The console has no compiled-in URLs. Empty API_URL = same origin, via nginx's /api/ proxy —
+      # nothing to configure for the common case. DOCS_URL points the header's "API Docs" link at the
+      # same-origin Swagger UI; set it empty to hide the link.
+      API_URL: ""
+      DOCS_URL: "/swagger-ui.html"
+    ports:
+      - "4200:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks: [area-net]
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  area-net:
+    driver: bridge
