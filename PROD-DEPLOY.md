@@ -87,10 +87,10 @@ curl -s -o /dev/null -w '%{http_code}\n' \
 | Host | What |
 |------|------|
 | 4200 | Console (Angular UI, nginx — also proxies `/api/` to the API) |
-| 8084 | API (single entrypoint for integrating services) |
+| 4401 | API (single entrypoint for integrating services) |
 | 5437 | Postgres |
 
-The API's management port (9084) is **internal-only** — health, metrics and the cache-eviction
+The API's management port (5401) is **internal-only** — health, metrics and the cache-eviction
 endpoint are reachable inside the docker network, not from outside. Redis has no published port.
 
 ## 5. Adjust for the live host
@@ -104,7 +104,7 @@ Edit these directly in `docker-compose.prod.yml` if they differ:
   with on first start; it does not need to match the source dump.
 - **`CORS_ORIGINS`** — leave empty for the same-origin console; add an origin only for a browser app
   served from another host.
-- **`RATE_LIMIT_TRUST_FORWARDED_FOR`** — keep `false` while port 8084 is published. Set `true` only
+- **`RATE_LIMIT_TRUST_FORWARDED_FOR`** — keep `false` while port 4401 is published. Set `true` only
   after removing the API's published port so nginx is the sole ingress; otherwise a caller can forge
   `X-Forwarded-For` and evade the limiter.
 - **`API_DOCS_ENABLED`** — set `false` to withdraw Swagger UI and `/v3/api-docs` in production.

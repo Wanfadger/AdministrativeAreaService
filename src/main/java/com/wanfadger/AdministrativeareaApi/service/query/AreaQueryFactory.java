@@ -58,10 +58,22 @@ public class AreaQueryFactory {
     private static final Set<String> FILTERABLE =
             Set.of("name", "code", "latitude", "longitude", "description");
 
-    /** Structural params, consumed here rather than turned into column filters. */
+    /**
+     * Structural params, consumed here rather than turned into column filters.
+     *
+     * <p><b>{@code code} is deliberately NOT in this set</b>, though it looks like it belongs. It is a
+     * {@link #FILTERABLE} column, and reserving it here silently disabled every {@code code:OPERATOR}
+     * filter: {@link #canonicalise} and {@link #toQuery} both skip RESERVED fields, so
+     * {@code ?code:IN=a,b,c} was dropped and the caller got the <i>entire level</i> back — no error,
+     * just the wrong rows. That is the worst way for a filter to fail, and it made
+     * {@code code:IN} useless as a validation tool: asking "do these codes exist?" answered "yes" for
+     * every code, because the filter was never applied.
+     *
+     * <p>{@code /{code}} is a path variable and {@code getOne} builds its own map directly, never
+     * passing through here — so nothing needs protecting.
+     */
     private static final Set<String> RESERVED =
-            Set.of("type", "partOf", "search", "page", "size", "sortBy", "sortDirection", "view",
-                    "code");
+            Set.of("type", "partOf", "search", "page", "size", "sortBy", "sortDirection", "view");
 
     /**
      * Build the canonical query map: whitelisted, clamped, normalised, and sorted so that two

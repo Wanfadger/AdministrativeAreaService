@@ -83,7 +83,7 @@ services:
     container_name: aa-api
     <<: [*restart, *logging]
     environment:
-      APP_PORT: 8084
+      APP_PORT: 4401
       APP_PROFILE: dev1
       DDL_AUTO: validate                 # Flyway owns the schema; never 'update'
       DB_URL: jdbc:postgresql://postgres:5432/areadevdb
@@ -94,13 +94,13 @@ services:
 
       # Actuator's own port — NOT published below. Health, metrics, heap and the cache-eviction
       # endpoint are operational surface, reachable inside area-net only.
-      MANAGEMENT_PORT: 9084
+      MANAGEMENT_PORT: 5401
 
       # Empty = same-origin. The console is served by nginx (ui service), which proxies /api/ to this
       # container, so CORS never applies to it. Add an origin only for a browser app served elsewhere.
       CORS_ORIGINS: ""
 
-      # FALSE because 8084 is published, so a caller can reach the API without passing nginx and could
+      # FALSE because 4401 is published, so a caller can reach the API without passing nginx and could
       # forge X-Forwarded-For. Only set true after removing this service's published port.
       RATE_LIMIT_ENABLED: "true"
       RATE_LIMIT_CAPACITY: "300"
@@ -114,14 +114,14 @@ services:
         -XX:+UseZGC
         -XX:+ExitOnOutOfMemoryError
     ports:
-      - "8084:8084"
+      - "4401:4401"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:9084/actuator/health/readiness"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:5401/actuator/health/readiness"]
       interval: 15s
       timeout: 5s
       retries: 10

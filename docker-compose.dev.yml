@@ -9,7 +9,7 @@
 #
 # Then, on the host — no configuration needed, the dev1 defaults already point at the ports below:
 #
-#   cd AdministrativeareaApi     && mvn spring-boot:run     # API     -> http://localhost:8084
+#   cd AdministrativeareaApi     && mvn spring-boot:run     # API     -> http://localhost:4401
 #   cd AdministrativeArea-Frontend && npm start             # console -> http://localhost:4200
 #
 # ---------------------------------------------------------------------------------------------
@@ -18,7 +18,7 @@
 # handing you an empty one. Two consequences worth knowing:
 #
 #   - Compose will warn about "orphan containers" (aa-api, aa-ui) if the full stack is still up.
-#     That is the warning working. STOP THEM FIRST, or the containerised API will hold :8084 and
+#     That is the warning working. STOP THEM FIRST, or the containerised API will hold :4401 and
 #     the containerised console will hold :4200, and your host processes will fail to bind:
 #         docker compose stop api ui
 #
@@ -92,7 +92,7 @@ services:
   # ---------------------------------------------------------------- observability (optional)
   #
   # The only part of this file that is genuinely different from the production stack. There, Prometheus
-  # scrapes `api:9084` over the compose network. Here the API is on your HOST, which has no name inside
+  # scrapes `api:5401` over the compose network. Here the API is on your HOST, which has no name inside
   # the network — hence host.docker.internal, mapped to the host gateway below, and a separate scrape
   # config. Grafana and its provisioned dashboard are unchanged.
 

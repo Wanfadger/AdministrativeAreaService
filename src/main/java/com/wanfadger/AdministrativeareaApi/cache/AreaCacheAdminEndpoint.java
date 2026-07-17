@@ -21,15 +21,15 @@ import java.util.TreeMap;
  * Wiping the cache is an <b>operational</b> action, not part of the public API, and it is a genuine
  * weapon: an unauthenticated "drop all caches" on the main port is a denial-of-service handle — one
  * request sends every subsequent read to Postgres until the cache refills. Actuator lives on the
- * separate management port (9084), which is deliberately <b>not published to the host</b> in
+ * separate management port (5401), which is deliberately <b>not published to the host</b> in
  * docker-compose; Prometheus and the healthcheck reach it inside the network and nothing outside can.
  * Putting the eviction here inherits that isolation instead of re-opening it on the public port.
  *
  * <p>In development, where you run the API from the IDE, the management port is on localhost, so:
  * <pre>
- *   curl -X DELETE http://localhost:9084/actuator/areacache            # everything
- *   curl -X DELETE http://localhost:9084/actuator/areacache?type=PARISH # one level and below
- *   curl        http://localhost:9084/actuator/areacache               # what is cached right now
+ *   curl -X DELETE http://localhost:5401/actuator/areacache            # everything
+ *   curl -X DELETE http://localhost:5401/actuator/areacache?type=PARISH # one level and below
+ *   curl        http://localhost:5401/actuator/areacache               # what is cached right now
  * </pre>
  *
  * <h2>Why not the built-in {@code /actuator/caches}</h2>

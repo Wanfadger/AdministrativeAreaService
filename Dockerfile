@@ -33,13 +33,13 @@ COPY --from=layers --chown=app:app /layers/snapshot-dependencies/ ./
 COPY --from=layers --chown=app:app /layers/application/           ./
 
 USER app
-EXPOSE 8084
+EXPOSE 4401
 
 # MaxRAMPercentage makes the JVM respect the container's cgroup limit instead of
 # sizing the heap from the host's total RAM.
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
 
 HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=10 \
-  CMD wget -qO- http://localhost:9084/actuator/health/readiness || exit 1
+  CMD wget -qO- http://localhost:5401/actuator/health/readiness || exit 1
 
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher"]

@@ -6,7 +6,7 @@ scrape_configs:
   - job_name: administrative-area-api
     metrics_path: /actuator/prometheus
     static_configs:
-      - targets: ["api:9084"]   # actuator lives on its own, unpublished port
+      - targets: ["api:5401"]   # actuator lives on its own, unpublished port
         labels:
           application: AdministrativeAreaApi
 

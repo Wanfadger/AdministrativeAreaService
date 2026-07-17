@@ -14,8 +14,8 @@ import java.util.List;
 /**
  * Swagger/OpenAPI Configuration
  * 
- * Access Swagger UI at: http://localhost:8084/swagger-ui.html
- * Access API Docs at: http://localhost:8084/v3/api-docs
+ * Access Swagger UI at: http://localhost:4401/swagger-ui.html
+ * Access API Docs at: http://localhost:4401/v3/api-docs
  */
 @Configuration
 public class SwaggerConfig {
@@ -35,7 +35,7 @@ public class SwaggerConfig {
                                 .url("https://www.apache.org/licenses/LICENSE-2.0.html")))
                 .servers(List.of(
                         new Server()
-                                .url("http://localhost:8084")
+                                .url("http://localhost:4401")
                                 .description("Development Server"),
                         new Server()
                                 .url("https://api.administrativearea.com")

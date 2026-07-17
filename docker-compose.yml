@@ -106,7 +106,7 @@ services:
     <<: [*restart, *logging]
     environment:
       # Spring's SystemEnvironmentPropertySource maps DB_URL -> ${DB-URL}, etc.
-      APP_PORT: 8084
+      APP_PORT: 4401
       APP_PROFILE: ${APP_PROFILE:-dev1}
       DDL_AUTO: ${DDL_AUTO:-validate}
       DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
@@ -118,7 +118,7 @@ services:
       # Actuator's own port. Note it is NOT in `ports:` below — health, metrics, env and heap details
       # are operational surface, not public API. Prometheus and the container healthcheck reach it
       # inside area-net; nothing outside the network can.
-      MANAGEMENT_PORT: 9084
+      MANAGEMENT_PORT: 5401
 
       # Browser origins allowed to call the API. Empty by default, and that is correct: the console is
       # served by nginx in the `ui` service, which reverse-proxies /api/ to this container, so it is
@@ -140,7 +140,7 @@ services:
       # FALSE, and read the next paragraph before changing it.
       #
       # Trusting X-Forwarded-For is only sound when the proxy is the ONLY way in. It is not here: the
-      # api service publishes 8084 to the host so other services can call it directly, which means a
+      # api service publishes 4401 to the host so other services can call it directly, which means a
       # caller can reach the API without passing nginx, set X-Forwarded-For themselves, rotate it per
       # request and never be limited at all. Trusting the header would make the limiter decorative
       # against precisely the caller it exists to stop.
@@ -156,14 +156,14 @@ services:
         -XX:+UseZGC
         -XX:+ExitOnOutOfMemoryError
     ports:
-      - "${API_PORT:-8084}:8084"
+      - "${API_PORT:-4401}:4401"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:9084/actuator/health/readiness"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:5401/actuator/health/readiness"]
       interval: 15s
       timeout: 5s
       retries: 10

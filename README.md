@@ -55,13 +55,13 @@ parent. Any value other than `flat` returns the default nested shape.
 
 ```bash
 # nested (default)
-curl "http://localhost:8084/api/v1/administrative-areas/search?type=SUBCOUNTY&page=1&size=25&sortBy=name&sortDirection=asc"
+curl "http://localhost:4401/api/v1/administrative-areas/search?type=SUBCOUNTY&page=1&size=25&sortBy=name&sortDirection=asc"
 
 # flat
-curl "http://localhost:8084/api/v1/administrative-areas/search?type=SUBCOUNTY&page=1&size=25&view=flat"
+curl "http://localhost:4401/api/v1/administrative-areas/search?type=SUBCOUNTY&page=1&size=25&view=flat"
 ```
 
-Interactive docs (when enabled): **[Swagger UI](http://localhost:8084/swagger-ui.html)**.
+Interactive docs (when enabled): **[Swagger UI](http://localhost:4401/swagger-ui.html)**.
 
 ---
 
@@ -95,9 +95,9 @@ Postgres
 ETag versions and broadcasts to other pods — a correct cluster-wide wipe needs all three.
 
 ```bash
-curl -X DELETE http://localhost:9084/actuator/areacache             # everything, cluster-wide
-curl -X DELETE "http://localhost:9084/actuator/areacache?type=PARISH" # one level and below
-curl           http://localhost:9084/actuator/areacache             # per-region in-heap sizes
+curl -X DELETE http://localhost:5401/actuator/areacache             # everything, cluster-wide
+curl -X DELETE "http://localhost:5401/actuator/areacache?type=PARISH" # one level and below
+curl           http://localhost:5401/actuator/areacache             # per-region in-heap sizes
 ```
 
 ---
@@ -110,7 +110,7 @@ Bring up just Postgres and Redis; run the app on the host:
 
 ```bash
 docker compose -f docker-compose.dev.yml up -d          # postgres :5437, redis :8101
-mvn spring-boot:run                                      # API :8084, management :9084
+mvn spring-boot:run                                      # API :4401, management :5401
 ```
 
 The `dev1` profile defaults already point at those ports — no configuration needed. Add
@@ -152,8 +152,8 @@ Everything is environment-overridable; the `dev1` defaults are for local use.
 
 | Concern | Property / env | Default |
 |---|---|---|
-| API port | `APP-PORT` | 8084 |
-| Management port | `MANAGEMENT-PORT` | 9084 (not published in Docker) |
+| API port | `APP-PORT` | 4401 |
+| Management port | `MANAGEMENT-PORT` | 5401 (not published in Docker) |
 | Postgres | `DB-URL` / `DB-USERNAME` / `DB-PASSWORD` | `localhost:5437/areadevdb` |
 | Redis | `REDIS-HOST` / `REDIS-PORT` | `localhost:8101` |
 | CORS origins | `CORS-ORIGINS` | `http://localhost:4200` |
@@ -169,7 +169,7 @@ Everything is environment-overridable; the `dev1` defaults are for local use.
 
 ## Observability
 
-On the management port (`:9084`): `/actuator/health` (with `liveness`/`readiness` probes),
+On the management port (`:5401`): `/actuator/health` (with `liveness`/`readiness` probes),
 `/actuator/prometheus`, `/actuator/metrics`, `/actuator/caches`, `/actuator/areacache`.
 
 The Grafana dashboard (provisioned under the `observability` profile) shows cache hit ratio per tier
