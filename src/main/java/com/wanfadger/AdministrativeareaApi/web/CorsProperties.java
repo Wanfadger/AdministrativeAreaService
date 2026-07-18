@@ -35,13 +35,29 @@ import java.util.List;
 public class CorsProperties {
 
     /**
-     * Exact origins allowed to call the API from a browser. Empty ⇒ no browser origin is allowed,
-     * which is the correct default for a service whose only front end is same-origin.
+     * Exact origins allowed to call the API from a browser. Empty ⇒ none allowed by exact match,
+     * which is the correct default for a service whose only front end is same-origin. Set the real
+     * origins here (via {@code CORS-ORIGINS}) in any environment where a known browser origin is fixed.
      *
-     * <p>Deliberately exact origins, not patterns: a pattern like {@code https://*.example.com} also
-     * matches {@code https://evil.attacker.example.com} if anyone can register a subdomain.
+     * <p>Deliberately exact, not a broad pattern: a pattern like {@code https://*.example.com} also
+     * matches {@code https://evil.attacker.example.com} if anyone can register a subdomain. For the one
+     * case where exactness is impractical — local development, where the dev-server port varies — use
+     * {@link #allowedOriginPatterns} with a <i>narrow</i> pattern instead.
      */
     private List<String> allowedOrigins = List.of();
+
+    /**
+     * Origin <b>patterns</b> allowed to call the API from a browser (Spring's {@code allowedOriginPatterns}).
+     * Empty by default. Its reason for existing is development: the console and URRMS each run their own
+     * {@code ng serve} and cannot both hold one port, so the console's port varies from run to run —
+     * pinning an exact origin would mean editing config every time it moves. A single narrow pattern
+     * ({@code http://localhost:*}) lets any localhost port through without reconfiguration.
+     *
+     * <p>Narrow on purpose: {@code http://localhost:*} widens only the <b>port</b>, and only on the local
+     * machine — it can never match a remote host. Fully configurable via {@code CORS-ORIGIN-PATTERNS};
+     * set it empty in an environment that has no cross-origin browser client (e.g. same-origin prod).
+     */
+    private List<String> allowedOriginPatterns = List.of();
 
     /** Methods the API actually exposes. Not a wildcard — the list is short and known. */
     private List<String> allowedMethods = List.of("GET", "POST", "PUT", "DELETE", "OPTIONS");

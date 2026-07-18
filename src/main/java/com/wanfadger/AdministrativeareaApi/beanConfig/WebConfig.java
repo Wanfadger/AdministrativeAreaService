@@ -55,15 +55,24 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(@NonNull CorsRegistry registry) {
-        if (cors.getAllowedOrigins().isEmpty()) {
-            log.info("CORS: no browser origins allowed (app.cors.allowed-origins is empty). "
-                    + "Server-to-server consumers are unaffected — CORS is a browser mechanism.");
+        // An empty env default (e.g. CORS-ORIGINS with nothing set) can bind to a single blank entry;
+        // drop blanks so it behaves as "unset" rather than adding a nonsensical empty origin.
+        String[] origins = cors.getAllowedOrigins().stream()
+                .filter(o -> o != null && !o.isBlank()).toArray(String[]::new);
+        String[] patterns = cors.getAllowedOriginPatterns().stream()
+                .filter(p -> p != null && !p.isBlank()).toArray(String[]::new);
+        boolean hasOrigins = origins.length > 0;
+        boolean hasPatterns = patterns.length > 0;
+        if (!hasOrigins && !hasPatterns) {
+            log.info("CORS: no browser origins or patterns allowed (app.cors.allowed-origins and "
+                    + "allowed-origin-patterns are both empty). Server-to-server consumers are unaffected "
+                    + "— CORS is a browser mechanism.");
             return;
         }
 
-        log.info("CORS: allowing browser origins {}", cors.getAllowedOrigins());
-        registry.addMapping("/api/**")
-                .allowedOrigins(cors.getAllowedOrigins().toArray(String[]::new))
+        log.info("CORS: allowing browser origins {} and patterns {}",
+                java.util.Arrays.toString(origins), java.util.Arrays.toString(patterns));
+        var mapping = registry.addMapping("/api/**")
                 .allowedMethods(cors.getAllowedMethods().toArray(String[]::new))
                 .allowedHeaders(cors.getAllowedHeaders().toArray(String[]::new))
                 // Without ETag here, a cross-origin client never sees the header, never sends
@@ -71,5 +80,13 @@ public class WebConfig implements WebMvcConfigurer {
                 .exposedHeaders(cors.getExposedHeaders().toArray(String[]::new))
                 .allowCredentials(cors.isAllowCredentials())
                 .maxAge(cors.getMaxAge().toSeconds());
+        if (hasOrigins) {
+            mapping.allowedOrigins(origins);
+        }
+        if (hasPatterns) {
+            // allowedOriginPatterns echoes the matched origin back (never a bare '*'), so it composes
+            // with a fixed allowlist and stays valid even if credentials are later turned on.
+            mapping.allowedOriginPatterns(patterns);
+        }
     }
 }
