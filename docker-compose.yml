@@ -134,6 +134,11 @@ services:
       # entirely; hiding the console's link (DOCS_URL below) does not, on its own, do that.
       API_DOCS_ENABLED: ${API_DOCS_ENABLED:-true}
 
+      # The origin Swagger UI's "Try it out" calls, on top of the always-listed localhost entry. Empty
+      # in development, where localhost is already right. Set it to the origin the BROWSER reaches —
+      # nginx's, not the API's own port — in any deployment with a fixed public address.
+      OPENAPI_SERVER_URL: ${OPENAPI_SERVER_URL:-}
+
       RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
       RATE_LIMIT_CAPACITY: ${RATE_LIMIT_CAPACITY:-300}
 

@@ -109,6 +109,11 @@ services:
       # Set false to withdraw Swagger UI and /v3/api-docs in production.
       API_DOCS_ENABLED: "true"
 
+      # The origin Swagger UI's "Try it out" calls. This is the CONSOLE's public origin, not this
+      # container's 4401 — nginx proxies /swagger-ui.html and /v3/api-docs through, so a user reading
+      # the docs is on the console's origin and calls must stay there. Change it with the ui port below.
+      OPENAPI_SERVER_URL: "http://154.72.196.32:5002"
+
       JAVA_OPTS: >-
         -XX:MaxRAMPercentage=75
         -XX:+UseZGC
@@ -144,7 +149,9 @@ services:
       API_URL: ""
       DOCS_URL: "/swagger-ui.html"
     ports:
-      - "4200:80"
+      # Public entrypoint: http://154.72.196.32:5002. Only the host side moves — the console has no
+      # compiled-in URL, so a port change needs no rebuild. Keep the API's OPENAPI_SERVER_URL in step.
+      - "5002:80"
     depends_on:
       api:
         condition: service_healthy
