@@ -113,7 +113,9 @@ public class AdministrativeAreaController {
                     + "full parent hierarchy; pass view=flat for just the parent's code, which is "
                     + "roughly a tenth of the payload. Default page size is 50, max 5000. Advanced "
                     + "users may append field:operator=value query params (operators: EQUALS, "
-                    + "NOT_EQUALS, CONTAINS, NOT_CONTAINS, GT, LT, GTE, LTE, IN), e.g. &name:CONTAINS=ka.")
+                    + "NOT_EQUALS, CONTAINS, NOT_CONTAINS, GT, LT, GTE, LTE, IN, IS_NULL, "
+                    + "IS_NOT_NULL), e.g. &name:CONTAINS=ka. The two null operators ignore the "
+                    + "value but still need one sent, e.g. &parent:IS_NULL=true.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Paginated results."),
             @ApiResponse(responseCode = "400", description = "Missing/unsupported 'type', or an unknown 'sortBy' field.",

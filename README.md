@@ -46,7 +46,11 @@ Base path: `/api/v1/administrative-areas`. All responses are JSON envelopes
 
 Advanced filters use the grammar `field:OPERATOR=value` as query keys, e.g.
 `name:CONTAINS=kampala`. Operators: `EQUALS`, `NOT_EQUALS`, `CONTAINS`, `NOT_CONTAINS`, `GT`, `GTE`,
-`LT`, `LTE`, `IN`.
+`LT`, `LTE`, `IN`, `IS_NULL`, `IS_NOT_NULL`.
+
+`IS_NULL` / `IS_NOT_NULL` ignore the supplied value, but one must still be sent — a filter with a
+blank value is dropped before it reaches the specification. Write `parent:IS_NULL=true`, not
+`parent:IS_NULL=`.
 
 **`?view=flat`** returns each item as its own fields plus `partOfCode` (the immediate parent's code)
 instead of the nested ancestry. It is much smaller and skips the joins up the hierarchy — use it for
