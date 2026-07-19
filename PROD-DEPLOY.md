@@ -26,13 +26,32 @@ docker exec aa-postgres pg_dump -U siip-db-user-dev -d areadevdb > areadb.sql
 Each image builds from its own Dockerfile — the API builds its jar (Maven stage) and the console
 builds the Angular bundle, so only Docker is needed, no local `mvn`/`npm`.
 
-> **The console's public address is not a build input.** It goes live at
-> `http://154.72.196.32:5002`, but nothing in the image knows that: the console's API URL is runtime
-> config (the container's entrypoint writes `config.js` from `API_URL` at start), and it defaults to
-> **same origin**, reaching the API through nginx's own `/api/` proxy. So there is no build-arg to set,
-> and moving the console to another host or port later needs only a compose edit — **not a rebuild**.
-> The address is set in two places in `docker-compose.prod.yml`, covered in step 5: the `ui` port
-> mapping, and the API's `OPENAPI_SERVER_URL` (Swagger's "Try it out" target).
+### There is no `API_GATEWAY` build-arg here — and there must not be
+
+If you deploy the URRMS stack, this is the step that looks like it is missing something. The URRMS
+frontend is built with `--build-arg API_GATEWAY=…` (see `Authentication/PROD-DEPLOY.md` step 1),
+because it reaches every backend through the gateway on 8082. **This console is different, on
+purpose.** Do not go looking for the equivalent flag; there isn't one, and adding one would break the
+console.
+
+Two independent reasons:
+
+1. **The gateway route for this service is read-only.** `URRMSGateWay`'s `ADMINISTRATIVEAREA_VS`
+   route carries `Method=GET,OPTIONS` — enforced, not merely conventional. This console **creates,
+   updates and deletes** areas (`POST`/`PUT`/`DELETE` in `administrative-area.service.ts`). Point it
+   at `${API_GATEWAY}/administrative-area` and every read would work while every write failed — the
+   worst shape of failure, because it looks fine until someone tries to save. URRMS consumes this
+   service read-only through the gateway; the console is the *writer* and talks to the API directly.
+
+2. **Nothing about the address is compiled in.** The console's API URL is runtime config: the
+   container entrypoint writes `config.js` from the `API_URL` env var at start, defaulting to
+   **same origin**, which reaches the API through nginx's own `/api/` proxy inside the compose
+   network. So the image is host-agnostic — moving the console to another host or port is a compose
+   edit, **never a rebuild**.
+
+The public address (`http://154.72.196.32:5002`) is therefore set at *deploy* time, in two places in
+`docker-compose.prod.yml`, both covered in step 5: the `ui` port mapping, and the API's
+`OPENAPI_SERVER_URL` (Swagger's "Try it out" target). Build the UI image with no URL flags at all.
 
 ```bash
 NS=wanfadger; TAG=2026-07-19   # dated build tag; the compose pins it via ${IMAGE_TAG} (or use TAG=latest)
@@ -134,6 +153,11 @@ Edit these directly in `docker-compose.prod.yml` if they differ:
 - **`CORS_ORIGINS`** — leave empty. The console is same-origin through nginx's `/api/` proxy, so CORS
   never applies to it — that stays true on a public IP, and `154.72.196.32:5002` does **not** belong
   here. Add an origin only for a browser app served from a genuinely different host.
+- **`API_URL`** (on the `ui` service) — leave empty unless you split the console and the API onto
+  **different hosts**, which the default compose does not do. Only then set it to the API's public
+  origin *and* add the console's origin to `CORS_ORIGINS` above — the two changes go together, and
+  omitting the second means the browser blocks every call. Still no rebuild: this is runtime config.
+  Note this is the API's own address, never the URRMS gateway — see step 1 for why.
 - **`RATE_LIMIT_TRUST_FORWARDED_FOR`** — keep `false` while port 4401 is published. Set `true` only
   after removing the API's published port so nginx is the sole ingress; otherwise a caller can forge
   `X-Forwarded-For` and evade the limiter.
