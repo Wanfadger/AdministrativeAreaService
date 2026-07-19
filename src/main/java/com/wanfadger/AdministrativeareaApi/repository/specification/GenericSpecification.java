@@ -86,6 +86,13 @@ public class GenericSpecification<T> implements Specification<T> {
                             (Number) castToRequiredType(javaType, rawValue.toString()));
                 }
                 return builder.lessThanOrEqualTo(path.as(String.class), rawValue.toString());
+            // Value-less by design: NULL is not equal to anything, itself included, so no
+            // comparison operator can express "unassigned". Whatever value is sent is ignored --
+            // one has to be sent only because blank-valued filters are skipped upstream.
+            case IS_NULL:
+                return builder.isNull(path);
+            case IS_NOT_NULL:
+                return builder.isNotNull(path);
             case IN: {
                 // Split CSV → typed collection so JPA emits `field IN (v1, v2, …)`.
                 String raw = rawValue.toString();
