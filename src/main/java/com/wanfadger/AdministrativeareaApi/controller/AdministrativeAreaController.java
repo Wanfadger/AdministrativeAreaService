@@ -115,7 +115,16 @@ public class AdministrativeAreaController {
                     + "users may append field:operator=value query params (operators: EQUALS, "
                     + "NOT_EQUALS, CONTAINS, NOT_CONTAINS, GT, LT, GTE, LTE, IN, IS_NULL, "
                     + "IS_NOT_NULL), e.g. &name:CONTAINS=ka. The two null operators ignore the "
-                    + "value but still need one sent, e.g. &parent:IS_NULL=true.")
+                    + "value but still need one sent, e.g. &parent:IS_NULL=true.\n\n"
+                    + "ANCESTORS: a filter's field may be a path up the hierarchy, so the whole "
+                    + "subtree of any ancestor is reachable in one call and with any operator. For a "
+                    + "COUNTY search the paths are localGovernment., localGovernment.subRegion. and "
+                    + "localGovernment.subRegion.region. — so every county in a region is "
+                    + "&localGovernment.subRegion.region.code:EQUALS=<code>, and every county in the "
+                    + "region NAMED Northern is "
+                    + "&localGovernment.subRegion.region.name:EQUALS=Northern. Contrast 'partOf', "
+                    + "which takes one code and matches the IMMEDIATE parent only. A 400 on an "
+                    + "unfilterable field lists the paths available for that type.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Paginated results."),
             @ApiResponse(responseCode = "400", description = "Missing/unsupported 'type', or an unknown 'sortBy' field.",
@@ -132,7 +141,9 @@ public class AdministrativeAreaController {
             @Parameter(description = "Parent area's code, one level up from 'type': for SUBREGION the "
                     + "region code, LOCALGOVERNMENT the sub-region code, COUNTY the local-government "
                     + "code, SUBCOUNTY the county code, PARISH the sub-county code. Ignored for REGION. "
-                    + "Optional — omit for an unfiltered search of the type.")
+                    + "Optional — omit for an unfiltered search of the type. Takes ONE code and only "
+                    + "the immediate parent; for a whole subtree filter on the ancestor's path, "
+                    + "e.g. subCounty.county.localGovernment.subRegion.region.code:EQUALS for PARISH.")
             @RequestParam(required = false) String partOf,
             @Parameter(description = "Page number (1-based)")
             @RequestParam(required = false) Integer page,

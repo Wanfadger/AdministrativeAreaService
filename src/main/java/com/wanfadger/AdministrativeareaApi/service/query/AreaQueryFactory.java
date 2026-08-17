@@ -54,9 +54,58 @@ public class AreaQueryFactory {
     private static final String SORTABLE_LIST =
             SORTABLE.stream().sorted().collect(java.util.stream.Collectors.joining(", "));
 
-    /** Columns a {@code field:OPERATOR=value} filter may target. */
+    /**
+     * Columns a {@code field:OPERATOR=value} filter may target — on the level being searched, or on
+     * any of its ancestors via the property path that reaches them.
+     *
+     * <p>{@code type=COUNTY&localGovernment.subRegion.region.name:EQUALS=Northern} is every county
+     * in the region called Northern, in one request, using the same filter syntax and the same
+     * operator set as {@code name:CONTAINS}. The paths come from {@link AreaHierarchy}, so the
+     * legal set is bounded by the six levels rather than open to any dotted string a caller invents
+     * — which matters because an unbounded set of accepted keys is an unbounded set of cache keys.
+     */
     private static final Set<String> FILTERABLE =
             Set.of("name", "code", "latitude", "longitude", "description");
+
+    /** Rendered into the 400 so the caller learns what they may filter on. */
+    private static final String FILTERABLE_LIST =
+            FILTERABLE.stream().sorted().collect(java.util.stream.Collectors.joining(", "));
+
+    /** Every legal filter field for a level: its own columns, plus each ancestor path + column. */
+    private static final Map<AdministrativeAreaType, Set<String>> FILTERABLE_BY_TYPE =
+            new java.util.EnumMap<>(AdministrativeAreaType.class);
+
+    static {
+        for (AdministrativeAreaType type : AdministrativeAreaType.values()) {
+            Set<String> fields = new java.util.TreeSet<>(FILTERABLE);
+            AreaHierarchy.ancestorPathPrefixes(type).values()
+                    .forEach(prefix -> FILTERABLE.forEach(column -> fields.add(prefix + column)));
+            FILTERABLE_BY_TYPE.put(type, java.util.Collections.unmodifiableSet(fields));
+        }
+    }
+
+    /** True when {@code field} may be filtered on for a search at {@code type}. */
+    private static boolean filterable(AdministrativeAreaType type, String field) {
+        return type != null && FILTERABLE_BY_TYPE.get(type).contains(field);
+    }
+
+    /**
+     * The 400 for an unfilterable field: the columns, then the ancestor paths this level offers.
+     *
+     * <p>Naming the paths is the whole point — a caller who did not know ancestor filtering existed
+     * learns it here, from the error they get by guessing.
+     */
+    private static String filterableHelp(AdministrativeAreaType type) {
+        Map<AdministrativeAreaType, String> prefixes = AreaHierarchy.ancestorPathPrefixes(type);
+        if (prefixes.isEmpty()) {
+            return "Filterable fields: " + FILTERABLE_LIST + ".";
+        }
+        String paths = prefixes.entrySet().stream()
+                .map(e -> e.getValue() + "<field> (" + e.getKey().name() + ")")
+                .collect(java.util.stream.Collectors.joining(", "));
+        return "Filterable fields: " + FILTERABLE_LIST
+                + " — on this level, or on any ancestor by prefixing its path: " + paths + ".";
+    }
 
     /**
      * Structural params, consumed here rather than turned into column filters.
@@ -124,7 +173,17 @@ public class AreaQueryFactory {
             int colon = key.indexOf(':');
             String field = colon > 0 ? key.substring(0, colon) : key;
             if (RESERVED.contains(field)) continue;
-            if (!FILTERABLE.contains(field)) continue;   // silently dropped: cannot fork the key
+            if (!filterable(type, field)) {
+                // A dotted path is unambiguously an attempt to filter across a relationship. No
+                // client sends one by accident, and none predates this feature — so unlike a stray
+                // flat parameter, there is no compatibility argument for dropping it quietly, and
+                // every argument against: the response to a dropped filter is the whole level with
+                // HTTP 200. Loud without waiting for X-Strict-Params, as ancestorType always was.
+                if (field.indexOf('.') > 0) {
+                    throw new InvalidException("Cannot filter on '" + field + "'. " + filterableHelp(type));
+                }
+                continue;   // silently dropped: cannot fork the key
+            }
 
             out.put(key, value.trim());
         }
